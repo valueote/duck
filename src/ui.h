@@ -1,3 +1,4 @@
+#pragma once
 #include <filesystem>
 #include <notcurses/notcurses.h>
 #include <string>

@@ -1,3 +1,4 @@
+#pragma once
 #include "fs_utils.h"
 #include "ui.h"
 #include <filesystem>

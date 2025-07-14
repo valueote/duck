@@ -162,14 +162,7 @@ void ui::render() { notcurses_render(nc_); }
 void ui::display_fs_error(const fs::filesystem_error &e) {
   ncplane_printf_yx(right_plane_, 0, 0, "Error: %s", e.what());
 }
-//
-// std::string ui::format_directory_entries(fs::directory_entry entry) {
-//   if (fs::is_regular_file(entry)) {
-//     return std::format("📄 {}", entry.path().filename().string());
-//   } else {
-//     return std::format("📁 {} ", entry.path().filename().string());
-//   }
-// }
+
 std::string ui::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{
       {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
