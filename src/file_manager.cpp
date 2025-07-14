@@ -8,7 +8,6 @@ file_manager::file_manager()
 
 void file_manager::run() {
   while (running_) {
-    ui_.refresh();
     ui_.display_current_path(current_path_);
     ui_.display_direcotry_entries(curdir_entries, selected_);
     ui_.display_file_preview(curdir_entries, selected_);
@@ -80,6 +79,7 @@ void file_manager::update_curdir_entries() {
 }
 
 void file_manager::update_selected_entries() {
+  curdir_entries.clear();
   for (const auto &entry : fs::directory_iterator(curdir_entries[selected_]))
     selected_dir_entries_.push_back(entry);
 }

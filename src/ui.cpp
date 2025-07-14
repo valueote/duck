@@ -17,12 +17,11 @@ std::string get_text_preview(const fs::path &path, size_t max_lines = 20,
   size_t lines = 0;
 
   while (std::getline(file, line) && lines < max_lines) {
-    // 截断过长的行
+
     if (line.length() > max_width) {
       line = line.substr(0, max_width - 3) + "...";
     }
 
-    // 替换控制字符
     for (auto &c : line) {
       if (iscntrl(static_cast<unsigned char>(c))) {
         c = '?';
@@ -67,12 +66,6 @@ ui::config::config(ncplane *stdplane) {
 void ui::config::resize(ncplane *stdplane) {
   ncplane_dim_yx(stdplane, &rows_, &cols_);
   mid_col_ = cols_ / 2;
-  left_opts_.rows = rows_;
-  left_opts_.cols = mid_col_;
-
-  right_opts_.rows = rows_;
-  right_opts_.x = static_cast<int>(mid_col_) + 1;
-  right_opts_.cols = cols_ - mid_col_ - 1;
 }
 
 ui::ui()
@@ -85,28 +78,36 @@ ui::~ui() { notcurses_stop(nc_); }
 
 void ui::resize_plane() {
   config_.resize(stdplane_);
-  clear_plane();
-  left_plane_ = ncplane_create(stdplane_, &config_.left_opts_);
-  right_plane_ = ncplane_create(stdplane_, &config_.right_opts_);
+
+  ncplane_erase(stdplane_);
+
+  unsigned int new_left_cols = config_.mid_col_;
+  unsigned int new_right_x = config_.mid_col_ + 1;
+  unsigned int new_right_cols = config_.cols_ - config_.mid_col_ - 1;
+
+  ncplane_resize_simple(left_plane_, config_.rows_, new_left_cols);
+
+  ncplane_move_yx(right_plane_, 0, new_right_x);
+  ncplane_resize_simple(right_plane_, config_.rows_, new_right_cols);
+
   display_separator();
 }
 
 void ui::clear_plane() {
   ncplane_destroy(left_plane_);
   ncplane_destroy(right_plane_);
-  left_plane_ = ncplane_create(stdplane_, &config_.left_opts_);
-  right_plane_ = ncplane_create(stdplane_, &config_.right_opts_);
 }
 
-void ui::refresh() { clear_plane(); }
-
 void ui::display_current_path(const std::string &path) {
+  ncplane_erase(left_plane_);
   ncplane_printf_yx(left_plane_, 0, 0, "📁 %s", path.c_str());
 }
 
 void ui::display_direcotry_entries(
     const std::vector<fs::directory_entry> &entries, size_t selected) {
   for (size_t i = 0; i < entries.size(); ++i) {
+    if (i + 2 >= config_.rows_)
+      break;
     std::string name = format_directory_entries(entries[i]);
     if (i == selected)
       ncplane_printf_yx(left_plane_, i + 2, 0, "> %s", name.c_str());
@@ -117,12 +118,13 @@ void ui::display_direcotry_entries(
 
 void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
                               size_t selected) {
-  if (!entries.empty() && selected >= 0 &&
-      static_cast<size_t>(selected) < entries.size()) {
+
+  ncplane_erase(right_plane_);
+  if (!entries.empty() && selected < entries.size()) {
     const auto &entry = entries[selected];
     if (entry.is_regular_file()) {
-      std::string preview =
-          get_text_preview(entry.path(), config_.rows_ - 3, config_.cols_ - 10);
+      std::string preview = get_text_preview(entry.path(), config_.rows_ - 3,
+                                             ncplane_dim_x(right_plane_) - 2);
       ncplane_printf_yx(right_plane_, 0, 0, "📄 Preview: %s",
                         entry.path().filename().c_str());
       int y = 2;

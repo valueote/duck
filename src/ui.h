@@ -30,7 +30,6 @@ public:
   ui();
   ~ui();
   notcurses *get_nc();
-  void refresh();
   void clear_plane();
   void resize_plane();
 
