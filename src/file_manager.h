@@ -10,6 +10,13 @@ private:
   ncinput input_handler_;
   bool running_;
   size_t selected_;
+  struct input_state {
+    uint32_t last_key = 0;
+    ncintype_e last_type = NCTYPE_UNKNOWN;
+    uint64_t last_time = 0;
+  };
+
+  input_state input_state_;
 
   fs::path current_path_;
   std::vector<fs::directory_entry> curdir_entries;
