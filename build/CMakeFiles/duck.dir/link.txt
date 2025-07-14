@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -Wl,--dependency-file=CMakeFiles/duck.dir/link.d CMakeFiles/duck.dir/src/main.cpp.o CMakeFiles/duck.dir/src/ui.cpp.o CMakeFiles/duck.dir/src/fs_utils.cpp.o CMakeFiles/duck.dir/src/input_handler.cpp.o CMakeFiles/duck.dir/src/file_manager.cpp.o -o duck  /usr/lib/libnotcurses.so /usr/lib/libnotcurses-core.so
