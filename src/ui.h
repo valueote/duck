@@ -36,10 +36,10 @@ public:
   void display_current_path(const std::string &path);
   void
   display_direcotry_entries(const std::vector<fs::directory_entry> &entries,
-                            size_t selected);
-  std::string format_directory_entries(fs::directory_entry entry);
+                            const size_t &selected);
+  std::string format_directory_entries(const fs::directory_entry &entry);
   void display_file_preview(const std::vector<fs::directory_entry> &entries,
-                            size_t selected);
+                            const size_t &selected);
   void display_separator();
   void render();
 

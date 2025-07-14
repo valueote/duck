@@ -1,8 +1,11 @@
 #include "ui.h"
+#include <algorithm>
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <notcurses/notcurses.h>
+#include <string>
+#include <unordered_map>
 namespace duck {
 std::string get_text_preview(const fs::path &path, size_t max_lines = 20,
                              size_t max_width = 80) {
@@ -100,11 +103,11 @@ void ui::clear_plane() {
 
 void ui::display_current_path(const std::string &path) {
   ncplane_erase(left_plane_);
-  ncplane_printf_yx(left_plane_, 0, 0, "📁 %s", path.c_str());
+  ncplane_printf_yx(left_plane_, 0, 0, "\uf4d3 %s", path.c_str());
 }
 
 void ui::display_direcotry_entries(
-    const std::vector<fs::directory_entry> &entries, size_t selected) {
+    const std::vector<fs::directory_entry> &entries, const size_t &selected) {
   for (size_t i = 0; i < entries.size(); ++i) {
     if (i + 2 >= config_.rows_)
       break;
@@ -117,7 +120,7 @@ void ui::display_direcotry_entries(
 }
 
 void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
-                              size_t selected) {
+                              const size_t &selected) {
 
   ncplane_erase(right_plane_);
   if (!entries.empty() && selected < entries.size()) {
@@ -125,7 +128,7 @@ void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
     if (entry.is_regular_file()) {
       std::string preview = get_text_preview(entry.path(), config_.rows_ - 3,
                                              ncplane_dim_x(right_plane_) - 2);
-      ncplane_printf_yx(right_plane_, 0, 0, "📄 Preview: %s",
+      ncplane_printf_yx(right_plane_, 0, 0, "\uf15c Preview : %s ",
                         entry.path().filename().c_str());
       int y = 2;
       std::istringstream ss(preview);
@@ -135,13 +138,13 @@ void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
         ncplane_putstr_yx(right_plane_, y++, 0, line.c_str());
       }
     } else if (entry.is_directory()) {
-      ncplane_printf_yx(right_plane_, 0, 0, "📁 Directory: %s",
+      ncplane_printf_yx(right_plane_, 0, 0, "\uf4d3 Directory: %s",
                         entry.path().filename().c_str());
     } else {
       ncplane_printf_yx(right_plane_, 0, 0, "[Unsupported file type]");
     }
   } else if (entries.empty()) {
-    ncplane_printf_yx(right_plane_, 0, 0, "📁 Empty directory");
+    ncplane_printf_yx(right_plane_, 0, 0, "\uf4d3 Empty directory");
   }
 }
 void ui::display_separator() {
@@ -159,12 +162,40 @@ void ui::render() { notcurses_render(nc_); }
 void ui::display_fs_error(const fs::filesystem_error &e) {
   ncplane_printf_yx(right_plane_, 0, 0, "Error: %s", e.what());
 }
+//
+// std::string ui::format_directory_entries(fs::directory_entry entry) {
+//   if (fs::is_regular_file(entry)) {
+//     return std::format("📄 {}", entry.path().filename().string());
+//   } else {
+//     return std::format("📁 {} ", entry.path().filename().string());
+//   }
+// }
+std::string ui::format_directory_entries(const fs::directory_entry &entry) {
+  static const std::unordered_map<std::string, std::string> extension_icons{
+      {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
+      {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
+      {".jpg", "\uf4e5"}, {".jpeg", "\uf4e5"}, {".png", "\uf4e5"},
+      {".gif", "\ue60d"}, {".pdf", "\ue67d"},  {".zip", "\ue6aa"},
+      {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
+      {".log", "\uf4ed"}, {".csv", "\ueefc"},
+  };
 
-std::string ui::format_directory_entries(fs::directory_entry entry) {
-  if (std::filesystem::is_regular_file(entry)) {
-    return std::format("📄 {}", entry.path().filename().string());
-  } else {
-    return std::format("📁 {} ", entry.path().filename().string());
+  const auto filename = entry.path().filename().string();
+
+  if (fs::is_directory(entry)) {
+    return std::format("\uf4d3 {}", filename);
   }
+
+  auto ext = entry.path().extension().string();
+  std::ranges::transform(ext, ext.begin(), [](char c) {
+    return static_cast<char>(std::tolower(c));
+  });
+
+  auto icon_it = extension_icons.find(ext);
+  const std::string &icon =
+      icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
+
+  return std::format("{} {}", icon, filename);
 }
+
 } // namespace duck
