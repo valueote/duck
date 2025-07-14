@@ -1,6 +1,5 @@
 #include "file_manager.h"
 #include <filesystem>
-#include <thread>
 namespace duck {
 file_manager::file_manager()
     : selected_(0), current_path_(fs::current_path()), ui_() {
@@ -13,6 +12,7 @@ void file_manager::run() {
     ui_.display_current_path(current_path_);
     ui_.display_direcotry_entries(curdir_entries, selected_);
     ui_.display_file_preview(curdir_entries, selected_);
+    ui_.display_separator();
     ui_.render();
 
     int id = wait_input();

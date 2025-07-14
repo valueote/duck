@@ -52,9 +52,9 @@ ui::config::config(ncplane *stdplane) {
   };
   right_opts_ = {
       .y = 0,
-      .x = static_cast<int>(mid_col_),
+      .x = static_cast<int>(mid_col_) + 1,
       .rows = rows_,
-      .cols = cols_ - mid_col_,
+      .cols = cols_ - mid_col_ - 1,
       .userptr = nullptr,
       .name = "right",
       .resizecb = nullptr,
@@ -67,9 +67,12 @@ ui::config::config(ncplane *stdplane) {
 void ui::config::resize(ncplane *stdplane) {
   ncplane_dim_yx(stdplane, &rows_, &cols_);
   mid_col_ = cols_ / 2;
+  left_opts_.rows = rows_;
   left_opts_.cols = mid_col_;
-  right_opts_.x = static_cast<int>(mid_col_);
-  right_opts_.cols = cols_ - mid_col_;
+
+  right_opts_.rows = rows_;
+  right_opts_.x = static_cast<int>(mid_col_) + 1;
+  right_opts_.cols = cols_ - mid_col_ - 1;
 }
 
 ui::ui()
@@ -85,6 +88,7 @@ void ui::resize_plane() {
   clear_plane();
   left_plane_ = ncplane_create(stdplane_, &config_.left_opts_);
   right_plane_ = ncplane_create(stdplane_, &config_.right_opts_);
+  display_separator();
 }
 
 void ui::clear_plane() {
@@ -110,6 +114,7 @@ void ui::display_direcotry_entries(
       ncplane_printf_yx(left_plane_, i + 2, 2, "%s", name.c_str());
   }
 }
+
 void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
                               size_t selected) {
   if (!entries.empty() && selected >= 0 &&
@@ -137,6 +142,14 @@ void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
     ncplane_printf_yx(right_plane_, 0, 0, "📁 Empty directory");
   }
 }
+void ui::display_separator() {
+  const char *separator_char = "│";
+
+  for (int y = 0; y < config_.rows_; ++y) {
+    ncplane_putstr_yx(stdplane_, y, config_.mid_col_, separator_char);
+  }
+}
+
 notcurses *ui::get_nc() { return nc_; }
 
 void ui::render() { notcurses_render(nc_); }

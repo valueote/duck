@@ -41,6 +41,7 @@ public:
   std::string format_directory_entries(fs::directory_entry entry);
   void display_file_preview(const std::vector<fs::directory_entry> &entries,
                             size_t selected);
+  void display_separator();
   void render();
 
   void display_fs_error(const fs::filesystem_error &e);
