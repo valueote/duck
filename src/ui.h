@@ -30,6 +30,7 @@ public:
   ui();
   ~ui();
   notcurses *get_nc();
+  void refresh();
   void clear_plane();
   void resize_plane();
 
@@ -37,6 +38,7 @@ public:
   void
   display_direcotry_entries(const std::vector<fs::directory_entry> &entries,
                             size_t selected);
+  std::string format_directory_entries(fs::directory_entry entry);
   void display_file_preview(const std::vector<fs::directory_entry> &entries,
                             size_t selected);
   void render();

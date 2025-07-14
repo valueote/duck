@@ -1,5 +1,6 @@
 #include "ui.h"
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <notcurses/notcurses.h>
 namespace duck {
@@ -89,7 +90,11 @@ void ui::resize_plane() {
 void ui::clear_plane() {
   ncplane_destroy(left_plane_);
   ncplane_destroy(right_plane_);
+  left_plane_ = ncplane_create(stdplane_, &config_.left_opts_);
+  right_plane_ = ncplane_create(stdplane_, &config_.right_opts_);
 }
+
+void ui::refresh() { clear_plane(); }
 
 void ui::display_current_path(const std::string &path) {
   ncplane_printf_yx(left_plane_, 0, 0, "📁 %s", path.c_str());
@@ -98,7 +103,7 @@ void ui::display_current_path(const std::string &path) {
 void ui::display_direcotry_entries(
     const std::vector<fs::directory_entry> &entries, size_t selected) {
   for (size_t i = 0; i < entries.size(); ++i) {
-    std::string name = entries[i].path().filename().string();
+    std::string name = format_directory_entries(entries[i]);
     if (i == selected)
       ncplane_printf_yx(left_plane_, i + 2, 0, "> %s", name.c_str());
     else
@@ -120,7 +125,6 @@ void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
       std::string line;
       while (std::getline(ss, line) &&
              y < static_cast<int>(config_.rows_) - 1) {
-        // 使用 ncplane_putstr_yx 处理特殊字符
         ncplane_putstr_yx(right_plane_, y++, 0, line.c_str());
       }
     } else if (entry.is_directory()) {
@@ -141,4 +145,11 @@ void ui::display_fs_error(const fs::filesystem_error &e) {
   ncplane_printf_yx(right_plane_, 0, 0, "Error: %s", e.what());
 }
 
+std::string ui::format_directory_entries(fs::directory_entry entry) {
+  if (std::filesystem::is_regular_file(entry)) {
+    return std::format("📄 {}", entry.path().filename().string());
+  } else {
+    return std::format("📁 {} ", entry.path().filename().string());
+  }
+}
 } // namespace duck

@@ -12,11 +12,16 @@ private:
   size_t selected_;
 
   fs::path current_path_;
-  std::vector<fs::directory_entry> entries_;
+  std::vector<fs::directory_entry> curdir_entries;
   std::vector<fs::directory_entry> selected_dir_entries_;
   void move_selected_down();
   void move_selected_up();
   int wait_input();
+  int get_input_nblock();
+  void handle_input(int id);
+
+  void update_curdir_entries();
+  void update_selected_entries();
 
 public:
   file_manager();
