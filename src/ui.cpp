@@ -34,6 +34,7 @@ UI::~UI() {}
 // TODO: Add a parent dir plane
 // TODO: Add Directory preview
 void UI::build_menu() {
+  menu_option_.focused_entry = &selected_;
   menu_option_.on_change = [this]() { update_preview_content(); };
   menu_ =
       Menu(&curdir_string_entries_, &(selected_), menu_option_) |
@@ -54,7 +55,6 @@ void UI::build_menu() {
         }
         if ((event == ftxui::Event::Backspace ||
              event == ftxui::Event::Character('h'))) {
-          std::cerr << "[Debug]" << file_manager_.parent_path();
           file_manager_.update_current_path(file_manager_.parent_path());
           file_manager_.update_curdir_entries();
           update_curdir_string_entires();
