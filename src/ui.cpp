@@ -20,49 +20,54 @@
 namespace duck {
 
 UI::UI(FileManager &file_manager)
-    : screen_{ftxui::ScreenInteractive::Fullscreen()},
-      file_manager_(file_manager) {
+    : selected_{0}, screen_{ftxui::ScreenInteractive::Fullscreen()},
+      file_manager_{file_manager} {
   update_curdir_string_entires();
   build_menu();
   setup_layout();
 }
 UI::~UI() {}
+
+// FIX: crash when change to an empty directory
+// FIX: crash when access priority directory
+// FIX: Menu prompt and highlighted entry are not same
+// TODO: Add a parent dir plane
+// TODO: Add Directory preview
 void UI::build_menu() {
   menu_option_.on_change = [this]() { update_preview_content(); };
-  FileManager &manager = this->file_manager_;
-  menu_ = Menu(&curdir_string_entries_, &(manager.selected()), menu_option_) |
-          ftxui::CatchEvent([this, &manager](ftxui::Event event) {
-            if (event == ftxui::Event::Return ||
-                event == ftxui::Event::Character('l')) {
-              if (manager.get_selected_entry().has_value() &&
-                  fs::is_directory(manager.get_selected_entry().value())) {
-                manager.update_current_path(
-                    fs::canonical(manager.get_selected_entry().value().path()));
-                manager.update_curdir_entries();
-                update_curdir_string_entires();
-                manager.selected() = 0;
-                menu_option_.on_change();
-                build_menu();
-              }
-              return true;
-            }
-            if ((event == ftxui::Event::Backspace ||
-                 event == ftxui::Event::Character('h'))) {
-              std::cerr << "[Debug]" << manager.parent_path();
-              manager.update_current_path(manager.parent_path());
-              manager.update_curdir_entries();
-              update_curdir_string_entires();
-              manager.selected() = 0;
-              menu_option_.on_change();
-              build_menu();
-              return true;
-            }
-            if (event == ftxui::Event::Character('q')) {
-              screen_.Exit();
-              return true;
-            }
-            return false;
-          });
+  menu_ =
+      Menu(&curdir_string_entries_, &(selected_), menu_option_) |
+      ftxui::CatchEvent([this](ftxui::Event event) {
+        if (event == ftxui::Event::Return ||
+            event == ftxui::Event::Character('l')) {
+          if (file_manager_.get_selected_entry(selected_).has_value() &&
+              fs::is_directory(
+                  file_manager_.get_selected_entry(selected_).value())) {
+            file_manager_.update_current_path(fs::canonical(
+                file_manager_.get_selected_entry(selected_).value().path()));
+            file_manager_.update_curdir_entries();
+            update_curdir_string_entires();
+            selected_ = 0;
+            menu_option_.on_change();
+          }
+          return true;
+        }
+        if ((event == ftxui::Event::Backspace ||
+             event == ftxui::Event::Character('h'))) {
+          std::cerr << "[Debug]" << file_manager_.parent_path();
+          file_manager_.update_current_path(file_manager_.parent_path());
+          file_manager_.update_curdir_entries();
+          update_curdir_string_entires();
+          selected_ = 0;
+          menu_option_.on_change();
+          return true;
+        }
+        if (event == ftxui::Event::Character('q')) {
+          screen_.Exit();
+          return true;
+        }
+        return false;
+      });
 }
 
 std::string UI::get_text_preview(const fs::path &path, size_t max_lines,
@@ -99,10 +104,9 @@ std::string UI::get_text_preview(const fs::path &path, size_t max_lines,
 }
 
 void UI::setup_layout() {
-  FileManager &manager = this->file_manager_;
-  layout_ = ftxui::Renderer(menu_, [&] {
+  layout_ = ftxui::Renderer(menu_, [this] {
     auto left_pane =
-        window(ftxui::text(" " + manager.current_path().string() + " ") |
+        window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
                    ftxui::bold,
                menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
                    ftxui::flex) |
@@ -111,7 +115,7 @@ void UI::setup_layout() {
     auto right_pane =
         window(ftxui::text(" Preview ") | ftxui::bold,
                ftxui::paragraph(get_text_preview(
-                   manager.curdir_entries()[manager.selected()])) |
+                   file_manager_.get_selected_entry(selected_).value())) |
                    ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
         ftxui::flex;
 
@@ -133,7 +137,7 @@ void UI::update_preview_content() {
     return;
   }
 
-  const auto &entry = file_manager_.curdir_entries()[file_manager_.selected()];
+  const auto entry = file_manager_.get_selected_entry(selected_).value();
   file_preview_content_ = get_text_preview(entry.path());
 
   // if (fs::is_directory(entry)) {

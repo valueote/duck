@@ -5,11 +5,11 @@
 #include <optional>
 namespace duck {
 FileManager::FileManager()
-    : selected_(0), current_path_(fs::current_path()),
+    : current_path_(fs::current_path()),
       parent_path_(current_path_.parent_path()) {
   update_curdir_entries();
-  if (fs::is_directory(curdir_entries_[selected_])) {
-    update_preview_entries();
+  if (fs::is_directory(curdir_entries_[0])) {
+    update_preview_entries(0);
   }
 }
 
@@ -44,15 +44,13 @@ void FileManager::update_curdir_entries() {
   load_directory_entries(current_path_, curdir_entries_);
 }
 
-void FileManager::update_preview_entries() {
-  load_directory_entries(curdir_entries_[selected_].path(), preview_entries_);
+void FileManager::update_preview_entries(int selected) {
+  load_directory_entries(curdir_entries_[selected].path(), preview_entries_);
 }
 
 const fs::path &FileManager::current_path() const { return current_path_; }
 
 const fs::path &FileManager::parent_path() const { return parent_path_; }
-
-int &FileManager::selected() { return selected_; }
 
 const std::vector<fs::directory_entry> &FileManager::curdir_entries() const {
   return curdir_entries_;
@@ -66,11 +64,12 @@ void FileManager::update_current_path(const fs::path &new_path) {
   parent_path_ = current_path_.parent_path();
 }
 
-std::optional<fs::directory_entry> FileManager::get_selected_entry() {
+std::optional<fs::directory_entry>
+FileManager::get_selected_entry(int selected) {
   if (curdir_entries_.empty()) {
     return std::nullopt;
   }
-  return curdir_entries_[selected_];
+  return curdir_entries_[selected];
 }
 
 } // namespace duck

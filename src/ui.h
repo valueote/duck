@@ -26,6 +26,8 @@ private:
   std::string file_preview_content_;
   std::vector<std::string> dir_preview_content_;
 
+  int selected_;
+
   void build_menu();
   void setup_layout();
   std::string get_text_preview(const fs::path &path, size_t max_lines = 50,

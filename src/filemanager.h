@@ -6,7 +6,6 @@ namespace fs = std::filesystem;
 
 class FileManager {
 private:
-  int selected_;
   fs::path current_path_;
   fs::path parent_path_;
   std::vector<fs::directory_entry> curdir_entries_;
@@ -18,14 +17,13 @@ public:
   FileManager();
   const fs::path &current_path() const;
   const fs::path &parent_path() const;
-  int &selected();
   const std::vector<fs::directory_entry> &curdir_entries() const;
   const std::vector<fs::directory_entry> &preview_entries() const;
 
   void update_current_path(const fs::path &new_path);
-  void update_preview_entries();
+  void update_preview_entries(int selected);
   void update_curdir_entries();
-  std::optional<fs::directory_entry> get_selected_entry();
+  std::optional<fs::directory_entry> get_selected_entry(int selected);
 };
 
 } // namespace duck
