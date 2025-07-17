@@ -1,14 +1,75 @@
 #include "ui.h"
+#include "filemanager.h"
+#include "ftxui/dom/elements.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <notcurses/notcurses.h>
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/component_options.hpp>
+#include <ftxui/component/event.hpp>
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/dom/node.hpp>
+#include <ftxui/screen/screen.hpp>
+#include <iostream>
+#include <ranges>
 #include <string>
 #include <unordered_map>
+#include <vector>
 namespace duck {
-std::string get_text_preview(const fs::path &path, size_t max_lines = 20,
-                             size_t max_width = 80) {
+
+UI::UI(FileManager &file_manager)
+    : screen_{ftxui::ScreenInteractive::Fullscreen()},
+      file_manager_(file_manager) {
+  update_curdir_string_entires();
+  build_menu();
+  setup_layout();
+}
+UI::~UI() {}
+void UI::build_menu() {
+  menu_option_.on_change = [this]() { update_preview_content(); };
+  FileManager &manager = this->file_manager_;
+  menu_ = Menu(&curdir_string_entries_, &(manager.selected()), menu_option_) |
+          ftxui::CatchEvent([this, &manager](ftxui::Event event) {
+            if (event == ftxui::Event::Return ||
+                event == ftxui::Event::Character('l')) {
+              if (manager.get_selected_entry().has_value() &&
+                  fs::is_directory(manager.get_selected_entry().value())) {
+                manager.update_current_path(
+                    fs::canonical(manager.get_selected_entry().value().path()));
+                manager.update_curdir_entries();
+                update_curdir_string_entires();
+                manager.selected() = 0;
+                menu_option_.on_change();
+                build_menu();
+              }
+              return true;
+            }
+            if ((event == ftxui::Event::Backspace ||
+                 event == ftxui::Event::Character('h'))) {
+              std::cerr << "[Debug]" << manager.parent_path();
+              manager.update_current_path(manager.parent_path());
+              manager.update_curdir_entries();
+              update_curdir_string_entires();
+              manager.selected() = 0;
+              menu_option_.on_change();
+              build_menu();
+              return true;
+            }
+            if (event == ftxui::Event::Character('q')) {
+              screen_.Exit();
+              return true;
+            }
+            return false;
+          });
+}
+
+std::string UI::get_text_preview(const fs::path &path, size_t max_lines,
+                                 size_t max_width) {
+
+  if (fs::is_directory(path))
+    return "[Directory]";
   if (!fs::is_regular_file(path))
     return "[Not a regular file]";
   std::ifstream file(path);
@@ -37,133 +98,54 @@ std::string get_text_preview(const fs::path &path, size_t max_lines = 20,
   return oss.str();
 }
 
-ui::config::config(ncplane *stdplane) {
-  ncplane_dim_yx(stdplane, &rows_, &cols_);
-  mid_col_ = cols_ / 2;
-  left_opts_ = {
-      .y = 0,
-      .x = 0,
-      .rows = rows_,
-      .cols = mid_col_,
-      .userptr = nullptr,
-      .name = "left",
-      .resizecb = nullptr,
-      .flags = 0,
-      .margin_b = 0,
-      .margin_r = 0,
-  };
-  right_opts_ = {
-      .y = 0,
-      .x = static_cast<int>(mid_col_) + 1,
-      .rows = rows_,
-      .cols = cols_ - mid_col_ - 1,
-      .userptr = nullptr,
-      .name = "right",
-      .resizecb = nullptr,
-      .flags = 0,
-      .margin_b = 0,
-      .margin_r = 0,
-  };
+void UI::setup_layout() {
+  FileManager &manager = this->file_manager_;
+  layout_ = ftxui::Renderer(menu_, [&] {
+    auto left_pane =
+        window(ftxui::text(" " + manager.current_path().string() + " ") |
+                   ftxui::bold,
+               menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
+                   ftxui::flex) |
+        ftxui::flex;
+
+    auto right_pane =
+        window(ftxui::text(" Preview ") | ftxui::bold,
+               ftxui::paragraph(get_text_preview(
+                   manager.curdir_entries()[manager.selected()])) |
+                   ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
+        ftxui::flex;
+
+    return hbox(left_pane, ftxui::separator(), right_pane);
+  });
+}
+void UI::update_curdir_string_entires() {
+  curdir_string_entries_ =
+      file_manager_.curdir_entries() |
+      std::views::transform([this](const fs::directory_entry &entry) {
+        return this->format_directory_entries(entry);
+      }) |
+      std::ranges::to<std::vector>();
 }
 
-void ui::config::resize(ncplane *stdplane) {
-  ncplane_dim_yx(stdplane, &rows_, &cols_);
-  mid_col_ = cols_ / 2;
-}
-
-ui::ui()
-    : opts_{.flags = 0}, nc_{notcurses_init(&opts_, nullptr)},
-      stdplane_{notcurses_stdplane(nc_)}, config_{stdplane_},
-      left_plane_{ncplane_create(stdplane_, &config_.left_opts_)},
-      right_plane_{ncplane_create(stdplane_, &config_.right_opts_)} {}
-
-ui::~ui() { notcurses_stop(nc_); }
-
-void ui::resize_plane() {
-  config_.resize(stdplane_);
-
-  ncplane_erase(stdplane_);
-
-  unsigned int new_left_cols = config_.mid_col_;
-  unsigned int new_right_x = config_.mid_col_ + 1;
-  unsigned int new_right_cols = config_.cols_ - config_.mid_col_ - 1;
-
-  ncplane_resize_simple(left_plane_, config_.rows_, new_left_cols);
-
-  ncplane_move_yx(right_plane_, 0, new_right_x);
-  ncplane_resize_simple(right_plane_, config_.rows_, new_right_cols);
-
-  display_separator();
-}
-
-void ui::clear_plane() {
-  ncplane_destroy(left_plane_);
-  ncplane_destroy(right_plane_);
-}
-
-void ui::display_current_path(const std::string &path) {
-  ncplane_erase(left_plane_);
-  ncplane_printf_yx(left_plane_, 0, 0, "\uf4d3 %s", path.c_str());
-}
-
-void ui::display_direcotry_entries(
-    const std::vector<fs::directory_entry> &entries, const size_t &selected) {
-  for (size_t i = 0; i < entries.size(); ++i) {
-    if (i + 2 >= config_.rows_)
-      break;
-    std::string name = format_directory_entries(entries[i]);
-    if (i == selected)
-      ncplane_printf_yx(left_plane_, i + 2, 0, "> %s", name.c_str());
-    else
-      ncplane_printf_yx(left_plane_, i + 2, 2, "%s", name.c_str());
+void UI::update_preview_content() {
+  if (file_manager_.curdir_entries().empty()) {
+    file_preview_content_ = "[Empty directory]";
+    return;
   }
+
+  const auto &entry = file_manager_.curdir_entries()[file_manager_.selected()];
+  file_preview_content_ = get_text_preview(entry.path());
+
+  // if (fs::is_directory(entry)) {
+  //   file_manager_.load_directory_entries(entry.path(), dir_preview_content_);
+  // } else {
+  //   file_preview_content_ = get_text_preview(entry.path());
+  // }
 }
 
-void ui::display_file_preview(const std::vector<fs::directory_entry> &entries,
-                              const size_t &selected) {
+void UI::render() { screen_.Loop(layout_); }
 
-  ncplane_erase(right_plane_);
-  if (!entries.empty() && selected < entries.size()) {
-    const auto &entry = entries[selected];
-    if (entry.is_regular_file()) {
-      std::string preview = get_text_preview(entry.path(), config_.rows_ - 3,
-                                             ncplane_dim_x(right_plane_) - 2);
-      ncplane_printf_yx(right_plane_, 0, 0, "\uf15c Preview : %s ",
-                        entry.path().filename().c_str());
-      int y = 2;
-      std::istringstream ss(preview);
-      std::string line;
-      while (std::getline(ss, line) &&
-             y < static_cast<int>(config_.rows_) - 1) {
-        ncplane_putstr_yx(right_plane_, y++, 0, line.c_str());
-      }
-    } else if (entry.is_directory()) {
-      ncplane_printf_yx(right_plane_, 0, 0, "\uf4d3 Directory: %s",
-                        entry.path().filename().c_str());
-    } else {
-      ncplane_printf_yx(right_plane_, 0, 0, "[Unsupported file type]");
-    }
-  } else if (entries.empty()) {
-    ncplane_printf_yx(right_plane_, 0, 0, "\uf4d3 Empty directory");
-  }
-}
-void ui::display_separator() {
-  const char *separator_char = "│";
-
-  for (int y = 0; y < config_.rows_; ++y) {
-    ncplane_putstr_yx(stdplane_, y, config_.mid_col_, separator_char);
-  }
-}
-
-notcurses *ui::get_nc() { return nc_; }
-
-void ui::render() { notcurses_render(nc_); }
-
-void ui::display_fs_error(const fs::filesystem_error &e) {
-  ncplane_printf_yx(right_plane_, 0, 0, "Error: %s", e.what());
-}
-
-std::string ui::format_directory_entries(const fs::directory_entry &entry) {
+std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{
       {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
       {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},

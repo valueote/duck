@@ -1,50 +1,44 @@
 #pragma once
+#include "filemanager.h"
 #include <filesystem>
-#include <notcurses/notcurses.h>
+#include <ftxui/component/component_base.hpp>
+#include <ftxui/component/component_options.hpp>
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/screen.hpp>
 #include <string>
 #include <vector>
 
 namespace duck {
 namespace fs = std::filesystem;
-class ui {
+class UI {
 private:
-  class config {
-  private:
-  public:
-    unsigned int rows_;
-    unsigned int cols_;
-    unsigned int mid_col_;
-    ncplane_options left_opts_;
-    ncplane_options right_opts_;
+  FileManager &file_manager_;
 
-    config(ncplane *stdplane);
-    void resize(ncplane *stdplane);
-  };
-  notcurses_options opts_;
-  notcurses *nc_;
-  ncplane *stdplane_;
-  config config_;
-  ncplane *left_plane_;
-  ncplane *right_plane_;
+  std::vector<std::string> curdir_string_entries_;
+  std::vector<std::string> previewdir_string_entries_;
+
+  ftxui::ScreenInteractive screen_;
+  ftxui::Component layout_;
+  ftxui::MenuOption menu_option_;
+  ftxui::Component menu_;
+
+  std::string file_preview_content_;
+  std::vector<std::string> dir_preview_content_;
+
+  void build_menu();
+  void setup_layout();
+  std::string get_text_preview(const fs::path &path, size_t max_lines = 50,
+                               size_t max_width = 80);
+  void update_preview_content();
+  void update_curdir_string_entires();
 
 public:
-  ui();
-  ~ui();
-  notcurses *get_nc();
-  void clear_plane();
-  void resize_plane();
+  UI(FileManager &file_manager);
+  ~UI();
 
-  void display_current_path(const std::string &path);
-  void
-  display_direcotry_entries(const std::vector<fs::directory_entry> &entries,
-                            const size_t &selected);
   std::string format_directory_entries(const fs::directory_entry &entry);
-  void display_file_preview(const std::vector<fs::directory_entry> &entries,
-                            const size_t &selected);
-  void display_separator();
   void render();
-
-  void display_fs_error(const fs::filesystem_error &e);
 };
 
 } // namespace duck

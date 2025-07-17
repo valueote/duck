@@ -1,6 +1,5 @@
-#include "file_manager.h"
+#include "duck.h"
 int main() {
-  duck::file_manager fmanager;
-  fmanager.run();
-  return 0;
+  duck::Duck d;
+  d.run();
 }
