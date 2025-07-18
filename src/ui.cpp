@@ -13,6 +13,7 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <iostream>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <unordered_map>
@@ -28,9 +29,7 @@ UI::UI(FileManager &file_manager)
 }
 UI::~UI() {}
 
-// FIX: crash when change to an empty directory
 // FIX: crash when access priority directory
-// FIX: Menu prompt and highlighted entry are not same
 // TODO: Add a parent dir plane
 // TODO: Add Directory preview
 void UI::build_menu() {
@@ -70,16 +69,36 @@ void UI::build_menu() {
       });
 }
 
-std::string UI::get_text_preview(const fs::path &path, size_t max_lines,
-                                 size_t max_width) {
+void UI::setup_layout() {
+  layout_ = ftxui::Renderer(menu_, [this] {
+    auto left_pane =
+        window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
+                   ftxui::bold,
+               menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
+                   ftxui::flex) |
+        ftxui::flex;
 
-  if (fs::is_directory(path))
-    return "[Directory]";
-  if (!fs::is_regular_file(path))
-    return "[Not a regular file]";
-  std::ifstream file(path);
-  if (!file)
+    auto right_pane =
+        window(ftxui::text(" Preview ") | ftxui::bold,
+               ftxui::paragraph(get_text_preview(
+                   file_manager_.get_selected_entry(selected_))) |
+                   ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
+        ftxui::flex;
+
+    return hbox(left_pane, ftxui::separator(), right_pane);
+  });
+}
+
+std::string UI::get_text_preview(const std::optional<fs::path> &path,
+                                 size_t max_lines, size_t max_width) {
+  if (!path.has_value()) {
     return "[Failed to open file]";
+  }
+  if (fs::is_directory(path.value()))
+    return "[Directory]";
+  if (!fs::is_regular_file(path.value()))
+    return "[Not a regular file]";
+  std::ifstream file(path.value());
 
   std::ostringstream oss;
   std::string line;
@@ -103,25 +122,6 @@ std::string UI::get_text_preview(const fs::path &path, size_t max_lines,
   return oss.str();
 }
 
-void UI::setup_layout() {
-  layout_ = ftxui::Renderer(menu_, [this] {
-    auto left_pane =
-        window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
-                   ftxui::bold,
-               menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
-                   ftxui::flex) |
-        ftxui::flex;
-
-    auto right_pane =
-        window(ftxui::text(" Preview ") | ftxui::bold,
-               ftxui::paragraph(get_text_preview(
-                   file_manager_.get_selected_entry(selected_).value())) |
-                   ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
-        ftxui::flex;
-
-    return hbox(left_pane, ftxui::separator(), right_pane);
-  });
-}
 void UI::update_curdir_string_entires() {
   curdir_string_entries_ =
       file_manager_.curdir_entries() |
@@ -129,6 +129,9 @@ void UI::update_curdir_string_entires() {
         return this->format_directory_entries(entry);
       }) |
       std::ranges::to<std::vector>();
+  if (curdir_string_entries_.empty()) {
+    curdir_string_entries_.push_back("[No item in the current directory]");
+  }
 }
 
 void UI::update_preview_content() {
@@ -137,8 +140,8 @@ void UI::update_preview_content() {
     return;
   }
 
-  const auto entry = file_manager_.get_selected_entry(selected_).value();
-  file_preview_content_ = get_text_preview(entry.path());
+  file_preview_content_ =
+      get_text_preview(file_manager_.get_selected_entry(selected_));
 
   // if (fs::is_directory(entry)) {
   //   file_manager_.load_directory_entries(entry.path(), dir_preview_content_);

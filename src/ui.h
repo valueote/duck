@@ -6,6 +6,7 @@
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -30,8 +31,8 @@ private:
 
   void build_menu();
   void setup_layout();
-  std::string get_text_preview(const fs::path &path, size_t max_lines = 50,
-                               size_t max_width = 80);
+  std::string get_text_preview(const std::optional<fs::path> &path,
+                               size_t max_lines = 50, size_t max_width = 80);
   void update_preview_content();
   void update_curdir_string_entires();
 
