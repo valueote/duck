@@ -33,6 +33,8 @@ private:
   void setup_layout();
   std::string get_text_preview(const std::optional<fs::path> &path,
                                size_t max_lines = 50, size_t max_width = 80);
+
+  ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path);
   void update_preview_content();
   void update_curdir_string_entires();
 
