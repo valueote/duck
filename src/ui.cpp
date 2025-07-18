@@ -30,11 +30,9 @@ UI::~UI() {}
 
 // FIX: crash when access priority directory
 // TODO: Add a parent dir plane
-// TODO: Add Directory preview
-//
+// TODO: Selected previous dir when change to parent directory
 void UI::build_menu() {
   menu_option_.focused_entry = &selected_;
-  menu_option_.on_change = [this]() { update_preview_content(); };
   menu_ =
       Menu(&curdir_string_entries_, &(selected_), menu_option_) |
       ftxui::CatchEvent([this](ftxui::Event event) {
@@ -48,7 +46,6 @@ void UI::build_menu() {
             file_manager_.update_curdir_entries();
             update_curdir_string_entires();
             selected_ = 0;
-            menu_option_.on_change();
           }
           return true;
         }
@@ -58,7 +55,6 @@ void UI::build_menu() {
           file_manager_.update_curdir_entries();
           update_curdir_string_entires();
           selected_ = 0;
-          menu_option_.on_change();
           return true;
         }
         if (event == ftxui::Event::Character('q')) {
@@ -77,6 +73,7 @@ void UI::setup_layout() {
                menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
                    ftxui::flex) |
         ftxui::flex;
+
     auto right_pane =
         window(ftxui::text(" Preview ") | ftxui::bold,
                [this] {
@@ -102,8 +99,9 @@ std::string UI::get_text_preview(const std::optional<fs::path> &path,
   if (!path.has_value()) {
     return "No file to preview";
   }
+
   if (fs::is_directory(path.value()))
-    return "[Directory]";
+    return "[ERROR]: Call get_text_preview on the directory";
 
   std::ifstream file(path.value());
 
@@ -132,10 +130,10 @@ std::string UI::get_text_preview(const std::optional<fs::path> &path,
 ftxui::Element
 UI::get_directory_preview(const std::optional<fs::path> &dir_path) {
   if (!dir_path.has_value()) {
-    return ftxui::text("[Not a directory]");
+    return ftxui::text("Nothing to preview");
   }
   if (!fs::is_directory(dir_path.value())) {
-    return ftxui::text("[Not a directory]");
+    return ftxui::text("[ERROR]: Call get_directory_preview on the file");
   }
 
   file_manager_.update_preview_entries(selected_);
@@ -146,6 +144,7 @@ UI::get_directory_preview(const std::optional<fs::path> &dir_path) {
             return ftxui::text(this->format_directory_entries(entry));
           }) |
           std::ranges::to<std::vector>();
+
   if (lines.empty()) {
     lines.push_back(ftxui::text("[Empty folder]"));
   }
@@ -160,9 +159,6 @@ void UI::update_curdir_string_entires() {
         return this->format_directory_entries(entry);
       }) |
       std::ranges::to<std::vector>();
-  if (curdir_string_entries_.empty()) {
-    curdir_string_entries_.push_back("[No item in the current directory]");
-  }
 }
 
 void UI::update_preview_content() {
