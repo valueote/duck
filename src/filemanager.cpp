@@ -60,6 +60,7 @@ const std::vector<fs::directory_entry> &FileManager::preview_entries() const {
 }
 
 void FileManager::update_current_path(const fs::path &new_path) {
+  previous_path_ = current_path_;
   current_path_ = new_path;
   parent_path_ = current_path_.parent_path();
 }

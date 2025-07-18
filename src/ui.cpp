@@ -36,8 +36,7 @@ void UI::build_menu() {
   menu_ =
       Menu(&curdir_string_entries_, &(selected_), menu_option_) |
       ftxui::CatchEvent([this](ftxui::Event event) {
-        if (event == ftxui::Event::Return ||
-            event == ftxui::Event::Character('l')) {
+        if (event == ftxui::Event::Character('l')) {
           if (file_manager_.get_selected_entry(selected_).has_value() &&
               fs::is_directory(
                   file_manager_.get_selected_entry(selected_).value())) {
@@ -45,16 +44,13 @@ void UI::build_menu() {
                 file_manager_.get_selected_entry(selected_).value().path()));
             file_manager_.update_curdir_entries();
             update_curdir_string_entires();
-            selected_ = 0;
           }
           return true;
         }
-        if ((event == ftxui::Event::Backspace ||
-             event == ftxui::Event::Character('h'))) {
+        if (event == ftxui::Event::Character('h')) {
           file_manager_.update_current_path(file_manager_.parent_path());
           file_manager_.update_curdir_entries();
           update_curdir_string_entires();
-          selected_ = 0;
           return true;
         }
         if (event == ftxui::Event::Character('q')) {
@@ -75,7 +71,7 @@ void UI::setup_layout() {
         ftxui::flex;
 
     auto right_pane =
-        window(ftxui::text(" Preview ") | ftxui::bold,
+        window(ftxui::text(" Coneten Preview ") | ftxui::bold,
                [this] {
                  const auto selected_path_opt =
                      file_manager_.get_selected_entry(selected_);

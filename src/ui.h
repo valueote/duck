@@ -28,6 +28,7 @@ private:
   std::vector<std::string> dir_preview_content_;
 
   int selected_;
+  std::optional<int> previous_selected_;
 
   void build_menu();
   void setup_layout();

@@ -7,6 +7,7 @@ namespace fs = std::filesystem;
 class FileManager {
 private:
   fs::path current_path_;
+  fs::path previous_path_;
   fs::path parent_path_;
   std::vector<fs::directory_entry> curdir_entries_;
   std::vector<fs::directory_entry> preview_entries_;
