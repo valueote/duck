@@ -28,15 +28,16 @@ private:
   std::vector<std::string> dir_preview_content_;
 
   int selected_;
-  std::optional<int> previous_selected_;
+  int previous_selected_;
 
   void build_menu();
   void setup_layout();
   std::string get_text_preview(const std::optional<fs::path> &path,
                                size_t max_lines = 50, size_t max_width = 80);
-
   ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path);
-  void update_preview_content();
+  void move_down_direcotry();
+  void move_up_direcotry();
+  void set_selected_previous_dir();
   void update_curdir_string_entires();
 
 public:

@@ -17,7 +17,8 @@ private:
 public:
   FileManager();
   const fs::path &current_path() const;
-  const fs::path &parent_path() const;
+  const fs::path &cur_parent_path() const;
+  const fs::path &previous_path() const;
   const std::vector<fs::directory_entry> &curdir_entries() const;
   const std::vector<fs::directory_entry> &preview_entries() const;
 

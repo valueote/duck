@@ -12,6 +12,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <iterator>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -20,7 +21,8 @@
 namespace duck {
 
 UI::UI(FileManager &file_manager)
-    : selected_{0}, screen_{ftxui::ScreenInteractive::Fullscreen()},
+    : selected_{0}, previous_selected_(0),
+      screen_{ftxui::ScreenInteractive::Fullscreen()},
       file_manager_{file_manager} {
   update_curdir_string_entires();
   build_menu();
@@ -33,32 +35,26 @@ UI::~UI() {}
 // TODO: Selected previous dir when change to parent directory
 void UI::build_menu() {
   menu_option_.focused_entry = &selected_;
-  menu_ =
-      Menu(&curdir_string_entries_, &(selected_), menu_option_) |
-      ftxui::CatchEvent([this](ftxui::Event event) {
-        if (event == ftxui::Event::Character('l')) {
-          if (file_manager_.get_selected_entry(selected_).has_value() &&
-              fs::is_directory(
-                  file_manager_.get_selected_entry(selected_).value())) {
-            file_manager_.update_current_path(fs::canonical(
-                file_manager_.get_selected_entry(selected_).value().path()));
-            file_manager_.update_curdir_entries();
-            update_curdir_string_entires();
-          }
-          return true;
-        }
-        if (event == ftxui::Event::Character('h')) {
-          file_manager_.update_current_path(file_manager_.parent_path());
-          file_manager_.update_curdir_entries();
-          update_curdir_string_entires();
-          return true;
-        }
-        if (event == ftxui::Event::Character('q')) {
-          screen_.Exit();
-          return true;
-        }
-        return false;
-      });
+  menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_) |
+          ftxui::CatchEvent([this](ftxui::Event event) {
+            if (event == ftxui::Event::Character('l')) {
+              if (file_manager_.get_selected_entry(selected_).has_value() &&
+                  fs::is_directory(
+                      file_manager_.get_selected_entry(selected_).value())) {
+                move_down_direcotry();
+              }
+              return true;
+            }
+            if (event == ftxui::Event::Character('h')) {
+              move_up_direcotry();
+              return true;
+            }
+            if (event == ftxui::Event::Character('q')) {
+              screen_.Exit();
+              return true;
+            }
+            return false;
+          });
 }
 
 void UI::setup_layout() {
@@ -148,6 +144,33 @@ UI::get_directory_preview(const std::optional<fs::path> &dir_path) {
   return ftxui::vbox(std::move(lines));
 }
 
+void UI::move_down_direcotry() {
+  file_manager_.update_current_path(fs::canonical(
+      file_manager_.get_selected_entry(selected_).value().path()));
+  file_manager_.update_curdir_entries();
+  update_curdir_string_entires();
+  selected_ = previous_selected_;
+}
+
+void UI::move_up_direcotry() {
+  file_manager_.update_current_path(file_manager_.cur_parent_path());
+  file_manager_.update_curdir_entries();
+  update_curdir_string_entires();
+  previous_selected_ = selected_;
+  set_selected_previous_dir();
+}
+
+void UI::set_selected_previous_dir() {
+  const auto &entrise = file_manager_.curdir_entries();
+  const auto &entry = file_manager_.previous_path();
+  for (size_t i = 0; i < entrise.size(); ++i) {
+    if (entrise[i] == entry) {
+      selected_ = i;
+      break;
+    }
+  }
+}
+
 void UI::update_curdir_string_entires() {
   curdir_string_entries_ =
       file_manager_.curdir_entries() |
@@ -156,23 +179,6 @@ void UI::update_curdir_string_entires() {
       }) |
       std::ranges::to<std::vector>();
 }
-
-void UI::update_preview_content() {
-  if (file_manager_.curdir_entries().empty()) {
-    file_preview_content_ = "[Empty directory]";
-    return;
-  }
-
-  file_preview_content_ =
-      get_text_preview(file_manager_.get_selected_entry(selected_));
-
-  // if (fs::is_directory(entry)) {
-  //   file_manager_.load_directory_entries(entry.path(), dir_preview_content_);
-  // } else {
-  //   file_preview_content_ = get_text_preview(entry.path());
-  // }
-}
-
 void UI::render() { screen_.Loop(layout_); }
 
 std::string UI::format_directory_entries(const fs::directory_entry &entry) {

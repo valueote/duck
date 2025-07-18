@@ -50,7 +50,9 @@ void FileManager::update_preview_entries(int selected) {
 
 const fs::path &FileManager::current_path() const { return current_path_; }
 
-const fs::path &FileManager::parent_path() const { return parent_path_; }
+const fs::path &FileManager::cur_parent_path() const { return parent_path_; }
+
+const fs::path &FileManager::previous_path() const { return previous_path_; }
 
 const std::vector<fs::directory_entry> &FileManager::curdir_entries() const {
   return curdir_entries_;
