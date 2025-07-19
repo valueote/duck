@@ -69,6 +69,7 @@ void FileManager::update_current_path(const fs::path &new_path) {
   previous_path_ = current_path_;
   current_path_ = new_path;
   parent_path_ = current_path_.parent_path();
+  update_curdir_entries();
 }
 
 std::optional<fs::directory_entry>

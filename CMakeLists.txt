@@ -15,7 +15,8 @@ FetchContent_Declare(
   GIT_TAG v6.1.9)
 FetchContent_MakeAvailable(ftxui)
 
-add_executable(duck src/main.cpp src/ui.cpp src/filemanager.cpp src/duck.cpp)
+add_executable(duck src/main.cpp src/ui.cpp src/filemanager.cpp
+                    src/inputhandler.cpp src/duck.cpp)
 
 target_link_libraries(
   duck

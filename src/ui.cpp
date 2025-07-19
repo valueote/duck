@@ -27,7 +27,6 @@ UI::UI()
       screen_{ftxui::ScreenInteractive::Fullscreen()} {
   build_menu();
 }
-UI::~UI() {}
 
 // TODO: Add a parent dir plane
 void UI::build_menu() {
@@ -129,19 +128,13 @@ UI::get_directory_preview(const std::optional<fs::path> &dir_path,
 }
 
 void UI::move_down_direcotry(FileManager &file_manager) {
-  file_manager.update_current_path(
-      fs::canonical(file_manager.get_selected_entry(selected_).value().path()));
-  file_manager.update_curdir_entries();
   update_curdir_string_entires(file_manager);
   selected_ = previous_selected_;
 }
 
 void UI::move_up_direcotry(FileManager &file_manager) {
-  file_manager.update_current_path(file_manager.cur_parent_path());
-  file_manager.update_curdir_entries();
   update_curdir_string_entires(file_manager);
   previous_selected_ = selected_;
-  set_selected_previous_dir(file_manager);
 }
 
 void UI::set_selected_previous_dir(FileManager &file_manager) {
@@ -176,7 +169,6 @@ void UI::open_file(FileManager &file_manager) {
   if (!handlers.contains(ext)) {
     return;
   }
-
   screen_.WithRestoredIO([&] {
     pid_t pid = fork();
     if (pid == -1) {
@@ -227,5 +219,6 @@ std::string UI::format_directory_entries(const fs::directory_entry &entry) {
 }
 
 int UI::get_selected() { return selected_; }
+
 void UI::exit() { screen_.Exit(); }
 } // namespace duck

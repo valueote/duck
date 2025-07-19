@@ -37,7 +37,6 @@ private:
 
 public:
   UI();
-  ~UI();
 
   void build_menu();
   void setup_layout(FileManager &file_manager);
