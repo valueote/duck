@@ -12,10 +12,12 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
-#include <iterator>
 #include <optional>
+#include <print>
 #include <ranges>
 #include <string>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <unordered_map>
 #include <vector>
 namespace duck {
@@ -30,13 +32,15 @@ UI::UI(FileManager &file_manager)
 }
 UI::~UI() {}
 
-// FIX: crash when access priority directory
 // TODO: Add a parent dir plane
-// TODO: Selected previous dir when change to parent directory
 void UI::build_menu() {
   menu_option_.focused_entry = &selected_;
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_) |
           ftxui::CatchEvent([this](ftxui::Event event) {
+            if (event == ftxui::Event::Return) {
+              open_file();
+              return true;
+            }
             if (event == ftxui::Event::Character('l')) {
               if (file_manager_.get_selected_entry(selected_).has_value() &&
                   fs::is_directory(
@@ -161,13 +165,11 @@ void UI::move_up_direcotry() {
 }
 
 void UI::set_selected_previous_dir() {
-  const auto &entrise = file_manager_.curdir_entries();
-  const auto &entry = file_manager_.previous_path();
-  for (size_t i = 0; i < entrise.size(); ++i) {
-    if (entrise[i] == entry) {
-      selected_ = i;
-      break;
-    }
+  const auto &entries = file_manager_.curdir_entries();
+  const auto &previous = file_manager_.previous_path();
+
+  if (auto it = std::ranges::find(entries, previous); it != entries.end()) {
+    selected_ = static_cast<int>(std::distance(entries.begin(), it));
   }
 }
 
@@ -180,6 +182,41 @@ void UI::update_curdir_string_entires() {
       std::ranges::to<std::vector>();
 }
 void UI::render() { screen_.Loop(layout_); }
+
+// FIX: key conficting when running new proc
+void UI::open_file() {
+  const static std::unordered_map<std::string, std::string> handlers = {
+      {".txt", "nvim"}, {".cpp", "nvim"}, {"none", "none"}};
+  auto selected_file_opt = file_manager_.get_selected_entry(selected_);
+  if (!selected_file_opt.has_value()) {
+    return;
+  }
+
+  std::string ext = selected_file_opt.value().path().extension().string();
+  if (!handlers.contains(ext)) {
+    return;
+  }
+
+  screen_.WithRestoredIO([&] {
+    pid_t pid = fork();
+    if (pid == -1) {
+      std::print(stderr, "[ERROR]: fork fail in open_file");
+      return;
+    }
+
+    if (pid == 0) {
+      const char *handler = handlers.at(ext).c_str();
+      const char *file_path = selected_file_opt->path().c_str();
+
+      execlp(handler, handler, file_path, nullptr);
+
+      std::exit(EXIT_FAILURE);
+    } else {
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  })();
+}
 
 std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{

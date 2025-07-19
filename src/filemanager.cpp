@@ -1,12 +1,14 @@
 #include "filemanager.h"
 #include <algorithm>
 #include <filesystem>
-#include <iostream>
 #include <optional>
+#include <print>
 namespace duck {
 FileManager::FileManager()
     : current_path_(fs::current_path()),
       parent_path_(current_path_.parent_path()) {
+  curdir_entries_.reserve(150);
+  preview_entries_.reserve(150);
   update_curdir_entries();
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
@@ -30,13 +32,13 @@ void FileManager::load_directory_entries(
         files.push_back(entry);
       }
     }
-    std::sort(dirs.begin(), dirs.end());
-    std::sort(files.begin(), files.end());
+    std::ranges::sort(dirs);
+    std::ranges::sort(files);
     entries.insert(entries.end(), dirs.begin(), dirs.end());
     entries.insert(entries.end(), files.begin(), files.end());
 
   } catch (const std::exception &e) {
-    std::cerr << e.what();
+    std::print(stderr, "[ERROR]: {} in load_directory_entries", e.what());
   }
 }
 

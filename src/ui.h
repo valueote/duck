@@ -39,6 +39,7 @@ private:
   void move_up_direcotry();
   void set_selected_previous_dir();
   void update_curdir_string_entires();
+  void open_file();
 
 public:
   UI(FileManager &file_manager);
