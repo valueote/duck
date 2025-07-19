@@ -44,6 +44,7 @@ void UI::enter_direcotry(
 void UI::leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
                          const fs::path &previous_path) {
   update_curdir_string_entires(curdir_entries);
+  previous_selected_ = selected_;
   if (auto it = std::ranges::find(curdir_entries, previous_path);
       it != curdir_entries.end()) {
     selected_ = static_cast<int>(std::distance(curdir_entries.begin(), it));
