@@ -8,7 +8,6 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -33,15 +32,16 @@ private:
 public:
   UI();
 
-  void setup_layout(std::function<ftxui::Element()> layout_setter);
+  void setup_layout(std::function<ftxui::Element()> layout_builder);
   void move_down_direcotry(FileManager &file_manager_);
   void move_up_direcotry(FileManager &file_manager_);
   void set_selected_previous_dir(FileManager &file_manager);
   void update_curdir_string_entires(FileManager &file_manager);
-  void open_file(FileManager &file_manager_);
   void exit();
   int get_selected();
   ftxui::Component &get_menu();
+  ftxui::ScreenInteractive &get_screen();
+
   void set_input_handler(std::function<bool(ftxui::Event)> handler);
   std::string format_directory_entries(const fs::directory_entry &entry);
 

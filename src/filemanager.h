@@ -28,5 +28,4 @@ public:
   std::optional<fs::directory_entry> get_selected_entry(const int selected);
   bool delete_selected_entry(const int selected);
 };
-
 } // namespace duck

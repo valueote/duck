@@ -11,8 +11,6 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
-#include <optional>
-#include <print>
 #include <ranges>
 #include <string>
 #include <sys/wait.h>
@@ -33,8 +31,8 @@ void UI::set_input_handler(std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
-void UI::setup_layout(std::function<ftxui::Element()> layout_setter) {
-  layout_ = ftxui::Renderer(menu_, layout_setter);
+void UI::setup_layout(std::function<ftxui::Element()> layout_builder) {
+  layout_ = ftxui::Renderer(menu_, layout_builder);
 }
 
 void UI::move_down_direcotry(FileManager &file_manager) {
@@ -65,40 +63,6 @@ void UI::update_curdir_string_entires(FileManager &file_manager) {
       std::ranges::to<std::vector>();
 }
 void UI::render() { screen_.Loop(layout_); }
-
-void UI::open_file(FileManager &file_manager) {
-  const static std::unordered_map<std::string, std::string> handlers = {
-      {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
-      {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
-  auto selected_file_opt = file_manager.get_selected_entry(selected_);
-  if (!selected_file_opt.has_value()) {
-    return;
-  }
-
-  std::string ext = selected_file_opt.value().path().extension().string();
-  if (!handlers.contains(ext)) {
-    return;
-  }
-  screen_.WithRestoredIO([&] {
-    pid_t pid = fork();
-    if (pid == -1) {
-      std::print(stderr, "[ERROR]: fork fail in open_file");
-      return;
-    }
-
-    if (pid == 0) {
-      const char *handler = handlers.at(ext).c_str();
-      const char *file_path = selected_file_opt->path().c_str();
-
-      execlp(handler, handler, file_path, nullptr);
-
-      std::exit(EXIT_FAILURE);
-    } else {
-      int status;
-      waitpid(pid, &status, 0);
-    }
-  })();
-}
 
 std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{
@@ -131,5 +95,8 @@ std::string UI::format_directory_entries(const fs::directory_entry &entry) {
 int UI::get_selected() { return selected_; }
 
 ftxui::Component &UI::get_menu() { return menu_; }
+
+ftxui::ScreenInteractive &UI::get_screen() { return screen_; };
+
 void UI::exit() { screen_.Exit(); }
 } // namespace duck

@@ -10,6 +10,7 @@ private:
 
 public:
   InputHander(FileManager &file_manager, UI &ui);
+  void open_file();
   bool operator()(ftxui::Event event);
 };
 
