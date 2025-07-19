@@ -25,7 +25,8 @@ public:
   void update_current_path(const fs::path &new_path);
   void update_preview_entries(int selected);
   void update_curdir_entries();
-  std::optional<fs::directory_entry> get_selected_entry(int selected);
+  std::optional<fs::directory_entry> get_selected_entry(const int selected);
+  bool delete_selected_entry(const int selected);
 };
 
 } // namespace duck

@@ -3,9 +3,11 @@
 #include <filesystem>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -14,8 +16,6 @@ namespace duck {
 namespace fs = std::filesystem;
 class UI {
 private:
-  FileManager &file_manager_;
-
   std::vector<std::string> curdir_string_entries_;
   std::vector<std::string> previewdir_string_entries_;
 
@@ -30,21 +30,25 @@ private:
   int selected_;
   int previous_selected_;
 
-  void build_menu();
-  void setup_layout();
   std::string get_text_preview(const std::optional<fs::path> &path,
                                size_t max_lines = 50, size_t max_width = 80);
-  ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path);
-  void move_down_direcotry();
-  void move_up_direcotry();
-  void set_selected_previous_dir();
-  void update_curdir_string_entires();
-  void open_file();
+  ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path,
+                                       FileManager &file_manager);
 
 public:
-  UI(FileManager &file_manager);
+  UI();
   ~UI();
 
+  void build_menu();
+  void setup_layout(FileManager &file_manager);
+  void move_down_direcotry(FileManager &file_manager_);
+  void move_up_direcotry(FileManager &file_manager_);
+  void set_selected_previous_dir(FileManager &file_manager);
+  void update_curdir_string_entires(FileManager &file_manager);
+  void open_file(FileManager &file_manager_);
+  void exit();
+  int get_selected();
+  void set_input_handler(std::function<bool(ftxui::Event)> handler);
   std::string format_directory_entries(const fs::directory_entry &entry);
   void render();
 };

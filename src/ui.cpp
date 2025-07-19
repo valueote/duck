@@ -22,49 +22,27 @@
 #include <vector>
 namespace duck {
 
-UI::UI(FileManager &file_manager)
+UI::UI()
     : selected_{0}, previous_selected_(0),
-      screen_{ftxui::ScreenInteractive::Fullscreen()},
-      file_manager_{file_manager} {
-  update_curdir_string_entires();
+      screen_{ftxui::ScreenInteractive::Fullscreen()} {
   build_menu();
-  setup_layout();
 }
 UI::~UI() {}
 
 // TODO: Add a parent dir plane
 void UI::build_menu() {
   menu_option_.focused_entry = &selected_;
-  menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_) |
-          ftxui::CatchEvent([this](ftxui::Event event) {
-            if (event == ftxui::Event::Return) {
-              open_file();
-              return true;
-            }
-            if (event == ftxui::Event::Character('l')) {
-              if (file_manager_.get_selected_entry(selected_).has_value() &&
-                  fs::is_directory(
-                      file_manager_.get_selected_entry(selected_).value())) {
-                move_down_direcotry();
-              }
-              return true;
-            }
-            if (event == ftxui::Event::Character('h')) {
-              move_up_direcotry();
-              return true;
-            }
-            if (event == ftxui::Event::Character('q')) {
-              screen_.Exit();
-              return true;
-            }
-            return false;
-          });
+  menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
-void UI::setup_layout() {
-  layout_ = ftxui::Renderer(menu_, [this] {
+void UI::set_input_handler(std::function<bool(ftxui::Event)> handler) {
+  menu_ = menu_ | ftxui::CatchEvent(handler);
+}
+
+void UI::setup_layout(FileManager &file_manager) {
+  layout_ = ftxui::Renderer(menu_, [this, &file_manager]() {
     auto left_pane =
-        window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
+        window(ftxui::text(" " + file_manager.current_path().string() + " ") |
                    ftxui::bold,
                menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
                    ftxui::flex) |
@@ -72,14 +50,15 @@ void UI::setup_layout() {
 
     auto right_pane =
         window(ftxui::text(" Coneten Preview ") | ftxui::bold,
-               [this] {
+               [this, &file_manager] {
                  const auto selected_path_opt =
-                     file_manager_.get_selected_entry(selected_);
+                     file_manager.get_selected_entry(selected_);
                  if (!selected_path_opt.has_value()) {
                    return ftxui::text("No item selected");
                  }
                  if (fs::is_directory(selected_path_opt.value())) {
-                   return get_directory_preview(selected_path_opt);
+                   return get_directory_preview(selected_path_opt,
+                                                file_manager);
                  }
                  return ftxui::paragraph(get_text_preview(selected_path_opt));
                }() |
@@ -124,7 +103,8 @@ std::string UI::get_text_preview(const std::optional<fs::path> &path,
 }
 
 ftxui::Element
-UI::get_directory_preview(const std::optional<fs::path> &dir_path) {
+UI::get_directory_preview(const std::optional<fs::path> &dir_path,
+                          FileManager &file_manager) {
   if (!dir_path.has_value()) {
     return ftxui::text("Nothing to preview");
   }
@@ -132,10 +112,10 @@ UI::get_directory_preview(const std::optional<fs::path> &dir_path) {
     return ftxui::text("[ERROR]: Call get_directory_preview on the file");
   }
 
-  file_manager_.update_preview_entries(selected_);
+  file_manager.update_preview_entries(selected_);
 
   std::vector<ftxui::Element> lines;
-  lines = file_manager_.preview_entries() |
+  lines = file_manager.preview_entries() |
           std::views::transform([this](const fs::directory_entry &entry) {
             return ftxui::text(this->format_directory_entries(entry));
           }) |
@@ -148,34 +128,34 @@ UI::get_directory_preview(const std::optional<fs::path> &dir_path) {
   return ftxui::vbox(std::move(lines));
 }
 
-void UI::move_down_direcotry() {
-  file_manager_.update_current_path(fs::canonical(
-      file_manager_.get_selected_entry(selected_).value().path()));
-  file_manager_.update_curdir_entries();
-  update_curdir_string_entires();
+void UI::move_down_direcotry(FileManager &file_manager) {
+  file_manager.update_current_path(
+      fs::canonical(file_manager.get_selected_entry(selected_).value().path()));
+  file_manager.update_curdir_entries();
+  update_curdir_string_entires(file_manager);
   selected_ = previous_selected_;
 }
 
-void UI::move_up_direcotry() {
-  file_manager_.update_current_path(file_manager_.cur_parent_path());
-  file_manager_.update_curdir_entries();
-  update_curdir_string_entires();
+void UI::move_up_direcotry(FileManager &file_manager) {
+  file_manager.update_current_path(file_manager.cur_parent_path());
+  file_manager.update_curdir_entries();
+  update_curdir_string_entires(file_manager);
   previous_selected_ = selected_;
-  set_selected_previous_dir();
+  set_selected_previous_dir(file_manager);
 }
 
-void UI::set_selected_previous_dir() {
-  const auto &entries = file_manager_.curdir_entries();
-  const auto &previous = file_manager_.previous_path();
+void UI::set_selected_previous_dir(FileManager &file_manager) {
+  const auto &entries = file_manager.curdir_entries();
+  const auto &previous = file_manager.previous_path();
 
   if (auto it = std::ranges::find(entries, previous); it != entries.end()) {
     selected_ = static_cast<int>(std::distance(entries.begin(), it));
   }
 }
 
-void UI::update_curdir_string_entires() {
+void UI::update_curdir_string_entires(FileManager &file_manager) {
   curdir_string_entries_ =
-      file_manager_.curdir_entries() |
+      file_manager.curdir_entries() |
       std::views::transform([this](const fs::directory_entry &entry) {
         return this->format_directory_entries(entry);
       }) |
@@ -183,11 +163,11 @@ void UI::update_curdir_string_entires() {
 }
 void UI::render() { screen_.Loop(layout_); }
 
-// FIX: key conficting when running new proc
-void UI::open_file() {
+void UI::open_file(FileManager &file_manager) {
   const static std::unordered_map<std::string, std::string> handlers = {
-      {".txt", "nvim"}, {".cpp", "nvim"}, {"none", "none"}};
-  auto selected_file_opt = file_manager_.get_selected_entry(selected_);
+      {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
+      {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
+  auto selected_file_opt = file_manager.get_selected_entry(selected_);
   if (!selected_file_opt.has_value()) {
     return;
   }
@@ -246,4 +226,6 @@ std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   return std::format("{} {}", icon, filename);
 }
 
+int UI::get_selected() { return selected_; }
+void UI::exit() { screen_.Exit(); }
 } // namespace duck

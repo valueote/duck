@@ -5,7 +5,7 @@
 namespace duck {
 class Duck {
 private:
-  FileManager filemanager_;
+  FileManager file_manager_;
   UI ui_;
 
 public:
