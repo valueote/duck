@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <filesystem>
 #include <format>
-#include <fstream>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -22,14 +21,10 @@
 #include <vector>
 namespace duck {
 
+// TODO: Add a parent dir plane
 UI::UI()
     : selected_{0}, previous_selected_(0),
       screen_{ftxui::ScreenInteractive::Fullscreen()} {
-  build_menu();
-}
-
-// TODO: Add a parent dir plane
-void UI::build_menu() {
   menu_option_.focused_entry = &selected_;
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
@@ -38,93 +33,8 @@ void UI::set_input_handler(std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
-void UI::setup_layout(FileManager &file_manager) {
-  layout_ = ftxui::Renderer(menu_, [this, &file_manager]() {
-    auto left_pane =
-        window(ftxui::text(" " + file_manager.current_path().string() + " ") |
-                   ftxui::bold,
-               menu_->Render() | ftxui::vscroll_indicator | ftxui::frame |
-                   ftxui::flex) |
-        ftxui::flex;
-
-    auto right_pane =
-        window(ftxui::text(" Coneten Preview ") | ftxui::bold,
-               [this, &file_manager] {
-                 const auto selected_path_opt =
-                     file_manager.get_selected_entry(selected_);
-                 if (!selected_path_opt.has_value()) {
-                   return ftxui::text("No item selected");
-                 }
-                 if (fs::is_directory(selected_path_opt.value())) {
-                   return get_directory_preview(selected_path_opt,
-                                                file_manager);
-                 }
-                 return ftxui::paragraph(get_text_preview(selected_path_opt));
-               }() |
-                   ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
-        ftxui::flex;
-
-    return hbox(left_pane, ftxui::separator(), right_pane);
-  });
-}
-
-std::string UI::get_text_preview(const std::optional<fs::path> &path,
-                                 size_t max_lines, size_t max_width) {
-  if (!path.has_value()) {
-    return "No file to preview";
-  }
-
-  if (fs::is_directory(path.value()))
-    return "[ERROR]: Call get_text_preview on the directory";
-
-  std::ifstream file(path.value());
-
-  std::ostringstream oss;
-  std::string line;
-  size_t lines = 0;
-
-  while (std::getline(file, line) && lines < max_lines) {
-
-    if (line.length() > max_width) {
-      line = line.substr(0, max_width - 3) + "...";
-    }
-
-    for (auto &c : line) {
-      if (iscntrl(static_cast<unsigned char>(c))) {
-        c = '?';
-      }
-    }
-
-    oss << line << '\n';
-    ++lines;
-  }
-  return oss.str();
-}
-
-ftxui::Element
-UI::get_directory_preview(const std::optional<fs::path> &dir_path,
-                          FileManager &file_manager) {
-  if (!dir_path.has_value()) {
-    return ftxui::text("Nothing to preview");
-  }
-  if (!fs::is_directory(dir_path.value())) {
-    return ftxui::text("[ERROR]: Call get_directory_preview on the file");
-  }
-
-  file_manager.update_preview_entries(selected_);
-
-  std::vector<ftxui::Element> lines;
-  lines = file_manager.preview_entries() |
-          std::views::transform([this](const fs::directory_entry &entry) {
-            return ftxui::text(this->format_directory_entries(entry));
-          }) |
-          std::ranges::to<std::vector>();
-
-  if (lines.empty()) {
-    lines.push_back(ftxui::text("[Empty folder]"));
-  }
-
-  return ftxui::vbox(std::move(lines));
+void UI::setup_layout(std::function<ftxui::Element()> layout_setter) {
+  layout_ = ftxui::Renderer(menu_, layout_setter);
 }
 
 void UI::move_down_direcotry(FileManager &file_manager) {
@@ -220,5 +130,6 @@ std::string UI::format_directory_entries(const fs::directory_entry &entry) {
 
 int UI::get_selected() { return selected_; }
 
+ftxui::Component &UI::get_menu() { return menu_; }
 void UI::exit() { screen_.Exit(); }
 } // namespace duck

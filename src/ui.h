@@ -30,16 +30,10 @@ private:
   int selected_;
   int previous_selected_;
 
-  std::string get_text_preview(const std::optional<fs::path> &path,
-                               size_t max_lines = 50, size_t max_width = 80);
-  ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path,
-                                       FileManager &file_manager);
-
 public:
   UI();
 
-  void build_menu();
-  void setup_layout(FileManager &file_manager);
+  void setup_layout(std::function<ftxui::Element()> layout_setter);
   void move_down_direcotry(FileManager &file_manager_);
   void move_up_direcotry(FileManager &file_manager_);
   void set_selected_previous_dir(FileManager &file_manager);
@@ -47,8 +41,10 @@ public:
   void open_file(FileManager &file_manager_);
   void exit();
   int get_selected();
+  ftxui::Component &get_menu();
   void set_input_handler(std::function<bool(ftxui::Event)> handler);
   std::string format_directory_entries(const fs::directory_entry &entry);
+
   void render();
 };
 
