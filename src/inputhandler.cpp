@@ -4,9 +4,9 @@
 #include <print>
 #include <sys/wait.h>
 namespace duck {
-InputHander::InputHander(FileManager &file_manager, UI &ui)
+InputHandler::InputHandler(FileManager &file_manager, UI &ui)
     : file_manager_{file_manager}, ui_{ui} {}
-bool InputHander::operator()(ftxui::Event event) {
+bool InputHandler::operator()(ftxui::Event event) {
   if (event == ftxui::Event::Return) {
     open_file();
     return true;
@@ -18,27 +18,27 @@ bool InputHander::operator()(ftxui::Event event) {
 
       file_manager_.update_current_path(fs::canonical(
           file_manager_.get_selected_entry(ui_.selected()).value().path()));
-      ui_.move_down_direcotry(file_manager_);
+      ui_.enter_direcotry(file_manager_.curdir_entries());
     }
     return true;
   }
   if (event == ftxui::Event::Character('h')) {
     file_manager_.update_current_path(file_manager_.cur_parent_path());
-    ui_.move_up_direcotry(file_manager_);
-    ui_.set_selected_previous_dir(file_manager_);
+    ui_.leave_direcotry(file_manager_.curdir_entries(),
+                        file_manager_.previous_path());
     return true;
   }
   if (event == ftxui::Event::Character('q')) {
     ui_.exit();
     return true;
   }
-  if (event == ftxui::Event::Character("d")) {
+  if (event == ftxui::Event::Character('d')) {
     return true;
   }
   return false;
 }
 
-void InputHander::open_file() {
+void InputHandler::open_file() {
   const static std::unordered_map<std::string, std::string> handlers = {
       {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
       {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};

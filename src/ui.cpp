@@ -1,5 +1,4 @@
 #include "ui.h"
-#include "filemanager.h"
 #include "ftxui/dom/elements.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -11,6 +10,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <print>
 #include <ranges>
 #include <string>
 #include <sys/wait.h>
@@ -35,35 +35,35 @@ void UI::set_layout(const std::function<ftxui::Element()> layout_builder) {
   layout_ = ftxui::Renderer(menu_, layout_builder);
 }
 
-void UI::move_down_direcotry(FileManager &file_manager) {
-  update_curdir_string_entires(file_manager);
+void UI::enter_direcotry(
+    const std::vector<fs::directory_entry> &curdir_entries) {
+  update_curdir_string_entires(curdir_entries);
   selected_ = previous_selected_;
 }
 
-void UI::move_up_direcotry(FileManager &file_manager) {
-  update_curdir_string_entires(file_manager);
-  previous_selected_ = selected_;
-}
-
-void UI::set_selected_previous_dir(FileManager &file_manager) {
-  const auto &entries = file_manager.curdir_entries();
-  const auto &previous = file_manager.previous_path();
-
-  if (auto it = std::ranges::find(entries, previous); it != entries.end()) {
-    selected_ = static_cast<int>(std::distance(entries.begin(), it));
+void UI::leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
+                         const fs::path &previous_path) {
+  update_curdir_string_entires(curdir_entries);
+  if (auto it = std::ranges::find(curdir_entries, previous_path);
+      it != curdir_entries.end()) {
+    selected_ = static_cast<int>(std::distance(curdir_entries.begin(), it));
+  } else {
+    std::print(stderr, "[ERROR]: error in leave_direcotry");
   }
 }
 
-void UI::update_curdir_string_entires(FileManager &file_manager) {
+void UI::update_curdir_string_entires(
+    const std::vector<fs::directory_entry> &curdir_entries) {
   curdir_string_entries_ =
-      file_manager.curdir_entries() |
+      curdir_entries |
       std::views::transform([this](const fs::directory_entry &entry) {
         return this->format_directory_entries(entry);
       }) |
       std::ranges::to<std::vector>();
 }
 
-std::string UI::format_directory_entries(const fs::directory_entry &entry) {
+const std::string
+UI::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{
       {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
       {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},

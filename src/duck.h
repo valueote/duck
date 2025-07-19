@@ -9,7 +9,7 @@ class Duck {
 private:
   FileManager file_manager_;
   UI ui_;
-  InputHander input_handler_;
+  InputHandler input_handler_;
   LayoutBuilder layout_builder_;
 
   void setup_ui();

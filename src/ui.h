@@ -1,5 +1,4 @@
 #pragma once
-#include "filemanager.h"
 #include <filesystem>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -35,11 +34,12 @@ public:
   void set_layout(const std::function<ftxui::Element()> layout_builder);
   void set_input_handler(const std::function<bool(ftxui::Event)> handler);
 
-  void move_down_direcotry(FileManager &file_manager_);
-  void move_up_direcotry(FileManager &file_manager_);
-  void set_selected_previous_dir(FileManager &file_manager);
-  void update_curdir_string_entires(FileManager &file_manager);
-  std::string format_directory_entries(const fs::directory_entry &entry);
+  void enter_direcotry(const std::vector<fs::directory_entry> &curdir_entries);
+  void leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
+                       const fs::path &previous_path);
+  void update_curdir_string_entires(
+      const std::vector<fs::directory_entry> &curdir_entries);
+  const std::string format_directory_entries(const fs::directory_entry &entry);
 
   void render();
   void exit();
