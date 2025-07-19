@@ -12,12 +12,12 @@ bool InputHander::operator()(ftxui::Event event) {
     return true;
   }
   if (event == ftxui::Event::Character('l')) {
-    if (file_manager_.get_selected_entry(ui_.get_selected()).has_value() &&
+    if (file_manager_.get_selected_entry(ui_.selected()).has_value() &&
         fs::is_directory(
-            file_manager_.get_selected_entry(ui_.get_selected()).value())) {
+            file_manager_.get_selected_entry(ui_.selected()).value())) {
 
       file_manager_.update_current_path(fs::canonical(
-          file_manager_.get_selected_entry(ui_.get_selected()).value().path()));
+          file_manager_.get_selected_entry(ui_.selected()).value().path()));
       ui_.move_down_direcotry(file_manager_);
     }
     return true;
@@ -42,7 +42,7 @@ void InputHander::open_file() {
   const static std::unordered_map<std::string, std::string> handlers = {
       {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
       {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
-  auto selected_file_opt = file_manager_.get_selected_entry(ui_.get_selected());
+  auto selected_file_opt = file_manager_.get_selected_entry(ui_.selected());
   if (!selected_file_opt.has_value()) {
     return;
   }
@@ -52,7 +52,7 @@ void InputHander::open_file() {
     return;
   }
 
-  ui_.get_screen().WithRestoredIO([&] {
+  ui_.screen().WithRestoredIO([&] {
     pid_t pid = fork();
     if (pid == -1) {
       std::print(stderr, "[ERROR]: fork fail in open_file");

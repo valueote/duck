@@ -15,6 +15,6 @@ void Duck::run() { ui_.render(); }
 void Duck::setup_ui() {
   ui_.update_curdir_string_entires(file_manager_);
   ui_.set_input_handler(input_handler_);
-  ui_.setup_layout(layout_builder_);
+  ui_.set_layout(layout_builder_);
 }
 } // namespace duck

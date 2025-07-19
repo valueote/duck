@@ -48,7 +48,7 @@ void FileManager::update_curdir_entries() {
   load_directory_entries(current_path_, curdir_entries_);
 }
 
-void FileManager::update_preview_entries(int selected) {
+void FileManager::update_preview_entries(const int &selected) {
   load_directory_entries(curdir_entries_[selected].path(), preview_entries_);
 }
 
@@ -72,8 +72,8 @@ void FileManager::update_current_path(const fs::path &new_path) {
   update_curdir_entries();
 }
 
-std::optional<fs::directory_entry>
-FileManager::get_selected_entry(const int selected) {
+const std::optional<fs::directory_entry>
+FileManager::get_selected_entry(const int &selected) const {
   if (curdir_entries_.empty()) {
     return std::nullopt;
   }

@@ -32,20 +32,20 @@ private:
 public:
   UI();
 
-  void setup_layout(std::function<ftxui::Element()> layout_builder);
+  void set_layout(const std::function<ftxui::Element()> layout_builder);
+  void set_input_handler(const std::function<bool(ftxui::Event)> handler);
+
   void move_down_direcotry(FileManager &file_manager_);
   void move_up_direcotry(FileManager &file_manager_);
   void set_selected_previous_dir(FileManager &file_manager);
   void update_curdir_string_entires(FileManager &file_manager);
-  void exit();
-  int get_selected();
-  ftxui::Component &get_menu();
-  ftxui::ScreenInteractive &get_screen();
-
-  void set_input_handler(std::function<bool(ftxui::Event)> handler);
   std::string format_directory_entries(const fs::directory_entry &entry);
 
   void render();
+  void exit();
+  int selected();
+  ftxui::Component &menu();
+  ftxui::ScreenInteractive &screen();
 };
 
 } // namespace duck

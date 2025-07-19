@@ -27,11 +27,11 @@ UI::UI()
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
-void UI::set_input_handler(std::function<bool(ftxui::Event)> handler) {
+void UI::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
-void UI::setup_layout(std::function<ftxui::Element()> layout_builder) {
+void UI::set_layout(const std::function<ftxui::Element()> layout_builder) {
   layout_ = ftxui::Renderer(menu_, layout_builder);
 }
 
@@ -62,7 +62,6 @@ void UI::update_curdir_string_entires(FileManager &file_manager) {
       }) |
       std::ranges::to<std::vector>();
 }
-void UI::render() { screen_.Loop(layout_); }
 
 std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{
@@ -75,7 +74,6 @@ std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   };
 
   const auto filename = entry.path().filename().string();
-
   if (fs::is_directory(entry)) {
     return std::format("\uf4d3 {}", filename);
   }
@@ -92,11 +90,14 @@ std::string UI::format_directory_entries(const fs::directory_entry &entry) {
   return std::format("{} {}", icon, filename);
 }
 
-int UI::get_selected() { return selected_; }
-
-ftxui::Component &UI::get_menu() { return menu_; }
-
-ftxui::ScreenInteractive &UI::get_screen() { return screen_; };
+void UI::render() { screen_.Loop(layout_); }
 
 void UI::exit() { screen_.Exit(); }
+
+int UI::selected() { return selected_; }
+
+ftxui::Component &UI::menu() { return menu_; }
+
+ftxui::ScreenInteractive &UI::screen() { return screen_; };
+
 } // namespace duck

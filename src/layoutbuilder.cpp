@@ -48,7 +48,7 @@ LayoutBuilder::get_directory_preview(const std::optional<fs::path> &dir_path) {
     return ftxui::text("[ERROR]: Call get_directory_preview on the file");
   }
 
-  file_manager_.update_preview_entries(ui_.get_selected());
+  file_manager_.update_preview_entries(ui_.selected());
 
   std::vector<ftxui::Element> lines;
   lines = file_manager_.preview_entries() |
@@ -68,15 +68,15 @@ ftxui::Element LayoutBuilder::operator()() {
   auto left_pane =
       window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
                  ftxui::bold,
-             ui_.get_menu()->Render() | ftxui::vscroll_indicator |
-                 ftxui::frame | ftxui::flex) |
+             ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame |
+                 ftxui::flex) |
       ftxui::flex;
 
   auto right_pane =
       window(ftxui::text(" Coneten Preview ") | ftxui::bold,
              [this] {
                const auto selected_path_opt =
-                   file_manager_.get_selected_entry(ui_.get_selected());
+                   file_manager_.get_selected_entry(ui_.selected());
                if (!selected_path_opt.has_value()) {
                  return ftxui::text("No item selected");
                }
