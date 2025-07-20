@@ -1,3 +1,0 @@
-/home/vivy/cs/duck/build/CMakeFiles/duck.dir
-/home/vivy/cs/duck/build/CMakeFiles/edit_cache.dir
-/home/vivy/cs/duck/build/CMakeFiles/rebuild_cache.dir
