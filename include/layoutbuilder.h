@@ -11,7 +11,7 @@ private:
 public:
   LayoutBuilder(FileManager &file_manager, UI &ui);
   std::string get_text_preview(const std::optional<fs::path> &path,
-                               size_t max_lines = 100, size_t max_width = 30);
+                               size_t max_lines = 100, size_t max_width = 80);
 
   ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path);
   ftxui::Element operator()();
