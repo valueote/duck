@@ -81,7 +81,15 @@ FileManager::get_selected_entry(const int &selected) const {
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
-  return fs::remove(curdir_entries_[selected]);
+  if (!fs::exists(curdir_entries_[selected])) {
+    std::print(stderr, "[ERROR] try to delete an unexisted file");
+    return false;
+  }
+  if (fs::is_directory(curdir_entries_[selected])) {
+    return fs::remove_all(curdir_entries_[selected]);
+  } else {
+    return fs::remove(curdir_entries_[selected]);
+  }
 }
 
 } // namespace duck
