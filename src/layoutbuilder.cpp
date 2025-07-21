@@ -98,22 +98,14 @@ std::function<ftxui::Element()> UiBuilder::layout() {
 
 std::function<ftxui::Element()> UiBuilder::deletion_dialog() {
   return [this]() {
-    auto yes_button = ftxui::Button("[Y]es", []() {});
-    auto no_button = ftxui::Button("[N]o", []() {});
+    auto selected_path = file_manager_.get_selected_entry(ui_.selected());
+    if (!selected_path.has_value()) {
+      return ftxui::text("[ERROR] No file selected for deletion.");
+    }
 
-    auto button_row = ftxui::Container::Horizontal({yes_button, no_button});
-
-    return ftxui::vbox(
-        {ftxui::text("Pemanently delete selected file?"), ftxui::separator(),
-         ftxui::text(
-             std::format("{}", file_manager_.get_selected_entry(ui_.selected())
-                                   ->path()
-                                   .string())),
-         ftxui::hbox({
-             yes_button->Render(),
-             ftxui::filler(),
-             no_button->Render(),
-         })});
+    return ftxui::vbox({
+        ftxui::text(std::format("{}", selected_path->path().string())),
+    });
   };
 }
 
