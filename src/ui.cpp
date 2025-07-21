@@ -33,29 +33,8 @@ void Ui::set_layout(const std::function<ftxui::Element()> layout_builder) {
 
 void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
                              const std::function<bool(ftxui::Event)> handler) {
-  auto on_confirm = [this] { show_delete_dialog_ = false; };
-
-  auto on_cancel = [this] { show_delete_dialog_ = false; };
-
-  auto yes_button = ftxui::Button("[Y]es", on_confirm);
-  auto no_button = ftxui::Button("[N]o", on_cancel);
-
-  auto button_row = ftxui::Container::Horizontal({yes_button, no_button});
-
-  auto dialog_content = ftxui::Renderer(button_row, [=] {
-    return ftxui::vbox({ftxui::text("Trash  selected file?"),
-                        ftxui::separator(),
-                        ftxui::text("/home/vivy/text_relax_output.txt"),
-                        ftxui::hbox({
-                            yes_button->Render(),
-                            ftxui::filler(),
-                            no_button->Render(),
-                        })}) |
-           ftxui::border;
-  });
-
+  auto dialog_content = ftxui::Renderer(dialog) | ftxui::border;
   dialog_content |= ftxui::CatchEvent(handler);
-
   modal_ = ftxui::Modal(layout_, dialog_content, &show_delete_dialog_);
 }
 

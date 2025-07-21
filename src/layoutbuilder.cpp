@@ -1,6 +1,7 @@
 #include "layoutbuilder.h"
 #include "ui.h"
 #include <fstream>
+#include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 
@@ -96,7 +97,24 @@ std::function<ftxui::Element()> UiBuilder::layout() {
 }
 
 std::function<ftxui::Element()> UiBuilder::deletion_dialog() {
-  return [this]() { return ftxui::emptyElement(); };
+  return [this]() {
+    auto yes_button = ftxui::Button("[Y]es", []() {});
+    auto no_button = ftxui::Button("[N]o", []() {});
+
+    auto button_row = ftxui::Container::Horizontal({yes_button, no_button});
+
+    return ftxui::vbox(
+        {ftxui::text("Pemanently delete selected file?"), ftxui::separator(),
+         ftxui::text(
+             std::format("{}", file_manager_.get_selected_entry(ui_.selected())
+                                   ->path()
+                                   .string())),
+         ftxui::hbox({
+             yes_button->Render(),
+             ftxui::filler(),
+             no_button->Render(),
+         })});
+  };
 }
 
 } // namespace duck

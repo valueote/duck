@@ -37,9 +37,6 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('d')) {
       ui_.toggle_delete_dialog();
       return true;
-      // file_manager_.delete_selected_entry(ui_.selected());
-      // file_manager_.update_curdir_entries();
-      // ui_.update_curdir_string_entires(file_manager_.curdir_entries());
     }
     return false;
   };
