@@ -55,15 +55,19 @@ void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
         auto dialog_content =
             ftxui::vbox({dialog(), ftxui::filler(), ftxui::separator(),
                          ftxui::hbox({
-                             yes_button->Render(),
                              ftxui::filler(),
+                             yes_button->Render(),
+                             ftxui::separatorEmpty() |
+                                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                             screen_.dimx() / 3),
                              no_button->Render(),
+                             ftxui::filler(),
                          })});
 
         return ftxui::window(ftxui::text("Permanently delete selected file?"),
                              dialog_content) |
-               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 2) |
-               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, screen_.dimy() / 2);
+               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 3 * 2) |
+               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, screen_.dimy() / 3 * 2);
       });
 
   auto dialog_with_handler =
@@ -71,6 +75,7 @@ void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
 
   modal_ = ftxui::Modal(layout_, dialog_with_handler, &show_delete_dialog_);
 }
+
 void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
 
 void Ui::enter_direcotry(
