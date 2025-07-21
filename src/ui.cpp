@@ -4,10 +4,6 @@
 #include <filesystem>
 #include <format>
 #include <ftxui/component/component.hpp>
-#include <ftxui/component/component_options.hpp>
-#include <ftxui/component/event.hpp>
-#include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <print>
@@ -21,7 +17,7 @@ namespace duck {
 
 // TODO: Add a parent dir plane
 UI::UI()
-    : selected_{0}, previous_selected_(0),
+    : selected_{0}, previous_selected_{0}, show_delete_dialog_{false},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {
   menu_option_.focused_entry = &selected_;
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
@@ -35,6 +31,36 @@ void UI::set_layout(const std::function<ftxui::Element()> layout_builder) {
   layout_ = ftxui::Renderer(menu_, layout_builder);
 }
 
+void UI::set_delete_dialog() {
+  auto on_confirm = [&] {
+    // 删除文件的逻辑
+    show_delete_dialog_ = false;
+  };
+
+  auto on_cancel = [&] { show_delete_dialog_ = false; };
+
+  auto yes_button = ftxui::Button("Yes", on_confirm);
+  auto no_button = ftxui::Button("No", on_cancel);
+
+  auto button_row = ftxui::Container::Horizontal({yes_button, no_button});
+
+  auto dialog_content = ftxui::Renderer(button_row, [=] {
+    return ftxui::vbox({ftxui::text("Trash 1 selected file?"),
+                        ftxui::separator(),
+                        ftxui::text("/home/vivy/text_relax_output.txt"),
+                        ftxui::hbox({
+                            yes_button->Render(),
+                            ftxui::filler(),
+                            no_button->Render(),
+                        })}) |
+           ftxui::border;
+  });
+
+  modal_ = ftxui::Modal(layout_, dialog_content, &show_delete_dialog_);
+}
+
+void UI::show_delete_dialog() { show_delete_dialog_ = true; }
+void UI::set_modal(ftxui::Component modal) {}
 void UI::enter_direcotry(
     const std::vector<fs::directory_entry> &curdir_entries) {
   update_curdir_string_entires(curdir_entries);
@@ -91,7 +117,7 @@ UI::format_directory_entries(const fs::directory_entry &entry) {
   return std::format("{} {}", icon, filename);
 }
 
-void UI::render() { screen_.Loop(layout_); }
+void UI::render() { screen_.Loop(modal_); }
 
 void UI::exit() { screen_.Exit(); }
 
