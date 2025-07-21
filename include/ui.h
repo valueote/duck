@@ -12,7 +12,7 @@
 
 namespace duck {
 namespace fs = std::filesystem;
-class UI {
+class Ui {
 private:
   std::vector<std::string> curdir_string_entries_;
   std::vector<std::string> previewdir_string_entries_;
@@ -31,11 +31,12 @@ private:
   bool show_delete_dialog_;
 
 public:
-  UI();
+  Ui();
 
-  void set_layout(const std::function<ftxui::Element()> layout_builder);
+  void set_layout(const std::function<ftxui::Element()> layout);
   void set_input_handler(const std::function<bool(ftxui::Event)> handler);
-  void set_delete_dialog(std::function<bool(ftxui::Event)> handler);
+  void set_deletion_dialog(const std::function<ftxui::Element()> dialog,
+                           const std::function<bool(ftxui::Event)> handler);
   void toggle_delete_dialog();
   void enter_direcotry(const std::vector<fs::directory_entry> &curdir_entries);
   void leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,

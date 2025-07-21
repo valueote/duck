@@ -2,18 +2,21 @@
 #include "filemanager.h"
 #include "ui.h"
 #include <ftxui/dom/node.hpp>
+#include <functional>
 namespace duck {
-class LayoutBuilder {
+class UiBuilder {
 private:
-  UI &ui_;
+  Ui &ui_;
   FileManager &file_manager_;
 
-public:
-  LayoutBuilder(FileManager &file_manager, UI &ui);
   std::string get_text_preview(const std::optional<fs::path> &path,
                                size_t max_lines = 100, size_t max_width = 80);
 
   ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path);
-  ftxui::Element operator()();
+
+public:
+  UiBuilder(FileManager &file_manager, Ui &ui);
+  std::function<ftxui::Element()> layout();
+  std::function<ftxui::Element()> deletion_dialog();
 };
 } // namespace duck

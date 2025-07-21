@@ -1,13 +1,15 @@
 #include "layoutbuilder.h"
+#include "ui.h"
 #include <fstream>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/dom/node.hpp>
 
 namespace duck {
-LayoutBuilder::LayoutBuilder(FileManager &file_manager, UI &ui)
+UiBuilder::UiBuilder(FileManager &file_manager, Ui &ui)
     : file_manager_{file_manager}, ui_{ui} {}
 
-std::string LayoutBuilder::get_text_preview(const std::optional<fs::path> &path,
-                                            size_t max_lines,
-                                            size_t max_width) {
+std::string UiBuilder::get_text_preview(const std::optional<fs::path> &path,
+                                        size_t max_lines, size_t max_width) {
   if (!path.has_value()) {
     return "No file to preview";
   }
@@ -40,7 +42,7 @@ std::string LayoutBuilder::get_text_preview(const std::optional<fs::path> &path,
 }
 
 ftxui::Element
-LayoutBuilder::get_directory_preview(const std::optional<fs::path> &dir_path) {
+UiBuilder::get_directory_preview(const std::optional<fs::path> &dir_path) {
   if (!dir_path.has_value()) {
     return ftxui::text("Nothing to preview");
   }
@@ -64,30 +66,37 @@ LayoutBuilder::get_directory_preview(const std::optional<fs::path> &dir_path) {
   return ftxui::vbox(std::move(lines));
 }
 
-ftxui::Element LayoutBuilder::operator()() {
-  auto left_pane =
-      window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
-                 ftxui::bold,
-             ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame |
-                 ftxui::flex) |
-      ftxui::flex;
+std::function<ftxui::Element()> UiBuilder::layout() {
+  return [this]() {
+    auto left_pane =
+        window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
+                   ftxui::bold,
+               ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame |
+                   ftxui::flex) |
+        ftxui::flex;
 
-  auto right_pane =
-      window(ftxui::text(" Coneten Preview ") | ftxui::bold,
-             [this] {
-               const auto selected_path_opt =
-                   file_manager_.get_selected_entry(ui_.selected());
-               if (!selected_path_opt.has_value()) {
-                 return ftxui::text("No item selected");
-               }
-               if (fs::is_directory(selected_path_opt.value())) {
-                 return get_directory_preview(selected_path_opt);
-               }
-               return ftxui::paragraph(get_text_preview(selected_path_opt));
-             }() |
-                 ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
-      ftxui::flex;
+    auto right_pane =
+        window(ftxui::text(" Coneten Preview ") | ftxui::bold,
+               [this] {
+                 const auto selected_path_opt =
+                     file_manager_.get_selected_entry(ui_.selected());
+                 if (!selected_path_opt.has_value()) {
+                   return ftxui::text("No item selected");
+                 }
+                 if (fs::is_directory(selected_path_opt.value())) {
+                   return get_directory_preview(selected_path_opt);
+                 }
+                 return ftxui::paragraph(get_text_preview(selected_path_opt));
+               }() |
+                   ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
+        ftxui::flex;
 
-  return hbox(left_pane, ftxui::separator(), right_pane);
+    return hbox(left_pane, ftxui::separator(), right_pane);
+  };
 }
+
+std::function<ftxui::Element()> UiBuilder::deletion_dialog() {
+  return [this]() { return ftxui::emptyElement(); };
+}
+
 } // namespace duck

@@ -16,22 +16,23 @@
 namespace duck {
 
 // TODO: Add a parent dir plane
-UI::UI()
+Ui::Ui()
     : selected_{0}, previous_selected_{0}, show_delete_dialog_{false},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {
   menu_option_.focused_entry = &selected_;
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
-void UI::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
+void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
-void UI::set_layout(const std::function<ftxui::Element()> layout_builder) {
+void Ui::set_layout(const std::function<ftxui::Element()> layout_builder) {
   layout_ = ftxui::Renderer(menu_, layout_builder);
 }
 
-void UI::set_delete_dialog(std::function<bool(ftxui::Event)> handler) {
+void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
+                             const std::function<bool(ftxui::Event)> handler) {
   auto on_confirm = [this] { show_delete_dialog_ = false; };
 
   auto on_cancel = [this] { show_delete_dialog_ = false; };
@@ -40,8 +41,6 @@ void UI::set_delete_dialog(std::function<bool(ftxui::Event)> handler) {
   auto no_button = ftxui::Button("[N]o", on_cancel);
 
   auto button_row = ftxui::Container::Horizontal({yes_button, no_button});
-
-  button_row |= ftxui::CatchEvent(handler);
 
   auto dialog_content = ftxui::Renderer(button_row, [=] {
     return ftxui::vbox({ftxui::text("Trash  selected file?"),
@@ -55,18 +54,20 @@ void UI::set_delete_dialog(std::function<bool(ftxui::Event)> handler) {
            ftxui::border;
   });
 
+  dialog_content |= ftxui::CatchEvent(handler);
+
   modal_ = ftxui::Modal(layout_, dialog_content, &show_delete_dialog_);
 }
 
-void UI::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
+void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
 
-void UI::enter_direcotry(
+void Ui::enter_direcotry(
     const std::vector<fs::directory_entry> &curdir_entries) {
   update_curdir_string_entires(curdir_entries);
   selected_ = previous_selected_;
 }
 
-void UI::leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
+void Ui::leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
                          const fs::path &previous_path) {
   update_curdir_string_entires(curdir_entries);
   previous_selected_ = selected_;
@@ -78,7 +79,7 @@ void UI::leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
   }
 }
 
-void UI::update_curdir_string_entires(
+void Ui::update_curdir_string_entires(
     const std::vector<fs::directory_entry> &curdir_entries) {
   curdir_string_entries_ =
       curdir_entries |
@@ -89,7 +90,7 @@ void UI::update_curdir_string_entires(
 }
 
 const std::string
-UI::format_directory_entries(const fs::directory_entry &entry) {
+Ui::format_directory_entries(const fs::directory_entry &entry) {
   static const std::unordered_map<std::string, std::string> extension_icons{
       {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
       {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
@@ -116,14 +117,14 @@ UI::format_directory_entries(const fs::directory_entry &entry) {
   return std::format("{} {}", icon, filename);
 }
 
-void UI::render() { screen_.Loop(modal_); }
+void Ui::render() { screen_.Loop(modal_); }
 
-void UI::exit() { screen_.Exit(); }
+void Ui::exit() { screen_.Exit(); }
 
-int UI::selected() { return selected_; }
+int Ui::selected() { return selected_; }
 
-ftxui::Component &UI::menu() { return menu_; }
+ftxui::Component &Ui::menu() { return menu_; }
 
-ftxui::ScreenInteractive &UI::screen() { return screen_; };
+ftxui::ScreenInteractive &Ui::screen() { return screen_; };
 
 } // namespace duck

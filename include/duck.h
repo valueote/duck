@@ -8,9 +8,9 @@ namespace duck {
 class Duck {
 private:
   FileManager file_manager_;
-  UI ui_;
+  Ui ui_;
   InputHandler input_handler_;
-  LayoutBuilder layout_builder_;
+  UiBuilder ui_builder_;
 
   void setup_ui();
 

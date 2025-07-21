@@ -4,7 +4,7 @@
 #include <print>
 #include <sys/wait.h>
 namespace duck {
-InputHandler::InputHandler(FileManager &file_manager, UI &ui)
+InputHandler::InputHandler(FileManager &file_manager, Ui &ui)
     : file_manager_{file_manager}, ui_{ui} {}
 
 std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
