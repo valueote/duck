@@ -31,21 +31,20 @@ void UI::set_layout(const std::function<ftxui::Element()> layout_builder) {
   layout_ = ftxui::Renderer(menu_, layout_builder);
 }
 
-void UI::set_delete_dialog() {
-  auto on_confirm = [&] {
-    // 删除文件的逻辑
-    show_delete_dialog_ = false;
-  };
+void UI::set_delete_dialog(std::function<bool(ftxui::Event)> handler) {
+  auto on_confirm = [this] { show_delete_dialog_ = false; };
 
-  auto on_cancel = [&] { show_delete_dialog_ = false; };
+  auto on_cancel = [this] { show_delete_dialog_ = false; };
 
-  auto yes_button = ftxui::Button("Yes", on_confirm);
-  auto no_button = ftxui::Button("No", on_cancel);
+  auto yes_button = ftxui::Button("[Y]es", on_confirm);
+  auto no_button = ftxui::Button("[N]o", on_cancel);
 
   auto button_row = ftxui::Container::Horizontal({yes_button, no_button});
 
+  button_row |= ftxui::CatchEvent(handler);
+
   auto dialog_content = ftxui::Renderer(button_row, [=] {
-    return ftxui::vbox({ftxui::text("Trash 1 selected file?"),
+    return ftxui::vbox({ftxui::text("Trash  selected file?"),
                         ftxui::separator(),
                         ftxui::text("/home/vivy/text_relax_output.txt"),
                         ftxui::hbox({
@@ -59,8 +58,8 @@ void UI::set_delete_dialog() {
   modal_ = ftxui::Modal(layout_, dialog_content, &show_delete_dialog_);
 }
 
-void UI::show_delete_dialog() { show_delete_dialog_ = true; }
-void UI::set_modal(ftxui::Component modal) {}
+void UI::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
+
 void UI::enter_direcotry(
     const std::vector<fs::directory_entry> &curdir_entries) {
   update_curdir_string_entires(curdir_entries);
