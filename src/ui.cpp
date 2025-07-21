@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <format>
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <print>
@@ -33,11 +34,20 @@ void Ui::set_layout(const std::function<ftxui::Element()> layout_builder) {
 
 void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
                              const std::function<bool(ftxui::Event)> handler) {
-  auto yes_button = ftxui::Button(
-      "[Y]es", [this] { screen_.PostEvent(ftxui::Event::Character('y')); });
-  auto no_button = ftxui::Button(
-      "[N]o", [this] { screen_.PostEvent(ftxui::Event::Character('n')); });
 
+  ftxui::ButtonOption button_option;
+  button_option.transform = [](const ftxui::EntryState &s) {
+    auto style = s.active ? ftxui::bold : ftxui::nothing;
+    return ftxui::text(s.label) | style | ftxui::center;
+  };
+
+  auto yes_button = ftxui::Button(
+      "[Y]es", [this] { screen_.PostEvent(ftxui::Event::Character('y')); },
+      button_option);
+
+  auto no_button = ftxui::Button(
+      "[N]o", [this] { screen_.PostEvent(ftxui::Event::Character('n')); },
+      button_option);
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
 
   auto dialog_renderer =
@@ -56,49 +66,11 @@ void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
                ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, screen_.dimy() / 2);
       });
 
-  // 将事件处理器附加到渲染器上
-  auto dialog_with_handler = dialog_renderer |
-                             ftxui::CatchEvent(handler)
-                             // 将整个对话框居中显示
-                             | ftxui::center;
+  auto dialog_with_handler =
+      dialog_renderer | ftxui::CatchEvent(handler) | ftxui::center;
 
-  // Modal
-  // 的工作方式是，当激活时，它会在主布局(layout_)之上渲染其内容(dialog_with_handler)
   modal_ = ftxui::Modal(layout_, dialog_with_handler, &show_delete_dialog_);
 }
-
-//
-// void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
-//                              const std::function<bool(ftxui::Event)> handler)
-//                              {
-//   auto yes_button = ftxui::Button(
-//       "[Y]es", [this] { screen_.PostEvent(ftxui::Event::Character('y')); });
-//   auto no_button = ftxui::Button(
-//       "[N]o", [this] { screen_.PostEvent(ftxui::Event::Character('n')); });
-//
-//   auto dialog_buttons = ftxui::Container::Horizontal({yes_button,
-//   no_button});
-//
-//   auto dialog_renderer = ftxui::Renderer(dialog_buttons, [=] {
-//     return ftxui::vbox({
-//                dialog() | ftxui::center,
-//                ftxui::separator(),
-//                ftxui::hbox({
-//                    yes_button->Render(),
-//                    ftxui::filler(),
-//                    no_button->Render(),
-//                }) | ftxui::center,
-//            }) |
-//            ftxui::border | ftxui::center |
-//            size(ftxui::HEIGHT, ftxui::GREATER_THAN, 6) |
-//            size(ftxui::WIDTH, ftxui::GREATER_THAN, 50);
-//   });
-//
-//   auto dialog_with_handler = dialog_renderer | CatchEvent(handler);
-//
-//   modal_ = Modal(layout_, dialog_with_handler, &show_delete_dialog_);
-// }
-//
 void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
 
 void Ui::enter_direcotry(
