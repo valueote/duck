@@ -1,8 +1,10 @@
 #include "inputhandler.h"
 #include "filemanager.h"
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
 #include <print>
 #include <sys/wait.h>
+
 namespace duck {
 InputHandler::InputHandler(FileManager &file_manager, Ui &ui)
     : file_manager_{file_manager}, ui_{ui} {}
@@ -13,6 +15,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       open_file();
       return true;
     }
+    if (event == ftxui::Event::Character('j')) {
+      ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
+    }
+
+    if (event == ftxui::Event::Character('k')) {
+      ui_.move_selected_up(file_manager_.curdir_entries().size() - 1);
+    }
+
     if (event == ftxui::Event::Character('l')) {
       if (file_manager_.get_selected_entry(ui_.selected()).has_value() &&
           fs::is_directory(
@@ -51,7 +61,8 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_handler() {
       ui_.toggle_delete_dialog();
       return true;
     }
-    if (event == ftxui::Event::Character('n')) {
+    if (event == ftxui::Event::Character('n') ||
+        event == ftxui::Event::Escape) {
       ui_.toggle_delete_dialog();
       return true;
     }

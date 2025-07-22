@@ -18,7 +18,7 @@ private:
   std::vector<std::string> previewdir_string_entries_;
 
   ftxui::ScreenInteractive screen_;
-  ftxui::Component layout_;
+  ftxui::Component main_layout_;
   ftxui::MenuOption menu_option_;
   ftxui::Component modal_;
   ftxui::Component menu_;
@@ -37,6 +37,8 @@ public:
   void set_input_handler(const std::function<bool(ftxui::Event)> handler);
   void set_deletion_dialog(const std::function<ftxui::Element()> deleted_entry,
                            const std::function<bool(ftxui::Event)> handler);
+  void move_selected_up(const int max);
+  void move_selected_down(const int max);
   void toggle_delete_dialog();
   void enter_direcotry(const std::vector<fs::directory_entry> &curdir_entries);
   void leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,

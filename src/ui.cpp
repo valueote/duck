@@ -19,17 +19,16 @@ namespace duck {
 // TODO: Add a parent dir plane
 Ui::Ui()
     : selected_{0}, previous_selected_{0}, show_delete_dialog_{false},
-      screen_{ftxui::ScreenInteractive::Fullscreen()} {
-  menu_option_.focused_entry = &selected_;
-  menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
-}
+      menu_option_{.focused_entry = &selected_},
+      menu_{Menu(&curdir_string_entries_, &(selected_), menu_option_)},
+      screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
 void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
 void Ui::set_layout(const std::function<ftxui::Element()> preview) {
-  layout_ = ftxui::Renderer(menu_, preview);
+  main_layout_ = ftxui::Renderer(menu_, preview);
 }
 
 void Ui::set_deletion_dialog(
@@ -74,7 +73,23 @@ void Ui::set_deletion_dialog(
   auto dialog_with_handler =
       dialog_renderer | ftxui::CatchEvent(handler) | ftxui::center;
 
-  modal_ = ftxui::Modal(layout_, dialog_with_handler, &show_delete_dialog_);
+  modal_ =
+      ftxui::Modal(main_layout_, dialog_with_handler, &show_delete_dialog_);
+}
+
+void Ui::move_selected_up(const int max) {
+  if (selected_ > 0) {
+    selected_--;
+  } else {
+    selected_ = max;
+  }
+}
+void Ui::move_selected_down(const int max) {
+  if (selected_ < max) {
+    selected_++;
+  } else {
+    selected_ = max;
+  }
 }
 
 void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
