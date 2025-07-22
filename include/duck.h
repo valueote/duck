@@ -1,7 +1,7 @@
 #pragma once
+#include "contentprovider.h"
 #include "filemanager.h"
 #include "inputhandler.h"
-#include "layoutbuilder.h"
 #include "ui.h"
 
 namespace duck {
@@ -10,7 +10,7 @@ private:
   FileManager file_manager_;
   Ui ui_;
   InputHandler input_handler_;
-  UiBuilder ui_builder_;
+  ContentProvider content_provider;
 
   void setup_ui();
 

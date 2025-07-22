@@ -33,9 +33,9 @@ private:
 public:
   Ui();
 
-  void set_layout(const std::function<ftxui::Element()> layout);
+  void set_layout(const std::function<ftxui::Element()> preview);
   void set_input_handler(const std::function<bool(ftxui::Event)> handler);
-  void set_deletion_dialog(const std::function<ftxui::Element()> dialog,
+  void set_deletion_dialog(const std::function<ftxui::Element()> deleted_entry,
                            const std::function<bool(ftxui::Event)> handler);
   void toggle_delete_dialog();
   void enter_direcotry(const std::vector<fs::directory_entry> &curdir_entries);

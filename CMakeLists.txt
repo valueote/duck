@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(ftxui)
 
 add_executable(duck src/main.cpp src/ui.cpp src/filemanager.cpp
-                    src/inputhandler.cpp src/layoutbuilder.cpp src/duck.cpp)
+                    src/inputhandler.cpp src/contentprovider.cpp src/duck.cpp)
 
 target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

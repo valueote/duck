@@ -28,12 +28,13 @@ void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
-void Ui::set_layout(const std::function<ftxui::Element()> layout_builder) {
-  layout_ = ftxui::Renderer(menu_, layout_builder);
+void Ui::set_layout(const std::function<ftxui::Element()> preview) {
+  layout_ = ftxui::Renderer(menu_, preview);
 }
 
-void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
-                             const std::function<bool(ftxui::Event)> handler) {
+void Ui::set_deletion_dialog(
+    const std::function<ftxui::Element()> deleted_entry,
+    const std::function<bool(ftxui::Event)> handler) {
 
   ftxui::ButtonOption button_option;
   button_option.transform = [](const ftxui::EntryState &s) {
@@ -50,10 +51,10 @@ void Ui::set_deletion_dialog(const std::function<ftxui::Element()> dialog,
       button_option);
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
 
-  auto dialog_renderer =
-      ftxui::Renderer(button_container, [yes_button, no_button, dialog, this] {
+  auto dialog_renderer = ftxui::Renderer(
+      button_container, [yes_button, no_button, deleted_entry, this] {
         auto dialog_content =
-            ftxui::vbox({dialog(), ftxui::filler(), ftxui::separator(),
+            ftxui::vbox({deleted_entry(), ftxui::filler(), ftxui::separator(),
                          ftxui::hbox({
                              ftxui::filler(),
                              yes_button->Render(),

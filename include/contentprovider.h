@@ -4,7 +4,7 @@
 #include <ftxui/dom/node.hpp>
 #include <functional>
 namespace duck {
-class UiBuilder {
+class ContentProvider {
 private:
   Ui &ui_;
   FileManager &file_manager_;
@@ -15,8 +15,8 @@ private:
   ftxui::Element get_directory_preview(const std::optional<fs::path> &dir_path);
 
 public:
-  UiBuilder(FileManager &file_manager, Ui &ui);
-  std::function<ftxui::Element()> layout();
-  std::function<ftxui::Element()> deletion_dialog();
+  ContentProvider(FileManager &file_manager, Ui &ui);
+  std::function<ftxui::Element()> preview();
+  std::function<ftxui::Element()> deleted_entry();
 };
 } // namespace duck
