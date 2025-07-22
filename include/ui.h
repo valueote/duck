@@ -7,6 +7,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -27,8 +28,8 @@ private:
   ftxui::Component modal_;
   ftxui::Component menu_;
 
+  std::stack<int> previous_selected_;
   int selected_;
-  int previous_selected_;
   bool show_delete_dialog_;
 
 public:
@@ -43,7 +44,7 @@ public:
   void toggle_delete_dialog();
   void enter_direcotry(std::vector<std::string> curdir_entries_string);
   void leave_direcotry(std::vector<std::string> curdir_entries_string,
-                       const fs::path &previous_path);
+                       const int &previous_path_index);
   void
   update_curdir_string_entires(std::vector<std::string> curdir_entries_string);
   const std::string format_directory_entries(const fs::directory_entry &entry);

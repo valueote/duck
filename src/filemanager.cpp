@@ -90,6 +90,14 @@ FileManager::get_selected_entry(const int &selected) const {
   return curdir_entries_[selected];
 }
 
+int FileManager::get_previous_path_index() const {
+  if (auto it = std::ranges::find(curdir_entries_, previous_path_);
+      it != curdir_entries_.end()) {
+    return static_cast<int>(std::distance(curdir_entries_.begin(), it));
+  }
+  return 0;
+}
+
 void FileManager::add_selected_entries(const int &selected) {
   if (curdir_entries_.empty()) {
     return;

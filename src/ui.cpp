@@ -16,7 +16,7 @@ namespace duck {
 
 // TODO: Add a parent dir plane
 Ui::Ui()
-    : selected_{0}, previous_selected_{0}, show_delete_dialog_{false},
+    : selected_{0}, show_delete_dialog_{false},
       menu_option_{.focused_entry = &selected_},
       menu_{Menu(&curdir_string_entries_, &(selected_), menu_option_)},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {}
@@ -94,13 +94,19 @@ void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
 
 void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
   update_curdir_string_entires(std::move(curdir_entries_string));
-  selected_ = previous_selected_;
+  if (previous_selected_.empty()) {
+    selected_ = 0;
+  } else {
+    selected_ = previous_selected_.top();
+    previous_selected_.pop();
+  }
 }
 
 void Ui::leave_direcotry(std::vector<std::string> curdir_entries_string,
-                         const fs::path &previous_path) {
+                         const int &previous_path_index) {
   update_curdir_string_entires(std::move(curdir_entries_string));
-  previous_selected_ = selected_;
+  previous_selected_.push(selected_);
+  selected_ = previous_path_index;
 }
 
 void Ui::update_curdir_string_entires(

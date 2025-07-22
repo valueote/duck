@@ -48,7 +48,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('h')) {
       file_manager_.update_current_path(file_manager_.cur_parent_path());
       ui_.leave_direcotry(file_manager_.curdir_entries_string(),
-                          file_manager_.previous_path());
+                          file_manager_.get_previous_path_index());
       return true;
     }
 
