@@ -19,9 +19,6 @@ private:
 
   bool is_selected(const fs::directory_entry &entry) const;
 
-  const std::string
-  format_directory_entries(const fs::directory_entry &entry) const;
-
 public:
   FileManager();
   void add_selected_entries(const int &selected);
@@ -43,5 +40,8 @@ public:
   int get_previous_path_index() const;
   const std::optional<fs::directory_entry>
   get_selected_entry(const int &selected) const;
+
+  const std::string
+  format_directory_entries(const fs::directory_entry &entry) const;
 };
 } // namespace duck

@@ -1,16 +1,11 @@
 #include "ui.h"
 #include "ftxui/dom/elements.hpp"
-#include <algorithm>
-#include <filesystem>
-#include <format>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <string>
-#include <sys/wait.h>
 #include <unistd.h>
-#include <unordered_map>
 #include <vector>
 namespace duck {
 
@@ -113,35 +108,6 @@ void Ui::update_curdir_string_entires(
     std::vector<std::string> curdir_entries_string) {
   curdir_string_entries_ = std::move(curdir_entries_string);
 }
-
-const std::string
-Ui::format_directory_entries(const fs::directory_entry &entry) {
-  static const std::unordered_map<std::string, std::string> extension_icons{
-      {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
-      {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
-      {".jpg", "\uf4e5"}, {".jpeg", "\uf4e5"}, {".png", "\uf4e5"},
-      {".gif", "\ue60d"}, {".pdf", "\ue67d"},  {".zip", "\ue6aa"},
-      {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
-      {".log", "\uf4ed"}, {".csv", "\ueefc"},
-  };
-
-  const auto filename = entry.path().filename().string();
-  if (fs::is_directory(entry)) {
-    return std::format("\uf4d3 {}", filename);
-  }
-
-  auto ext = entry.path().extension().string();
-  std::ranges::transform(ext, ext.begin(), [](char c) {
-    return static_cast<char>(std::tolower(c));
-  });
-
-  auto icon_it = extension_icons.find(ext);
-  const std::string &icon =
-      icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
-  std::string selected_marker = "[\u25cf] ";
-  return std::format("{} {} {}", selected_marker, icon, filename);
-}
-
 void Ui::render() { screen_.Loop(modal_); }
 
 void Ui::exit() { screen_.Exit(); }

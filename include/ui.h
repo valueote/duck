@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -12,8 +11,6 @@
 #include <vector>
 
 namespace duck {
-
-namespace fs = std::filesystem;
 
 class Ui {
 private:
@@ -47,7 +44,6 @@ public:
                        const int &previous_path_index);
   void
   update_curdir_string_entires(std::vector<std::string> curdir_entries_string);
-  const std::string format_directory_entries(const fs::directory_entry &entry);
 
   void render();
   void exit();
