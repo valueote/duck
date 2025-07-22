@@ -33,6 +33,7 @@ public:
 
   void toggle_selected(const int &selected);
   bool is_selected(const fs::directory_entry &entry) const;
+  void clear_selected_entries();
   bool delete_selected_entry(const int selected);
   bool delete_selected_entries();
   void update_current_path(const fs::path &new_path);

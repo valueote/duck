@@ -149,6 +149,8 @@ bool FileManager::delete_selected_entries() {
   return true;
 }
 
+void FileManager::clear_selected_entries() { selected_entires_.clear(); }
+
 bool FileManager::delete_entry(fs::directory_entry &entry) {
   if (!fs::exists(entry)) {
     std::print(stderr, "[ERROR] try to delete an unexisted file");
@@ -172,7 +174,7 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
       {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
       {".log", "\uf4ed"}, {".csv", "\ueefc"},
   };
-  const std::string selected_marker = is_selected(entry) ? "[x] " : "[ ] ";
+  const std::string selected_marker = is_selected(entry) ? "[x] " : "";
   const auto filename = entry.path().filename().string();
   if (fs::is_directory(entry)) {
     return selected_marker + std::format("\uf4d3 {}", filename);

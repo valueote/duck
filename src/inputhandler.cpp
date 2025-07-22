@@ -64,6 +64,25 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       return true;
     }
 
+    if (event == ftxui::Event::Character('y')) {
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('x')) {
+      return true;
+    }
+    if (event == ftxui::Event::Character('p')) {
+      for (const auto &entry : file_manager_.selected_entries()) {
+        fs::copy(entry, file_manager_.current_path());
+      }
+      return true;
+    }
+
+    if (event == ftxui::Event::Escape) {
+      file_manager_.clear_selected_entries();
+      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
+    }
+
     return false;
   };
 }
