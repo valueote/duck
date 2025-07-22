@@ -40,14 +40,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
         file_manager_.update_current_path(fs::canonical(
             file_manager_.get_selected_entry(ui_.selected()).value().path()));
-        ui_.enter_direcotry(file_manager_.curdir_entries());
+        ui_.enter_direcotry(file_manager_.curdir_entries_string());
       }
       return true;
     }
 
     if (event == ftxui::Event::Character('h')) {
       file_manager_.update_current_path(file_manager_.cur_parent_path());
-      ui_.leave_direcotry(file_manager_.curdir_entries(),
+      ui_.leave_direcotry(file_manager_.curdir_entries_string(),
                           file_manager_.previous_path());
       return true;
     }
@@ -69,10 +69,10 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 std::function<bool(ftxui::Event)> InputHandler::deletetion_handler() {
   return [this](ftxui::Event event) {
     if (event == ftxui::Event::Character('y')) {
-      file_manager_.delete_selected_entries();
-      // file_manager_.delete_selected_entry(ui_.selected());
+      // file_manager_.delete_selected_entries();
+      file_manager_.delete_selected_entry(ui_.selected());
       file_manager_.update_curdir_entries();
-      ui_.update_curdir_string_entires(file_manager_.curdir_entries());
+      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
       ui_.toggle_delete_dialog();
       return true;
     }

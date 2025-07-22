@@ -7,8 +7,6 @@
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
-#include <print>
-#include <ranges>
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -94,32 +92,20 @@ void Ui::move_selected_down(const int max) {
 
 void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
 
-void Ui::enter_direcotry(
-    const std::vector<fs::directory_entry> &curdir_entries) {
-  update_curdir_string_entires(curdir_entries);
+void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
+  update_curdir_string_entires(std::move(curdir_entries_string));
   selected_ = previous_selected_;
 }
 
-void Ui::leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
+void Ui::leave_direcotry(std::vector<std::string> curdir_entries_string,
                          const fs::path &previous_path) {
-  update_curdir_string_entires(curdir_entries);
+  update_curdir_string_entires(std::move(curdir_entries_string));
   previous_selected_ = selected_;
-  if (auto it = std::ranges::find(curdir_entries, previous_path);
-      it != curdir_entries.end()) {
-    selected_ = static_cast<int>(std::distance(curdir_entries.begin(), it));
-  } else {
-    std::print(stderr, "[ERROR]: error in leave_direcotry");
-  }
 }
 
 void Ui::update_curdir_string_entires(
-    const std::vector<fs::directory_entry> &curdir_entries) {
-  curdir_string_entries_ =
-      curdir_entries |
-      std::views::transform([this](const fs::directory_entry &entry) {
-        return this->format_directory_entries(entry);
-      }) |
-      std::ranges::to<std::vector>();
+    std::vector<std::string> curdir_entries_string) {
+  curdir_string_entries_ = std::move(curdir_entries_string);
 }
 
 const std::string
@@ -146,8 +132,8 @@ Ui::format_directory_entries(const fs::directory_entry &entry) {
   auto icon_it = extension_icons.find(ext);
   const std::string &icon =
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
-
-  return std::format("{} {}", icon, filename);
+  std::string selected_marker = "[\u25cf] ";
+  return std::format("{} {} {}", selected_marker, icon, filename);
 }
 
 void Ui::render() { screen_.Loop(modal_); }

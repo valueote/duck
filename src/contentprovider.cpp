@@ -38,16 +38,25 @@ std::function<ftxui::Element()> ContentProvider::preview() {
   };
 }
 
-std::function<ftxui::Element()> ContentProvider::deleted_entry() {
+std::function<ftxui::Element()> ContentProvider::deleted_entries() {
   return [this]() {
-    auto selected_path = file_manager_.get_selected_entry(ui_.selected());
-    if (!selected_path.has_value()) {
-      return ftxui::text("[ERROR] No file selected for deletion.");
+    if (!file_manager_.selected_entries().empty()) {
+      std::vector<ftxui::Element> lines =
+          file_manager_.selected_entries() |
+          std::views::transform([this](const fs::directory_entry &entry) {
+            return ftxui::text(ui_.format_directory_entries(entry));
+          }) |
+          std::ranges::to<std::vector>();
+      return ftxui::vbox({lines});
+    } else {
+      auto selected_path = file_manager_.get_selected_entry(ui_.selected());
+      if (!selected_path.has_value()) {
+        return ftxui::text("[ERROR] No file selected for deletion.");
+      }
+      return ftxui::vbox({
+          ftxui::text(std::format("{}", selected_path->path().string())),
+      });
     }
-
-    return ftxui::vbox({
-        ftxui::text(std::format("{}", selected_path->path().string())),
-    });
   };
 }
 
@@ -96,12 +105,12 @@ ftxui::Element ContentProvider::get_directory_preview(
 
   file_manager_.update_preview_entries(ui_.selected());
 
-  std::vector<ftxui::Element> lines;
-  lines = file_manager_.preview_entries() |
-          std::views::transform([this](const fs::directory_entry &entry) {
-            return ftxui::text(ui_.format_directory_entries(entry));
-          }) |
-          std::ranges::to<std::vector>();
+  std::vector<ftxui::Element> lines =
+      file_manager_.preview_entries() |
+      std::views::transform([this](const fs::directory_entry &entry) {
+        return ftxui::text(ui_.format_directory_entries(entry));
+      }) |
+      std::ranges::to<std::vector>();
 
   if (lines.empty()) {
     lines.push_back(ftxui::text("[Empty folder]"));

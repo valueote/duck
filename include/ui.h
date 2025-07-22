@@ -11,20 +11,21 @@
 #include <vector>
 
 namespace duck {
+
 namespace fs = std::filesystem;
+
 class Ui {
 private:
   std::vector<std::string> curdir_string_entries_;
   std::vector<std::string> previewdir_string_entries_;
+  std::string file_preview_content_;
+  std::vector<std::string> dir_preview_content_;
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
   ftxui::MenuOption menu_option_;
   ftxui::Component modal_;
   ftxui::Component menu_;
-
-  std::string file_preview_content_;
-  std::vector<std::string> dir_preview_content_;
 
   int selected_;
   int previous_selected_;
@@ -40,11 +41,11 @@ public:
   void move_selected_up(const int max);
   void move_selected_down(const int max);
   void toggle_delete_dialog();
-  void enter_direcotry(const std::vector<fs::directory_entry> &curdir_entries);
-  void leave_direcotry(const std::vector<fs::directory_entry> &curdir_entries,
+  void enter_direcotry(std::vector<std::string> curdir_entries_string);
+  void leave_direcotry(std::vector<std::string> curdir_entries_string,
                        const fs::path &previous_path);
-  void update_curdir_string_entires(
-      const std::vector<fs::directory_entry> &curdir_entries);
+  void
+  update_curdir_string_entires(std::vector<std::string> curdir_entries_string);
   const std::string format_directory_entries(const fs::directory_entry &entry);
 
   void render();

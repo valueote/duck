@@ -17,6 +17,6 @@ private:
 public:
   ContentProvider(FileManager &file_manager, Ui &ui);
   std::function<ftxui::Element()> preview();
-  std::function<ftxui::Element()> deleted_entry();
+  std::function<ftxui::Element()> deleted_entries();
 };
 } // namespace duck

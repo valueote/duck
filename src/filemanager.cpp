@@ -4,6 +4,8 @@
 #include <iterator>
 #include <optional>
 #include <print>
+#include <ranges>
+#include <unordered_map>
 namespace duck {
 FileManager::FileManager()
     : current_path_(fs::current_path()),
@@ -13,6 +15,24 @@ FileManager::FileManager()
     update_preview_entries(0);
   }
   selected_entires_.reserve(50);
+}
+
+const fs::path &FileManager::current_path() const { return current_path_; }
+
+const fs::path &FileManager::cur_parent_path() const { return parent_path_; }
+
+const fs::path &FileManager::previous_path() const { return previous_path_; }
+
+const std::vector<fs::directory_entry> &FileManager::curdir_entries() const {
+  return curdir_entries_;
+}
+
+const std::vector<fs::directory_entry> &FileManager::preview_entries() const {
+  return preview_entries_;
+}
+
+const std::vector<fs::directory_entry> &FileManager::selected_entries() const {
+  return selected_entires_;
 }
 
 void FileManager::load_directory_entries(
@@ -51,19 +71,6 @@ void FileManager::update_curdir_entries() {
 
 void FileManager::update_preview_entries(const int &selected) {
   load_directory_entries(curdir_entries_[selected].path(), preview_entries_);
-}
-
-const fs::path &FileManager::current_path() const { return current_path_; }
-
-const fs::path &FileManager::cur_parent_path() const { return parent_path_; }
-
-const fs::path &FileManager::previous_path() const { return previous_path_; }
-
-const std::vector<fs::directory_entry> &FileManager::curdir_entries() const {
-  return curdir_entries_;
-}
-const std::vector<fs::directory_entry> &FileManager::preview_entries() const {
-  return preview_entries_;
 }
 
 void FileManager::update_current_path(const fs::path &new_path) {
@@ -106,6 +113,7 @@ bool FileManager::delete_selected_entries() {
     delete_entry(entry);
   }
 
+  selected_entires_.clear();
   return true;
 }
 
@@ -122,4 +130,46 @@ bool FileManager::delete_entry(fs::directory_entry &entry) {
   return true;
 }
 
+const std::string
+FileManager::format_directory_entries(const fs::directory_entry &entry) const {
+  static const std::unordered_map<std::string, std::string> extension_icons{
+      {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
+      {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
+      {".jpg", "\uf4e5"}, {".jpeg", "\uf4e5"}, {".png", "\uf4e5"},
+      {".gif", "\ue60d"}, {".pdf", "\ue67d"},  {".zip", "\ue6aa"},
+      {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
+      {".log", "\uf4ed"}, {".csv", "\ueefc"},
+  };
+
+  const auto filename = entry.path().filename().string();
+  if (fs::is_directory(entry)) {
+    return std::format("\uf4d3 {}", filename);
+  }
+
+  auto ext = entry.path().extension().string();
+  std::ranges::transform(ext, ext.begin(), [](char c) {
+    return static_cast<char>(std::tolower(c));
+  });
+
+  auto icon_it = extension_icons.find(ext);
+  const std::string &icon =
+      icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
+  // std::string selected_marker = "[\u25cf] ";
+  return std::format("{} {}", icon, filename);
+}
+
+std::vector<std::string> FileManager::curdir_entries_string() const {
+  return curdir_entries_ |
+         std::views::transform([this](const fs::directory_entry &entry) {
+           return format_directory_entries(entry);
+         }) |
+         std::ranges::to<std::vector>();
+}
+
+std::vector<std::string> FileManager::preview_entries_string() const {
+  return {};
+}
+std::vector<std::string> FileManager::selected_entries_string() const {
+  return {};
+}
 } // namespace duck
