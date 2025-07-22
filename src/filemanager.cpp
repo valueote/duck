@@ -12,6 +12,7 @@ FileManager::FileManager()
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
   }
+  selected_entires_.reserve(50);
 }
 
 void FileManager::load_directory_entries(
@@ -76,20 +77,49 @@ const std::optional<fs::directory_entry>
 FileManager::get_selected_entry(const int &selected) const {
   if (curdir_entries_.empty()) {
     return std::nullopt;
+  } else if (selected < 0 || selected >= curdir_entries_.size()) {
+    return std::nullopt;
   }
   return curdir_entries_[selected];
 }
 
+void FileManager::add_selected_entries(const int &selected) {
+  if (curdir_entries_.empty()) {
+    return;
+  } else if (selected < 0 || selected >= curdir_entries_.size()) {
+    return;
+  }
+  selected_entires_.push_back(curdir_entries_[selected]);
+}
+
 bool FileManager::delete_selected_entry(const int selected) {
-  if (!fs::exists(curdir_entries_[selected])) {
+  return delete_entry(curdir_entries_[selected]);
+}
+
+bool FileManager::delete_selected_entries() {
+  if (selected_entires_.empty()) {
+    std::print(stderr, "[ERROR] try to delete empty file");
+    return false;
+  }
+
+  for (auto &entry : selected_entires_) {
+    delete_entry(entry);
+  }
+
+  return true;
+}
+
+bool FileManager::delete_entry(fs::directory_entry &entry) {
+  if (!fs::exists(entry)) {
     std::print(stderr, "[ERROR] try to delete an unexisted file");
     return false;
   }
-  if (fs::is_directory(curdir_entries_[selected])) {
-    return fs::remove_all(curdir_entries_[selected]);
+  if (fs::is_directory(entry)) {
+    return fs::remove_all(entry);
   } else {
-    return fs::remove(curdir_entries_[selected]);
+    return fs::remove(entry);
   }
+  return true;
 }
 
 } // namespace duck

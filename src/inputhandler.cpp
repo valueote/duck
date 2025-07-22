@@ -15,12 +15,20 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       open_file();
       return true;
     }
-    if (event == ftxui::Event::Character('j')) {
+
+    if (event == ftxui::Event::Character(' ')) {
+      file_manager_.add_selected_entries(ui_.selected());
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('j') ||
+        event == ftxui::Event::ArrowDown) {
       ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
       return true;
     }
 
-    if (event == ftxui::Event::Character('k')) {
+    if (event == ftxui::Event::Character('k') ||
+        event == ftxui::Event::ArrowUp) {
       ui_.move_selected_up(file_manager_.curdir_entries().size() - 1);
       return true;
     }
@@ -36,20 +44,24 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       }
       return true;
     }
+
     if (event == ftxui::Event::Character('h')) {
       file_manager_.update_current_path(file_manager_.cur_parent_path());
       ui_.leave_direcotry(file_manager_.curdir_entries(),
                           file_manager_.previous_path());
       return true;
     }
+
     if (event == ftxui::Event::Character('q')) {
       ui_.exit();
       return true;
     }
+
     if (event == ftxui::Event::Character('d')) {
       ui_.toggle_delete_dialog();
       return true;
     }
+
     return false;
   };
 }
@@ -57,7 +69,8 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 std::function<bool(ftxui::Event)> InputHandler::deletetion_handler() {
   return [this](ftxui::Event event) {
     if (event == ftxui::Event::Character('y')) {
-      file_manager_.delete_selected_entry(ui_.selected());
+      file_manager_.delete_selected_entries();
+      // file_manager_.delete_selected_entry(ui_.selected());
       file_manager_.update_curdir_entries();
       ui_.update_curdir_string_entires(file_manager_.curdir_entries());
       ui_.toggle_delete_dialog();

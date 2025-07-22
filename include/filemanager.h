@@ -11,8 +11,10 @@ private:
   fs::path parent_path_;
   std::vector<fs::directory_entry> curdir_entries_;
   std::vector<fs::directory_entry> preview_entries_;
+  std::vector<fs::directory_entry> selected_entires_;
   void load_directory_entries(const fs::path &path,
                               std::vector<fs::directory_entry> &entries);
+  bool delete_entry(fs::directory_entry &entry);
 
 public:
   FileManager();
@@ -27,6 +29,8 @@ public:
   void update_curdir_entries();
   const std::optional<fs::directory_entry>
   get_selected_entry(const int &selected) const;
+  void add_selected_entries(const int &selected);
   bool delete_selected_entry(const int selected);
+  bool delete_selected_entries();
 };
 } // namespace duck
