@@ -8,8 +8,9 @@
 #include <unordered_map>
 namespace duck {
 FileManager::FileManager()
-    : current_path_(fs::current_path()),
-      parent_path_(current_path_.parent_path()) {
+    : current_path_{fs::current_path()},
+      parent_path_{current_path_.parent_path()}, is_yangking_{false},
+      is_cutting_{false} {
   update_curdir_entries();
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
@@ -57,6 +58,9 @@ int FileManager::get_previous_path_index() const {
   }
   return 0;
 }
+
+bool FileManager::yangking() const { return is_yangking_; }
+bool FileManager::cutting() const { return is_yangking_; }
 
 const std::optional<fs::directory_entry>
 FileManager::get_selected_entry(const int &selected) const {
@@ -126,6 +130,10 @@ void FileManager::toggle_selected(const int &selected) {
     selected_entires_.push_back(curdir_entries_[selected]);
   }
 }
+
+void FileManager::toggle_yangking() { is_yangking_ = !is_yangking_; }
+
+void FileManager::toggle_cutting() { is_cutting_ = !is_cutting_; }
 
 bool FileManager::is_selected(const fs::directory_entry &entry) const {
   return std::ranges::find(selected_entires_, entry) != selected_entires_.end();

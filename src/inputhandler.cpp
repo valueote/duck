@@ -1,5 +1,6 @@
 #include "inputhandler.h"
 #include "filemanager.h"
+#include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <print>
@@ -65,16 +66,31 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('y')) {
+      file_manager_.toggle_yangking();
       return true;
     }
 
     if (event == ftxui::Event::Character('x')) {
+      file_manager_.toggle_cutting();
       return true;
     }
+
     if (event == ftxui::Event::Character('p')) {
-      for (const auto &entry : file_manager_.selected_entries()) {
-        fs::copy(entry, file_manager_.current_path());
+      if (file_manager_.yangking()) {
+        for (const auto &entry : file_manager_.selected_entries()) {
+          fs::copy(entry, file_manager_.current_path());
+        }
+        file_manager_.toggle_yangking();
+      } else if (file_manager_.cutting()) {
+        for (auto &entry : file_manager_.selected_entries()) {
+          fs::rename(entry, file_manager_.current_path());
+        }
+        file_manager_.toggle_cutting();
       }
+
+      file_manager_.clear_selected_entries();
+      file_manager_.update_curdir_entries();
+      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
       return true;
     }
 

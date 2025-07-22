@@ -13,6 +13,9 @@ private:
   std::vector<fs::directory_entry> preview_entries_;
   std::vector<fs::directory_entry> selected_entires_;
 
+  bool is_yangking_;
+  bool is_cutting_;
+
   void load_directory_entries(const fs::path &path,
                               std::vector<fs::directory_entry> &entries);
   bool delete_entry(fs::directory_entry &entry);
@@ -30,8 +33,12 @@ public:
   std::vector<std::string> preview_entries_string() const;
   std::vector<std::string> selected_entries_string() const;
   int get_previous_path_index() const;
+  bool yangking() const;
+  bool cutting() const;
 
   void toggle_selected(const int &selected);
+  void toggle_yangking();
+  void toggle_cutting();
   bool is_selected(const fs::directory_entry &entry) const;
   void clear_selected_entries();
   bool delete_selected_entry(const int selected);
