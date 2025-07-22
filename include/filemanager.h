@@ -31,7 +31,8 @@ public:
   std::vector<std::string> selected_entries_string() const;
   int get_previous_path_index() const;
 
-  void add_selected_entries(const int &selected);
+  void toggle_selected(const int &selected);
+  bool is_selected(const fs::directory_entry &entry) const;
   bool delete_selected_entry(const int selected);
   bool delete_selected_entries();
   void update_current_path(const fs::path &new_path);
@@ -40,7 +41,6 @@ public:
 
   const std::optional<fs::directory_entry>
   get_selected_entry(const int &selected) const;
-  bool is_selected(const fs::directory_entry &entry) const;
   const std::string
   format_directory_entries(const fs::directory_entry &entry) const;
 };

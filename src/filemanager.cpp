@@ -113,13 +113,22 @@ void FileManager::update_current_path(const fs::path &new_path) {
   update_curdir_entries();
 }
 
-void FileManager::add_selected_entries(const int &selected) {
-  if (curdir_entries_.empty()) {
-    return;
-  } else if (selected < 0 || selected >= curdir_entries_.size()) {
+void FileManager::toggle_selected(const int &selected) {
+  if (curdir_entries_.empty() || selected < 0 ||
+      selected >= curdir_entries_.size()) {
     return;
   }
-  selected_entires_.push_back(curdir_entries_[selected]);
+
+  if (auto it = std::ranges::find(selected_entires_, curdir_entries_[selected]);
+      it != selected_entires_.end()) {
+    selected_entires_.erase(it);
+  } else {
+    selected_entires_.push_back(curdir_entries_[selected]);
+  }
+}
+
+bool FileManager::is_selected(const fs::directory_entry &entry) const {
+  return std::ranges::find(selected_entires_, entry) != selected_entires_.end();
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
@@ -153,14 +162,6 @@ bool FileManager::delete_entry(fs::directory_entry &entry) {
   return true;
 }
 
-bool FileManager::is_selected(const fs::directory_entry &entry) const {
-  if (const auto &it = std::ranges::find(selected_entires_, entry);
-      it != selected_entires_.end()) {
-    return true;
-  }
-  return false;
-}
-
 const std::string
 FileManager::format_directory_entries(const fs::directory_entry &entry) const {
   static const std::unordered_map<std::string, std::string> extension_icons{
@@ -171,10 +172,10 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
       {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
       {".log", "\uf4ed"}, {".csv", "\ueefc"},
   };
-
+  const std::string selected_marker = is_selected(entry) ? "[x] " : "[ ] ";
   const auto filename = entry.path().filename().string();
   if (fs::is_directory(entry)) {
-    return std::format("\uf4d3 {}", filename);
+    return selected_marker + std::format("\uf4d3 {}", filename);
   }
 
   auto ext = entry.path().extension().string();
@@ -187,7 +188,7 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
 
   // std::string selected_marker = "[\u25cf] ";
-  return std::format("{} {}", icon, filename);
+  return selected_marker + std::format("{} {}", icon, filename);
 }
 
 } // namespace duck
