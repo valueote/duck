@@ -88,7 +88,7 @@ void Ui::move_selected_down(const int max) {
   if (selected_ < max) {
     selected_++;
   } else {
-    selected_ = max;
+    selected_ = 0;
   }
 }
 

@@ -17,10 +17,12 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
     if (event == ftxui::Event::Character('j')) {
       ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
+      return true;
     }
 
     if (event == ftxui::Event::Character('k')) {
       ui_.move_selected_up(file_manager_.curdir_entries().size() - 1);
+      return true;
     }
 
     if (event == ftxui::Event::Character('l')) {
