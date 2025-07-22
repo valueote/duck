@@ -14,7 +14,7 @@ FileManager::FileManager()
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
   }
-  selected_entires_.reserve(50);
+  selected_entires_.reserve(64);
 }
 
 const fs::path &FileManager::current_path() const { return current_path_; }
@@ -33,6 +33,39 @@ const std::vector<fs::directory_entry> &FileManager::preview_entries() const {
 
 const std::vector<fs::directory_entry> &FileManager::selected_entries() const {
   return selected_entires_;
+}
+
+std::vector<std::string> FileManager::curdir_entries_string() const {
+  return curdir_entries_ |
+         std::views::transform([this](const fs::directory_entry &entry) {
+           return format_directory_entries(entry);
+         }) |
+         std::ranges::to<std::vector>();
+}
+
+std::vector<std::string> FileManager::preview_entries_string() const {
+  return {};
+}
+std::vector<std::string> FileManager::selected_entries_string() const {
+  return {};
+}
+
+int FileManager::get_previous_path_index() const {
+  if (auto it = std::ranges::find(curdir_entries_, previous_path_);
+      it != curdir_entries_.end()) {
+    return static_cast<int>(std::distance(curdir_entries_.begin(), it));
+  }
+  return 0;
+}
+
+const std::optional<fs::directory_entry>
+FileManager::get_selected_entry(const int &selected) const {
+  if (curdir_entries_.empty()) {
+    return std::nullopt;
+  } else if (selected < 0 || selected >= curdir_entries_.size()) {
+    return std::nullopt;
+  }
+  return curdir_entries_[selected];
 }
 
 void FileManager::load_directory_entries(
@@ -80,24 +113,6 @@ void FileManager::update_current_path(const fs::path &new_path) {
   update_curdir_entries();
 }
 
-const std::optional<fs::directory_entry>
-FileManager::get_selected_entry(const int &selected) const {
-  if (curdir_entries_.empty()) {
-    return std::nullopt;
-  } else if (selected < 0 || selected >= curdir_entries_.size()) {
-    return std::nullopt;
-  }
-  return curdir_entries_[selected];
-}
-
-int FileManager::get_previous_path_index() const {
-  if (auto it = std::ranges::find(curdir_entries_, previous_path_);
-      it != curdir_entries_.end()) {
-    return static_cast<int>(std::distance(curdir_entries_.begin(), it));
-  }
-  return 0;
-}
-
 void FileManager::add_selected_entries(const int &selected) {
   if (curdir_entries_.empty()) {
     return;
@@ -138,6 +153,14 @@ bool FileManager::delete_entry(fs::directory_entry &entry) {
   return true;
 }
 
+bool FileManager::is_selected(const fs::directory_entry &entry) const {
+  if (const auto &it = std::ranges::find(selected_entires_, entry);
+      it != selected_entires_.end()) {
+    return true;
+  }
+  return false;
+}
+
 const std::string
 FileManager::format_directory_entries(const fs::directory_entry &entry) const {
   static const std::unordered_map<std::string, std::string> extension_icons{
@@ -162,22 +185,9 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
   auto icon_it = extension_icons.find(ext);
   const std::string &icon =
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
+
   // std::string selected_marker = "[\u25cf] ";
   return std::format("{} {}", icon, filename);
 }
 
-std::vector<std::string> FileManager::curdir_entries_string() const {
-  return curdir_entries_ |
-         std::views::transform([this](const fs::directory_entry &entry) {
-           return format_directory_entries(entry);
-         }) |
-         std::ranges::to<std::vector>();
-}
-
-std::vector<std::string> FileManager::preview_entries_string() const {
-  return {};
-}
-std::vector<std::string> FileManager::selected_entries_string() const {
-  return {};
-}
 } // namespace duck

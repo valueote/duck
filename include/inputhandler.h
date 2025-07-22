@@ -14,7 +14,7 @@ private:
 public:
   InputHandler(FileManager &file_manager, Ui &ui);
   std::function<bool(ftxui::Event)> navigation_handler();
-  std::function<bool(ftxui::Event)> deletetion_handler();
+  std::function<bool(ftxui::Event)> deletetion_dialog_handler();
 };
 
 } // namespace duck

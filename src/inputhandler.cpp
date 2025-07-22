@@ -66,11 +66,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
   };
 }
 
-std::function<bool(ftxui::Event)> InputHandler::deletetion_handler() {
+std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
   return [this](ftxui::Event event) {
     if (event == ftxui::Event::Character('y')) {
-      // file_manager_.delete_selected_entries();
-      file_manager_.delete_selected_entry(ui_.selected());
+      if (!file_manager_.selected_entries().empty()) {
+        file_manager_.delete_selected_entries();
+      } else {
+        file_manager_.delete_selected_entry(ui_.selected());
+      }
       file_manager_.update_curdir_entries();
       ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
       ui_.toggle_delete_dialog();

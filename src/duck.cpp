@@ -16,6 +16,6 @@ void Duck::setup_ui() {
   ui_.set_input_handler(input_handler_.navigation_handler());
   ui_.set_layout(content_provider.preview());
   ui_.set_deletion_dialog(content_provider.deleted_entries(),
-                          input_handler_.deletetion_handler());
+                          input_handler_.deletetion_dialog_handler());
 }
 } // namespace duck
