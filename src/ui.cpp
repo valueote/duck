@@ -11,9 +11,15 @@ namespace duck {
 
 Ui::Ui()
     : selected_{0}, show_delete_dialog_{false},
-      menu_option_{.focused_entry = &selected_},
-      menu_{Menu(&curdir_string_entries_, &(selected_), menu_option_)},
-      screen_{ftxui::ScreenInteractive::Fullscreen()} {}
+      screen_{ftxui::ScreenInteractive::Fullscreen()} {
+
+  menu_option_.focused_entry = &selected_;
+  menu_option_.entries_option.transform = [](const ftxui::EntryState &state) {
+    auto style = state.active ? ftxui::inverted : ftxui::nothing;
+    return ftxui::text(state.label) | style;
+  };
+  menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
+}
 
 void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
   menu_ = menu_ | ftxui::CatchEvent(handler);
