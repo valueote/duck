@@ -44,7 +44,7 @@ std::function<ftxui::Element()> ContentProvider::deleted_entries() {
       std::vector<ftxui::Element> lines =
           file_manager_.selected_entries() |
           std::views::transform([this](const fs::directory_entry &entry) {
-            return ftxui::text(file_manager_.format_directory_entries(entry));
+            return ftxui::text(file_manager_.entry_name_with_icon(entry));
           }) |
           std::ranges::to<std::vector>();
       return ftxui::vbox({lines});

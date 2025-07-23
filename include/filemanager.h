@@ -49,9 +49,9 @@ public:
   void update_preview_entries(const int &selected);
   void update_curdir_entries();
 
-  const std::optional<fs::directory_entry>
+  std::optional<fs::directory_entry>
   get_selected_entry(const int &selected) const;
-  const std::string
-  format_directory_entries(const fs::directory_entry &entry) const;
+  std::string entry_name_with_icon(const fs::directory_entry &entry) const;
+  std::string format_directory_entries(const fs::directory_entry &entry) const;
 };
 } // namespace duck

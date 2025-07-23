@@ -4,3 +4,4 @@ debug.log
 compile_commands.json
 core.latest
 test
+core

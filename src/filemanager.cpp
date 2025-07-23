@@ -1,6 +1,7 @@
 #include "filemanager.h"
 #include <algorithm>
 #include <filesystem>
+#include <format>
 #include <iterator>
 #include <optional>
 #include <print>
@@ -63,7 +64,7 @@ int FileManager::get_previous_path_index() const {
 bool FileManager::yanking() const { return is_yanking_; }
 bool FileManager::cutting() const { return is_cutting_; }
 
-const std::optional<fs::directory_entry>
+std::optional<fs::directory_entry>
 FileManager::get_selected_entry(const int &selected) const {
   if (curdir_entries_.empty()) {
     return std::nullopt;
@@ -205,8 +206,8 @@ bool FileManager::delete_entry(fs::directory_entry &entry) {
   return true;
 }
 
-const std::string
-FileManager::format_directory_entries(const fs::directory_entry &entry) const {
+std::string
+FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
   static const std::unordered_map<std::string, std::string> extension_icons{
       {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
       {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
@@ -215,10 +216,10 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
       {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
       {".log", "\uf4ed"}, {".csv", "\ueefc"},
   };
-  const std::string selected_marker = is_selected(entry) ? "[x] " : "";
+
   const auto filename = entry.path().filename().string();
   if (fs::is_directory(entry)) {
-    return selected_marker + std::format("\uf4d3 {}", filename);
+    return std::format("\uf4d3 {}", filename);
   }
 
   auto ext = entry.path().extension().string();
@@ -230,8 +231,14 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
   const std::string &icon =
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
 
-  // std::string selected_marker = "[\u25cf] ";
-  return selected_marker + std::format("{} {}", icon, filename);
+  return std::format("{} {}", icon, filename);
+}
+
+std::string
+FileManager::format_directory_entries(const fs::directory_entry &entry) const {
+  const std::string selected_marker = is_selected(entry) ? "█ " : "  ";
+
+  return selected_marker + entry_name_with_icon(entry);
 }
 
 } // namespace duck
