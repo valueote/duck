@@ -18,7 +18,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character(' ')) {
-      file_manager_.toggle_selected(ui_.selected());
+      file_manager_.toggle_mark_on_selected(ui_.selected());
       ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
       ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
       return true;

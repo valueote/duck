@@ -16,7 +16,7 @@ FileManager::FileManager()
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
   }
-  selected_entires_.reserve(64);
+  marked_entires_.reserve(64);
   clipboard_entries_.reserve(64);
 }
 
@@ -34,8 +34,8 @@ const std::vector<fs::directory_entry> &FileManager::preview_entries() const {
   return preview_entries_;
 }
 
-const std::vector<fs::directory_entry> &FileManager::selected_entries() const {
-  return selected_entires_;
+const std::vector<fs::directory_entry> &FileManager::marked_entries() const {
+  return marked_entires_;
 }
 
 std::vector<std::string> FileManager::curdir_entries_string() const {
@@ -49,7 +49,7 @@ std::vector<std::string> FileManager::curdir_entries_string() const {
 std::vector<std::string> FileManager::preview_entries_string() const {
   return {};
 }
-std::vector<std::string> FileManager::selected_entries_string() const {
+std::vector<std::string> FileManager::marked_entries_string() const {
   return {};
 }
 
@@ -119,17 +119,17 @@ void FileManager::update_current_path(const fs::path &new_path) {
   update_curdir_entries();
 }
 
-void FileManager::toggle_selected(const int &selected) {
+void FileManager::toggle_mark_on_selected(const int &selected) {
   if (curdir_entries_.empty() || selected < 0 ||
       selected >= curdir_entries_.size()) {
     return;
   }
 
-  if (auto it = std::ranges::find(selected_entires_, curdir_entries_[selected]);
-      it != selected_entires_.end()) {
-    selected_entires_.erase(it);
+  if (auto it = std::ranges::find(marked_entires_, curdir_entries_[selected]);
+      it != marked_entires_.end()) {
+    marked_entires_.erase(it);
   } else {
-    selected_entires_.push_back(curdir_entries_[selected]);
+    marked_entires_.push_back(curdir_entries_[selected]);
   }
 }
 
@@ -149,12 +149,12 @@ void FileManager::paste(const int &selected) {
     return;
   }
 
-  if (selected_entires_.empty()) {
+  if (marked_entires_.empty()) {
     clipboard_entries_.push_back(curdir_entries_[selected]);
   } else {
-    clipboard_entries_ = std::move(selected_entires_);
+    clipboard_entries_ = std::move(marked_entires_);
   }
-  selected_entires_.clear();
+  marked_entires_.clear();
 
   try {
     for (const auto &entry : clipboard_entries_) {
@@ -169,29 +169,29 @@ void FileManager::paste(const int &selected) {
     std::println(stderr, "[ERORR] {}", e.what());
   }
 }
-bool FileManager::is_selected(const fs::directory_entry &entry) const {
-  return std::ranges::find(selected_entires_, entry) != selected_entires_.end();
+bool FileManager::is_marked(const fs::directory_entry &entry) const {
+  return std::ranges::find(marked_entires_, entry) != marked_entires_.end();
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
   return delete_entry(curdir_entries_[selected]);
 }
 
-bool FileManager::delete_selected_entries() {
-  if (selected_entires_.empty()) {
+bool FileManager::delete_marked_entries() {
+  if (marked_entires_.empty()) {
     std::println(stderr, "[ERROR] try to delete empty file");
     return false;
   }
 
-  for (auto &entry : selected_entires_) {
+  for (auto &entry : marked_entires_) {
     delete_entry(entry);
   }
 
-  selected_entires_.clear();
+  marked_entires_.clear();
   return true;
 }
 
-void FileManager::clear_selected_entries() { selected_entires_.clear(); }
+void FileManager::clear_marked_entries() { marked_entires_.clear(); }
 
 bool FileManager::delete_entry(fs::directory_entry &entry) {
   if (!fs::exists(entry)) {
@@ -236,7 +236,7 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
 
 std::string
 FileManager::format_directory_entries(const fs::directory_entry &entry) const {
-  const std::string selected_marker = is_selected(entry) ? "█ " : "  ";
+  const std::string selected_marker = is_marked(entry) ? "█ " : "  ";
 
   return selected_marker + entry_name_with_icon(entry);
 }
