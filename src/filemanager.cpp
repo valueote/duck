@@ -9,13 +9,14 @@
 namespace duck {
 FileManager::FileManager()
     : current_path_{fs::current_path()},
-      parent_path_{current_path_.parent_path()}, is_yangking_{false},
+      parent_path_{current_path_.parent_path()}, is_yanking_{false},
       is_cutting_{false} {
   update_curdir_entries();
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
   }
   selected_entires_.reserve(64);
+  clipboard_entries_.reserve(64);
 }
 
 const fs::path &FileManager::current_path() const { return current_path_; }
@@ -59,8 +60,8 @@ int FileManager::get_previous_path_index() const {
   return 0;
 }
 
-bool FileManager::yangking() const { return is_yangking_; }
-bool FileManager::cutting() const { return is_yangking_; }
+bool FileManager::yanking() const { return is_yanking_; }
+bool FileManager::cutting() const { return is_cutting_; }
 
 const std::optional<fs::directory_entry>
 FileManager::get_selected_entry(const int &selected) const {
@@ -98,7 +99,7 @@ void FileManager::load_directory_entries(
     std::ranges::copy(files, std::back_inserter(entries));
 
   } catch (const std::exception &e) {
-    std::print(stderr, "[ERROR]: {} in load_directory_entries", e.what());
+    std::println(stderr, "[ERROR]: {} in load_directory_entries", e.what());
   }
 }
 
@@ -131,10 +132,42 @@ void FileManager::toggle_selected(const int &selected) {
   }
 }
 
-void FileManager::toggle_yangking() { is_yangking_ = !is_yangking_; }
+void FileManager::start_yanking() {
+  is_yanking_ = true;
+  is_cutting_ = false;
+}
 
-void FileManager::toggle_cutting() { is_cutting_ = !is_cutting_; }
+void FileManager::start_cutting() {
+  is_cutting_ = true;
+  is_yanking_ = false;
+}
 
+void FileManager::paste(const int &selected) {
+  if (!is_cutting_ && !is_yanking_) {
+    std::println(stderr, "[ERROR] invalid state when pasting");
+    return;
+  }
+
+  if (selected_entires_.empty()) {
+    clipboard_entries_.push_back(curdir_entries_[selected]);
+  } else {
+    clipboard_entries_ = std::move(selected_entires_);
+  }
+  selected_entires_.clear();
+
+  try {
+    for (const auto &entry : clipboard_entries_) {
+      const fs::path dest_path = current_path_ / entry.path().filename();
+      if (is_yanking_) {
+        fs::copy(entry.path(), dest_path, fs::copy_options::recursive);
+      } else if (is_cutting_) {
+        fs::rename(entry.path(), dest_path);
+      }
+    }
+  } catch (const fs::filesystem_error &e) {
+    std::println(stderr, "[ERORR] {}", e.what());
+  }
+}
 bool FileManager::is_selected(const fs::directory_entry &entry) const {
   return std::ranges::find(selected_entires_, entry) != selected_entires_.end();
 }
@@ -145,7 +178,7 @@ bool FileManager::delete_selected_entry(const int selected) {
 
 bool FileManager::delete_selected_entries() {
   if (selected_entires_.empty()) {
-    std::print(stderr, "[ERROR] try to delete empty file");
+    std::println(stderr, "[ERROR] try to delete empty file");
     return false;
   }
 
@@ -161,7 +194,7 @@ void FileManager::clear_selected_entries() { selected_entires_.clear(); }
 
 bool FileManager::delete_entry(fs::directory_entry &entry) {
   if (!fs::exists(entry)) {
-    std::print(stderr, "[ERROR] try to delete an unexisted file");
+    std::println(stderr, "[ERROR] try to delete an unexisted file");
     return false;
   }
   if (fs::is_directory(entry)) {

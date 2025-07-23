@@ -66,29 +66,17 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('y')) {
-      file_manager_.toggle_yangking();
+      file_manager_.start_yanking();
       return true;
     }
 
     if (event == ftxui::Event::Character('x')) {
-      file_manager_.toggle_cutting();
+      file_manager_.start_cutting();
       return true;
     }
 
     if (event == ftxui::Event::Character('p')) {
-      if (file_manager_.yangking()) {
-        for (const auto &entry : file_manager_.selected_entries()) {
-          fs::copy(entry, file_manager_.current_path());
-        }
-        file_manager_.toggle_yangking();
-      } else if (file_manager_.cutting()) {
-        for (auto &entry : file_manager_.selected_entries()) {
-          fs::rename(entry, file_manager_.current_path());
-        }
-        file_manager_.toggle_cutting();
-      }
-
-      file_manager_.clear_selected_entries();
+      file_manager_.paste(ui_.selected());
       file_manager_.update_curdir_entries();
       ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
       return true;
@@ -143,7 +131,7 @@ void InputHandler::open_file() {
   ui_.screen().WithRestoredIO([&] {
     pid_t pid = fork();
     if (pid == -1) {
-      std::print(stderr, "[ERROR]: fork fail in open_file");
+      std::println(stderr, "[ERROR]: fork fail in open_file");
       return;
     }
 

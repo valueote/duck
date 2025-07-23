@@ -9,7 +9,6 @@
 #include <vector>
 namespace duck {
 
-// TODO: Add a parent dir plane
 Ui::Ui()
     : selected_{0}, show_delete_dialog_{false},
       menu_option_{.focused_entry = &selected_},
