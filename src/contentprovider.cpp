@@ -40,9 +40,9 @@ std::function<ftxui::Element()> ContentProvider::preview() {
 
 std::function<ftxui::Element()> ContentProvider::deleted_entries() {
   return [this]() {
-    if (!file_manager_.selected_entries().empty()) {
+    if (!file_manager_.marked_entries().empty()) {
       std::vector<ftxui::Element> lines =
-          file_manager_.selected_entries() |
+          file_manager_.marked_entries() |
           std::views::transform([this](const fs::directory_entry &entry) {
             return ftxui::text(file_manager_.entry_name_with_icon(entry));
           }) |

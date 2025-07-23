@@ -83,7 +83,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Escape) {
-      file_manager_.clear_selected_entries();
+      file_manager_.clear_marked_entries();
       ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
     }
 
@@ -94,8 +94,8 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
   return [this](ftxui::Event event) {
     if (event == ftxui::Event::Character('y')) {
-      if (!file_manager_.selected_entries().empty()) {
-        file_manager_.delete_selected_entries();
+      if (!file_manager_.marked_entries().empty()) {
+        file_manager_.delete_marked_entries();
       } else {
         file_manager_.delete_selected_entry(ui_.selected());
       }
