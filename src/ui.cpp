@@ -2,6 +2,7 @@
 #include "colorscheme.h"
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
@@ -34,56 +35,11 @@ void Ui::set_layout(const std::function<ftxui::Element()> preview) {
   main_layout_ = ftxui::Renderer(menu_, preview);
 }
 
-void Ui::set_deletion_dialog(
-    const std::function<ftxui::Element()> deleted_entry,
-    const std::function<bool(ftxui::Event)> handler) {
-
-  ftxui::ButtonOption button_option;
-  button_option.transform = [](const ftxui::EntryState &s) {
-    auto style = s.active ? ftxui::bold : ftxui::nothing;
-    return ftxui::text(s.label) | style | ftxui::center;
-  };
-
-  auto yes_button = ftxui::Button(
-      "[Y]es", [this] { screen_.PostEvent(ftxui::Event::Character('y')); },
-      button_option);
-
-  auto no_button = ftxui::Button(
-      "[N]o", [this] { screen_.PostEvent(ftxui::Event::Character('n')); },
-      button_option);
-  auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
-
-  auto dialog_renderer = ftxui::Renderer(button_container, [yes_button,
-                                                            no_button,
-                                                            deleted_entry,
-                                                            this] {
-    auto dialog_content = ftxui::vbox(
-        {deleted_entry() | ftxui::color(ftxui::Color::White), ftxui::filler(),
-         ftxui::separator(),
-         ftxui::hbox({
-             ftxui::filler(),
-             yes_button->Render(),
-             ftxui::separatorEmpty() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 3),
-             no_button->Render(),
-             ftxui::filler(),
-         })});
-
-    return ftxui::window(
-               ftxui::vbox({ftxui::text("Permanently delete selected file?") |
-                                ftxui::color(color_scheme_.warning()) |
-                                ftxui::bold | ftxui::hcenter |
-                                ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                            screen_.dimx() / 3 * 2),
-                            ftxui::filler()}),
-               dialog_content) |
-           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 3 * 2) |
-           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, screen_.dimy() / 3 * 2) |
-           ftxui::color(color_scheme_.border());
-  });
+void Ui::set_deletion_dialog(const ftxui::Component deleted_dialog,
+                             const std::function<bool(ftxui::Event)> handler) {
 
   auto dialog_with_handler =
-      dialog_renderer | ftxui::CatchEvent(handler) | ftxui::center;
+      deleted_dialog | ftxui::CatchEvent(handler) | ftxui::center;
 
   modal_ =
       ftxui::Modal(main_layout_, dialog_with_handler, &show_delete_dialog_);
@@ -133,8 +89,15 @@ void Ui::exit() { screen_.Exit(); }
 
 int Ui::selected() { return selected_; }
 
-ftxui::Component &Ui::menu() { return menu_; }
+std::pair<int, int> Ui::screen_size() {
+  return {screen_.dimx(), screen_.dimy()};
+}
+void Ui::post_event(const ftxui::Event &event) { screen_.PostEvent(event); }
 
-ftxui::ScreenInteractive &Ui::screen() { return screen_; };
+void Ui::restored_io(const std::function<void()> closure) {
+  screen_.WithRestoredIO(closure);
+}
+
+ftxui::Component &Ui::menu() { return menu_; }
 
 } // namespace duck

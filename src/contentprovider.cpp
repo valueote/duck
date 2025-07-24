@@ -5,6 +5,7 @@
 #include <boost/process.hpp>
 #include <fstream>
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
@@ -46,26 +47,71 @@ std::function<ftxui::Element()> ContentProvider::preview() {
   };
 }
 
-std::function<ftxui::Element()> ContentProvider::deleted_entries() {
-  return [this]() {
-    if (!file_manager_.marked_entries().empty()) {
-      std::vector<ftxui::Element> lines =
-          file_manager_.marked_entries() |
-          std::views::transform([this](const fs::directory_entry &entry) {
-            return ftxui::text(file_manager_.entry_name_with_icon(entry));
-          }) |
-          std::ranges::to<std::vector>();
-      return ftxui::vbox({lines});
-    } else {
-      auto selected_path = file_manager_.get_selected_entry(ui_.selected());
-      if (!selected_path.has_value()) {
-        return ftxui::text("[ERROR] No file selected for deletion.");
-      }
-      return ftxui::vbox({
-          ftxui::text(std::format("{}", selected_path->path().string())),
-      });
+ftxui::Element ContentProvider::deleted_entries() {
+  if (!file_manager_.marked_entries().empty()) {
+    std::vector<ftxui::Element> lines =
+        file_manager_.marked_entries() |
+        std::views::transform([this](const fs::directory_entry &entry) {
+          return ftxui::text(file_manager_.entry_name_with_icon(entry));
+        }) |
+        std::ranges::to<std::vector>();
+    return ftxui::vbox({lines});
+  } else {
+    auto selected_path = file_manager_.get_selected_entry(ui_.selected());
+    if (!selected_path.has_value()) {
+      return ftxui::text("[ERROR] No file selected for deletion.");
     }
+    return ftxui::vbox({
+        ftxui::text(std::format("{}", selected_path->path().string())),
+    });
+  }
+}
+
+ftxui::Component ContentProvider::deletion_dialog() {
+  ftxui::ButtonOption button_option;
+  button_option.transform = [](const ftxui::EntryState &s) {
+    auto style = s.active ? ftxui::bold : ftxui::nothing;
+    return ftxui::text(s.label) | style | ftxui::center;
   };
+
+  auto yes_button = ftxui::Button(
+      "[Y]es", [this] { ui_.post_event(ftxui::Event::Character('y')); },
+      button_option);
+
+  auto no_button = ftxui::Button(
+      "[N]o", [this] { ui_.post_event(ftxui::Event::Character('n')); },
+      button_option);
+  auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
+
+  auto dialog_renderer = ftxui::Renderer(button_container, [yes_button,
+                                                            no_button, this] {
+    auto screen_size = ui_.screen_size();
+    auto dialog_content = ftxui::vbox(
+        {deleted_entries() | ftxui::color(ftxui::Color::White), ftxui::filler(),
+         ftxui::separator(),
+         ftxui::hbox({
+             ftxui::filler(),
+             yes_button->Render(),
+             ftxui::separatorEmpty() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 3),
+             no_button->Render(),
+             ftxui::filler(),
+         })});
+
+    return ftxui::window(
+               ftxui::vbox({ftxui::text("Permanently delete selected file?") |
+                                ftxui::color(color_scheme_.warning()) |
+                                ftxui::bold | ftxui::hcenter |
+                                ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                            screen_size.first / 3 * 2),
+                            ftxui::filler()}),
+               dialog_content) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 3 * 2) |
+           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
+                       screen_size.second / 3 * 2) |
+           ftxui::color(color_scheme_.border());
+  });
+  return dialog_renderer;
 }
 
 std::string

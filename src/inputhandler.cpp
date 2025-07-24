@@ -128,7 +128,7 @@ void InputHandler::open_file() {
     return;
   }
 
-  ui_.screen().WithRestoredIO([&] {
+  ui_.restored_io([&]() {
     pid_t pid = fork();
     if (pid == -1) {
       std::println(stderr, "[ERROR]: fork fail in open_file");
@@ -146,7 +146,7 @@ void InputHandler::open_file() {
       int status;
       waitpid(pid, &status, 0);
     }
-  })();
+  });
 }
 
 } // namespace duck

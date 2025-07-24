@@ -9,6 +9,7 @@
 #include <functional>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace duck {
@@ -37,7 +38,7 @@ public:
 
   void set_layout(const std::function<ftxui::Element()> preview);
   void set_input_handler(const std::function<bool(ftxui::Event)> handler);
-  void set_deletion_dialog(const std::function<ftxui::Element()> deleted_entry,
+  void set_deletion_dialog(const ftxui::Component deletion_dialog,
                            const std::function<bool(ftxui::Event)> handler);
   void move_selected_up(const int max);
   void move_selected_down(const int max);
@@ -51,8 +52,10 @@ public:
   void render();
   void exit();
   int selected();
+  void post_event(const ftxui::Event &event);
+  void restored_io(const std::function<void()> closure);
+  std::pair<int, int> screen_size();
   ftxui::Component &menu();
-  ftxui::ScreenInteractive &screen();
 };
 
 } // namespace duck

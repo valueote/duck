@@ -38,12 +38,15 @@ private:
     ftxui::Color Mantle = ftxui::Color::RGB(41, 44, 60);       // #292c3c
     ftxui::Color Crust = ftxui::Color::RGB(35, 38, 52);        // #232634
   } CatppuccinFrappe;
+
   std::unordered_map<std::string, ftxui::Color> color_map_ = {
       {"text", CatppuccinFrappe.Text},
       {"border", CatppuccinFrappe.Blue},
       {"surface0", CatppuccinFrappe.Surface0},
       {"selected", CatppuccinFrappe.Teal},
       {"warning", CatppuccinFrappe.Yellow},
+      {"file", CatppuccinFrappe.Text},
+      {"dir", CatppuccinFrappe.Sapphire},
   };
 
 public:
