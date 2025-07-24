@@ -82,7 +82,6 @@ ftxui::Component ContentProvider::deletion_dialog() {
       "[N]o", [this] { ui_.post_event(ftxui::Event::Character('n')); },
       button_option);
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
-
   auto dialog_renderer = ftxui::Renderer(button_container, [yes_button,
                                                             no_button, this] {
     auto screen_size = ui_.screen_size();

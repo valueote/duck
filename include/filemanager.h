@@ -10,12 +10,14 @@ private:
   fs::path previous_path_;
   fs::path parent_path_;
   std::vector<fs::directory_entry> curdir_entries_;
+  std::vector<fs::directory_entry> hidden_entries_;
   std::vector<fs::directory_entry> preview_entries_;
   std::vector<fs::directory_entry> marked_entires_;
   std::vector<fs::directory_entry> clipboard_entries_;
 
   bool is_yanking_;
   bool is_cutting_;
+  bool show_hidden_;
 
   void load_directory_entries(const fs::path &path,
                               std::vector<fs::directory_entry> &entries);
@@ -48,6 +50,7 @@ public:
   void update_current_path(const fs::path &new_path);
   void update_preview_entries(const int &selected);
   void update_curdir_entries();
+  void toggle_hidden_entries();
 
   std::optional<fs::directory_entry>
   get_selected_entry(const int &selected) const;

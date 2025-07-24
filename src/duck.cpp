@@ -5,7 +5,7 @@
 
 namespace duck {
 Duck::Duck()
-    : ui_{color_scheme_}, input_handler_(file_manager_, ui_),
+    : input_handler_(file_manager_, ui_),
       content_provider(file_manager_, ui_, color_scheme_) {
   setup_ui();
 }
@@ -13,7 +13,7 @@ Duck::Duck()
 void Duck::run() { ui_.render(); }
 
 void Duck::setup_ui() {
-  ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
+  ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
   ui_.set_input_handler(input_handler_.navigation_handler());
   ui_.set_layout(content_provider.preview());
   ui_.set_deletion_dialog(content_provider.deletion_dialog(),

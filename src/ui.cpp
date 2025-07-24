@@ -12,7 +12,7 @@
 namespace duck {
 
 Ui::Ui()
-    : selected_{0}, show_delete_dialog_{false},
+    : selected_{0}, show_deletion_dialog_{false},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {
 
   menu_option_.focused_entry = &selected_;
@@ -39,7 +39,7 @@ void Ui::set_deletion_dialog(const ftxui::Component deleted_dialog,
       deleted_dialog | ftxui::CatchEvent(handler) | ftxui::center;
 
   modal_ =
-      ftxui::Modal(main_layout_, dialog_with_handler, &show_delete_dialog_);
+      ftxui::Modal(main_layout_, dialog_with_handler, &show_deletion_dialog_);
 }
 
 void Ui::move_selected_up(const int max) {
@@ -57,10 +57,12 @@ void Ui::move_selected_down(const int max) {
   }
 }
 
-void Ui::toggle_delete_dialog() { show_delete_dialog_ = !show_delete_dialog_; }
+void Ui::toggle_deletion_dialog() {
+  show_deletion_dialog_ = !show_deletion_dialog_;
+}
 
 void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
-  update_curdir_string_entires(std::move(curdir_entries_string));
+  update_curdir_entries_string(std::move(curdir_entries_string));
   if (previous_selected_.empty()) {
     selected_ = 0;
   } else {
@@ -71,12 +73,12 @@ void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
 
 void Ui::leave_direcotry(std::vector<std::string> curdir_entries_string,
                          const int &previous_path_index) {
-  update_curdir_string_entires(std::move(curdir_entries_string));
+  update_curdir_entries_string(std::move(curdir_entries_string));
   previous_selected_.push(selected_);
   selected_ = previous_path_index;
 }
 
-void Ui::update_curdir_string_entires(
+void Ui::update_curdir_entries_string(
     std::vector<std::string> curdir_entries_string) {
   curdir_string_entries_ = std::move(curdir_entries_string);
 }

@@ -11,7 +11,7 @@ namespace duck {
 FileManager::FileManager()
     : current_path_{fs::current_path()},
       parent_path_{current_path_.parent_path()}, is_yanking_{false},
-      is_cutting_{false} {
+      is_cutting_{false}, show_hidden_{false} {
   update_curdir_entries();
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
@@ -40,6 +40,12 @@ const std::vector<fs::directory_entry> &FileManager::marked_entries() const {
 
 std::vector<std::string> FileManager::curdir_entries_string() const {
   return curdir_entries_ |
+         std::views::filter([this](const fs::directory_entry &entry) {
+           if (entry.path().filename().string()[0] == '.' && !show_hidden_) {
+             return false;
+           }
+           return true;
+         }) |
          std::views::transform([this](const fs::directory_entry &entry) {
            return format_directory_entries(entry);
          }) |
@@ -132,6 +138,8 @@ void FileManager::toggle_mark_on_selected(const int &selected) {
     marked_entires_.push_back(curdir_entries_[selected]);
   }
 }
+
+void FileManager::toggle_hidden_entries() { show_hidden_ = !show_hidden_; }
 
 void FileManager::start_yanking() {
   is_yanking_ = true;

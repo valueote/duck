@@ -28,7 +28,7 @@ private:
 
   std::stack<int> previous_selected_;
   int selected_;
-  bool show_delete_dialog_;
+  bool show_deletion_dialog_;
 
 public:
   Ui();
@@ -39,16 +39,18 @@ public:
                            const std::function<bool(ftxui::Event)> handler);
   void move_selected_up(const int max);
   void move_selected_down(const int max);
-  void toggle_delete_dialog();
+  void toggle_deletion_dialog();
+  void toggle_hidden_entries();
   void enter_direcotry(std::vector<std::string> curdir_entries_string);
   void leave_direcotry(std::vector<std::string> curdir_entries_string,
                        const int &previous_path_index);
   void
-  update_curdir_string_entires(std::vector<std::string> curdir_entries_string);
+  update_curdir_entries_string(std::vector<std::string> curdir_entries_string);
 
   void render();
   void exit();
   int selected();
+  bool show_hidden();
   void post_event(const ftxui::Event &event);
   void restored_io(const std::function<void()> closure);
   std::pair<int, int> screen_size();

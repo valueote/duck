@@ -19,7 +19,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character(' ')) {
       file_manager_.toggle_mark_on_selected(ui_.selected());
-      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
+      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
       ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
       return true;
     }
@@ -61,7 +61,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('d')) {
-      ui_.toggle_delete_dialog();
+      ui_.toggle_deletion_dialog();
       return true;
     }
 
@@ -78,13 +78,18 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('p')) {
       file_manager_.paste(ui_.selected());
       file_manager_.update_curdir_entries();
-      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
+      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
       return true;
+    }
+
+    if (event == ftxui::Event::Character('.')) {
+      file_manager_.toggle_hidden_entries();
+      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
     }
 
     if (event == ftxui::Event::Escape) {
       file_manager_.clear_marked_entries();
-      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
+      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
     }
 
     return false;
@@ -100,13 +105,13 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
         file_manager_.delete_selected_entry(ui_.selected());
       }
       file_manager_.update_curdir_entries();
-      ui_.update_curdir_string_entires(file_manager_.curdir_entries_string());
-      ui_.toggle_delete_dialog();
+      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      ui_.toggle_deletion_dialog();
       return true;
     }
     if (event == ftxui::Event::Character('n') ||
         event == ftxui::Event::Escape) {
-      ui_.toggle_delete_dialog();
+      ui_.toggle_deletion_dialog();
       return true;
     }
 
