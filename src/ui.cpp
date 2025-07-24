@@ -1,5 +1,4 @@
 #include "ui.h"
-#include "colorscheme.h"
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
@@ -12,18 +11,16 @@
 #include <vector>
 namespace duck {
 
-Ui::Ui(const ColorScheme &color_scheme)
+Ui::Ui()
     : selected_{0}, show_delete_dialog_{false},
-      screen_{ftxui::ScreenInteractive::Fullscreen()},
-      color_scheme_{color_scheme} {
+      screen_{ftxui::ScreenInteractive::Fullscreen()} {
 
   menu_option_.focused_entry = &selected_;
-  menu_option_.entries_option.transform =
-      [this](const ftxui::EntryState &state) {
-        auto style = state.active ? ftxui::inverted : ftxui::nothing;
-        return ftxui::text(state.label) | style |
-               ftxui::color(color_scheme_.text());
-      };
+  menu_option_.entries_option.transform = [this](
+                                              const ftxui::EntryState &state) {
+    auto style = state.active ? ftxui::inverted : ftxui::nothing;
+    return ftxui::text(state.label) | style | ftxui::color(ftxui::Color::White);
+  };
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
