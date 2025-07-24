@@ -1,11 +1,17 @@
 #include "contentprovider.h"
+#include "colorscheme.h"
 #include "ui.h"
+#include <boost/asio.hpp>
+#include <boost/process.hpp>
 #include <fstream>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
+#include <ftxui/screen/color.hpp>
+#include <print>
 
 namespace duck {
+
 ContentProvider::ContentProvider(FileManager &file_manager, Ui &ui)
     : file_manager_{file_manager}, ui_{ui} {}
 
@@ -27,7 +33,8 @@ std::function<ftxui::Element()> ContentProvider::preview() {
                    return ftxui::text("No item selected");
                  }
                  if (fs::is_directory(selected_path_opt.value())) {
-                   return get_directory_preview(selected_path_opt);
+                   return get_directory_preview(selected_path_opt) |
+                          ftxui::color(ColorScheme::get("text"));
                  }
                  return ftxui::paragraph(get_text_preview(selected_path_opt));
                }() |
@@ -92,6 +99,57 @@ ContentProvider::get_text_preview(const std::optional<fs::path> &path,
     ++lines;
   }
   return oss.str();
+}
+
+std::string
+ContentProvider::bat_text_preview(const std::optional<fs::path> &path,
+                                  size_t max_lines, size_t max_width) {
+  if (!path.has_value()) {
+    return "No file to preview";
+  }
+
+  if (fs::is_directory(path.value())) {
+    return "[ERROR]: Call get_text_preview on the directory";
+  }
+
+  try {
+    namespace bp2 = boost::process::v2;
+    boost::asio::io_context ctx;
+    boost::asio::readable_pipe rp(ctx);
+
+    std::string command_str =
+        std::format("bat --color=always --style=plain --paging=never "
+                    "--line-range=:{:d} \"{}\"",
+                    max_lines, path.value().string());
+
+    bp2::shell cmd(command_str);
+
+    // --- 这是修改的核心部分 ---
+    bp2::process proc(ctx.get_executor(), cmd.exe(), cmd.args(),
+                      // 第一个初始化器：重定向 IO
+                      bp2::process_stdio{{}, rp, {}},
+                      // 第二个初始化器：使用正确的函数和类名来继承环境
+                      bp2::process_environment(bp2::environment::current()));
+    // --- 修改结束 ---
+
+    std::string output;
+    boost::system::error_code ec;
+    boost::asio::read(rp, boost::asio::dynamic_buffer(output), ec);
+
+    if (ec && ec != boost::asio::error::eof) {
+      throw boost::system::system_error(ec);
+    }
+
+    proc.wait();
+    return output;
+
+  } catch (const std::exception &e) {
+    // ... Fallback 代码保持不变 ...
+    std::println(stderr, "[WARN] Failed to use 'bat' with Boost.Process : {}",
+                 e.what());
+    // ...
+    return "[INFO] For syntax highlighting, please install 'bat'.";
+  }
 }
 
 ftxui::Element ContentProvider::get_directory_preview(

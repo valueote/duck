@@ -1,8 +1,10 @@
 #include "ui.h"
+#include "colorscheme.h"
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/node.hpp>
+#include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <string>
 #include <unistd.h>
@@ -16,7 +18,8 @@ Ui::Ui()
   menu_option_.focused_entry = &selected_;
   menu_option_.entries_option.transform = [](const ftxui::EntryState &state) {
     auto style = state.active ? ftxui::inverted : ftxui::nothing;
-    return ftxui::text(state.label) | style;
+    return ftxui::text(state.label) | style |
+           ftxui::color(ColorScheme::get("text"));
   };
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
