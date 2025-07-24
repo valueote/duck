@@ -40,12 +40,6 @@ const std::vector<fs::directory_entry> &FileManager::marked_entries() const {
 
 std::vector<std::string> FileManager::curdir_entries_string() const {
   return curdir_entries_ |
-         std::views::filter([this](const fs::directory_entry &entry) {
-           if (entry.path().filename().string()[0] == '.' && !show_hidden_) {
-             return false;
-           }
-           return true;
-         }) |
          std::views::transform([this](const fs::directory_entry &entry) {
            return format_directory_entries(entry);
          }) |
@@ -96,6 +90,9 @@ void FileManager::load_directory_entries(
     files.reserve(128);
 
     for (const auto &entry : fs::directory_iterator(path)) {
+      if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
+        continue;
+      }
       (entry.is_directory() ? dirs : files).push_back(entry);
     }
 

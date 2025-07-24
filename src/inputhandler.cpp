@@ -84,6 +84,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character('.')) {
       file_manager_.toggle_hidden_entries();
+      file_manager_.update_curdir_entries();
       ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
     }
 
