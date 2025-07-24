@@ -53,25 +53,34 @@ void Ui::set_deletion_dialog(
       button_option);
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
 
-  auto dialog_renderer = ftxui::Renderer(
-      button_container, [yes_button, no_button, deleted_entry, this] {
-        auto dialog_content =
-            ftxui::vbox({deleted_entry(), ftxui::filler(), ftxui::separator(),
-                         ftxui::hbox({
-                             ftxui::filler(),
-                             yes_button->Render(),
-                             ftxui::separatorEmpty() |
-                                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                             screen_.dimx() / 3),
-                             no_button->Render(),
-                             ftxui::filler(),
-                         })});
+  auto dialog_renderer = ftxui::Renderer(button_container, [yes_button,
+                                                            no_button,
+                                                            deleted_entry,
+                                                            this] {
+    auto dialog_content = ftxui::vbox(
+        {deleted_entry() | ftxui::color(ftxui::Color::White), ftxui::filler(),
+         ftxui::separator(),
+         ftxui::hbox({
+             ftxui::filler(),
+             yes_button->Render(),
+             ftxui::separatorEmpty() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 3),
+             no_button->Render(),
+             ftxui::filler(),
+         })});
 
-        return ftxui::window(ftxui::text("Permanently delete selected file?"),
-                             dialog_content) |
-               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 3 * 2) |
-               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, screen_.dimy() / 3 * 2);
-      });
+    return ftxui::window(
+               ftxui::vbox({ftxui::text("Permanently delete selected file?") |
+                                ftxui::color(color_scheme_.warning()) |
+                                ftxui::bold | ftxui::hcenter |
+                                ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                            screen_.dimx() / 3 * 2),
+                            ftxui::filler()}),
+               dialog_content) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_.dimx() / 3 * 2) |
+           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, screen_.dimy() / 3 * 2) |
+           ftxui::color(color_scheme_.border());
+  });
 
   auto dialog_with_handler =
       dialog_renderer | ftxui::CatchEvent(handler) | ftxui::center;

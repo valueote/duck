@@ -125,13 +125,9 @@ ContentProvider::bat_text_preview(const std::optional<fs::path> &path,
 
     bp2::shell cmd(command_str);
 
-    // --- 这是修改的核心部分 ---
     bp2::process proc(ctx.get_executor(), cmd.exe(), cmd.args(),
-                      // 第一个初始化器：重定向 IO
                       bp2::process_stdio{{}, rp, {}},
-                      // 第二个初始化器：使用正确的函数和类名来继承环境
                       bp2::process_environment(bp2::environment::current()));
-    // --- 修改结束 ---
 
     std::string output;
     boost::system::error_code ec;
@@ -145,10 +141,8 @@ ContentProvider::bat_text_preview(const std::optional<fs::path> &path,
     return output;
 
   } catch (const std::exception &e) {
-    // ... Fallback 代码保持不变 ...
     std::println(stderr, "[WARN] Failed to use 'bat' with Boost.Process : {}",
                  e.what());
-    // ...
     return "[INFO] For syntax highlighting, please install 'bat'.";
   }
 }

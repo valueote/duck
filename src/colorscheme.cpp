@@ -9,4 +9,6 @@ ftxui::Color ColorScheme::surface0() const { return color_map_.at("surface0"); }
 
 ftxui::Color ColorScheme::selected() const { return color_map_.at("selected"); }
 
+ftxui::Color ColorScheme::warning() const { return color_map_.at("warning"); }
+
 } // namespace duck

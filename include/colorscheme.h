@@ -39,16 +39,19 @@ private:
     ftxui::Color Crust = ftxui::Color::RGB(35, 38, 52);        // #232634
   } CatppuccinFrappe;
   std::unordered_map<std::string, ftxui::Color> color_map_ = {
-      {"text", ftxui::Color::RGB(198, 208, 245)},
-      {"border", ftxui::Color::RGB(186, 187, 241)},
-      {"surface0", ftxui::Color::RGB(65, 69, 89)},
-      {"selected", ftxui::Color::RGB(140, 170, 238)}};
+      {"text", CatppuccinFrappe.Text},
+      {"border", CatppuccinFrappe.Blue},
+      {"surface0", CatppuccinFrappe.Surface0},
+      {"selected", CatppuccinFrappe.Teal},
+      {"warning", CatppuccinFrappe.Yellow},
+  };
 
 public:
   ftxui::Color text() const;
   ftxui::Color border() const;
   ftxui::Color surface0() const;
   ftxui::Color selected() const;
+  ftxui::Color warning() const;
 };
 
 } // namespace duck
