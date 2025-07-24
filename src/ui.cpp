@@ -11,16 +11,18 @@
 #include <vector>
 namespace duck {
 
-Ui::Ui()
+Ui::Ui(const ColorScheme &color_scheme)
     : selected_{0}, show_delete_dialog_{false},
-      screen_{ftxui::ScreenInteractive::Fullscreen()} {
+      screen_{ftxui::ScreenInteractive::Fullscreen()},
+      color_scheme_{color_scheme} {
 
   menu_option_.focused_entry = &selected_;
-  menu_option_.entries_option.transform = [](const ftxui::EntryState &state) {
-    auto style = state.active ? ftxui::inverted : ftxui::nothing;
-    return ftxui::text(state.label) | style |
-           ftxui::color(ColorScheme::get("text"));
-  };
+  menu_option_.entries_option.transform =
+      [this](const ftxui::EntryState &state) {
+        auto style = state.active ? ftxui::inverted : ftxui::nothing;
+        return ftxui::text(state.label) | style |
+               ftxui::color(color_scheme_.text());
+      };
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 

@@ -12,8 +12,9 @@
 
 namespace duck {
 
-ContentProvider::ContentProvider(FileManager &file_manager, Ui &ui)
-    : file_manager_{file_manager}, ui_{ui} {}
+ContentProvider::ContentProvider(FileManager &file_manager, Ui &ui,
+                                 const ColorScheme &color_scheme)
+    : file_manager_{file_manager}, ui_{ui}, color_scheme_{color_scheme} {}
 
 std::function<ftxui::Element()> ContentProvider::preview() {
   return [this]() {
@@ -34,7 +35,7 @@ std::function<ftxui::Element()> ContentProvider::preview() {
                  }
                  if (fs::is_directory(selected_path_opt.value())) {
                    return get_directory_preview(selected_path_opt) |
-                          ftxui::color(ColorScheme::get("text"));
+                          ftxui::color(color_scheme_.text());
                  }
                  return ftxui::paragraph(get_text_preview(selected_path_opt));
                }() |

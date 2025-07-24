@@ -5,9 +5,12 @@
 #include <unordered_map>
 
 namespace duck {
+
+enum class Theme { CatppuccinFrappe };
+
 class ColorScheme {
 private:
-  struct catppuccin {
+  struct CatppuccinFrappe {
     ftxui::Color Rosewater = ftxui::Color::RGB(242, 213, 207); // #f2d5cf
     ftxui::Color Flamingo = ftxui::Color::RGB(238, 190, 190);  // #eebebe
     ftxui::Color Pink = ftxui::Color::RGB(244, 184, 228);      // #f4b8e4
@@ -34,11 +37,18 @@ private:
     ftxui::Color Base = ftxui::Color::RGB(48, 52, 70);         // #303446
     ftxui::Color Mantle = ftxui::Color::RGB(41, 44, 60);       // #292c3c
     ftxui::Color Crust = ftxui::Color::RGB(35, 38, 52);        // #232634
-  };
-  static std::unordered_map<std::string, ftxui::Color> colormap;
+  } CatppuccinFrappe;
+  std::unordered_map<std::string, ftxui::Color> color_map_ = {
+      {"text", ftxui::Color::RGB(198, 208, 245)},
+      {"border", ftxui::Color::RGB(186, 187, 241)},
+      {"surface0", ftxui::Color::RGB(65, 69, 89)},
+      {"selected", ftxui::Color::RGB(140, 170, 238)}};
 
 public:
-  static ftxui::Color get(const std::string &content);
+  ftxui::Color text() const;
+  ftxui::Color border() const;
+  ftxui::Color surface0() const;
+  ftxui::Color selected() const;
 };
 
 } // namespace duck

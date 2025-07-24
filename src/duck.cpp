@@ -5,7 +5,8 @@
 
 namespace duck {
 Duck::Duck()
-    : input_handler_(file_manager_, ui_), content_provider(file_manager_, ui_) {
+    : ui_{color_scheme_}, input_handler_(file_manager_, ui_),
+      content_provider(file_manager_, ui_, color_scheme_) {
   setup_ui();
 }
 

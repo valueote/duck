@@ -1,4 +1,5 @@
 #pragma once
+#include "colorscheme.h"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -29,8 +30,10 @@ private:
   int selected_;
   bool show_delete_dialog_;
 
+  const ColorScheme &color_scheme_;
+
 public:
-  Ui();
+  Ui(const ColorScheme &color_scheme);
 
   void set_layout(const std::function<ftxui::Element()> preview);
   void set_input_handler(const std::function<bool(ftxui::Event)> handler);
