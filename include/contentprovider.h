@@ -23,6 +23,9 @@ private:
 public:
   ContentProvider(FileManager &file_manager, Ui &ui,
                   const ColorScheme &color_scheme);
+
+  std::function<ftxui::Element(const ftxui::EntryState &state)>
+  entries_transform();
   std::function<ftxui::Element()> preview();
   ftxui::Component deletion_dialog();
 };

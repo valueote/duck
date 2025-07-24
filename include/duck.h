@@ -12,7 +12,7 @@ private:
   ColorScheme color_scheme_;
   Ui ui_;
   InputHandler input_handler_;
-  ContentProvider content_provider;
+  ContentProvider content_provider_;
 
   void setup_ui();
 

@@ -6,6 +6,7 @@
 #include <fstream>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
+#include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
@@ -16,6 +17,17 @@ namespace duck {
 ContentProvider::ContentProvider(FileManager &file_manager, Ui &ui,
                                  const ColorScheme &color_scheme)
     : file_manager_{file_manager}, ui_{ui}, color_scheme_{color_scheme} {}
+
+std::function<ftxui::Element(const ftxui::EntryState &state)>
+ContentProvider::entries_transform() {
+  return [this](const ftxui::EntryState &state) {
+    auto style = state.active
+                     ? ftxui::bgcolor(color_scheme_.selected()) | ftxui::bold |
+                           ftxui::color(ftxui::Color::Black)
+                     : ftxui::color(color_scheme_.text());
+    return ftxui::text(state.label) | style;
+  };
+}
 
 std::function<ftxui::Element()> ContentProvider::preview() {
   return [this]() {

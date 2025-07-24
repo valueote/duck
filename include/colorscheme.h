@@ -43,7 +43,7 @@ private:
       {"text", CatppuccinFrappe.Text},
       {"border", CatppuccinFrappe.Blue},
       {"surface0", CatppuccinFrappe.Surface0},
-      {"selected", CatppuccinFrappe.Teal},
+      {"selected", CatppuccinFrappe.Lavender},
       {"warning", CatppuccinFrappe.Yellow},
       {"file", CatppuccinFrappe.Text},
       {"dir", CatppuccinFrappe.Sapphire},

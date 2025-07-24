@@ -13,14 +13,13 @@ namespace duck {
 
 Ui::Ui()
     : selected_{0}, show_deletion_dialog_{false},
-      screen_{ftxui::ScreenInteractive::Fullscreen()} {
+      screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
+void Ui::set_menu(
+    const std::function<ftxui::Element(const ftxui::EntryState &state)>
+        entries_transform) {
   menu_option_.focused_entry = &selected_;
-  menu_option_.entries_option.transform = [this](
-                                              const ftxui::EntryState &state) {
-    auto style = state.active ? ftxui::inverted : ftxui::nothing;
-    return ftxui::text(state.label) | style | ftxui::color(ftxui::Color::White);
-  };
+  menu_option_.entries_option.transform = entries_transform;
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
