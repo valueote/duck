@@ -8,6 +8,6 @@ int main() {
 // TODO: implement error handler for filemanager yanking and cutting
 // TODO: Add a parent dir pane
 // TODO: Add preview for image
-// TODO: hide dot file by default
 // TODO: implement better color scheme
 // TODO: Add async to implement better performance
+// TODO: Add realtime response for filesystem changing;

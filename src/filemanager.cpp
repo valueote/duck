@@ -163,7 +163,10 @@ void FileManager::paste(const int &selected) {
 
   try {
     for (const auto &entry : clipboard_entries_) {
-      const fs::path dest_path = current_path_ / entry.path().filename();
+      fs::path dest_path = current_path_ / entry.path().filename();
+      if (fs::exists(dest_path)) {
+        dest_path = current_path_ / (entry.path().filename().string() + "_1");
+      }
       if (is_yanking_) {
         fs::copy(entry.path(), dest_path, fs::copy_options::recursive);
       } else if (is_cutting_) {
