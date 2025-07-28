@@ -5,3 +5,5 @@ compile_commands.json
 core.latest
 test
 core
+RAPIDS.cmake
+cpm-package-lock.cmake
