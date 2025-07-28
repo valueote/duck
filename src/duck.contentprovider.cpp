@@ -1,8 +1,7 @@
-#include "contentprovider.h"
-#include "colorscheme.h"
-#include "ui.h"
+module;
 #include <boost/asio.hpp>
 #include <boost/process.hpp>
+#include <filesystem>
 #include <fstream>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
@@ -11,7 +10,11 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
 #include <print>
+#include <ranges>
+module duck.contentprovider;
 
+import duck.colorscheme;
+import duck.ui;
 namespace duck {
 
 ContentProvider::ContentProvider(FileManager &file_manager, Ui &ui,

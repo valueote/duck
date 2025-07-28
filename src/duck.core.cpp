@@ -1,7 +1,10 @@
-#include "duck.h"
-#include "inputhandler.h"
-#include "ui.h"
+module;
 #include <ftxui/component/event.hpp>
+module duck.core;
+
+import duck.inputhandler;
+import duck.ui;
+import duck.contentprovider;
 
 namespace duck {
 Duck::Duck()

@@ -1,10 +1,13 @@
-#pragma once
+module;
 #include <filesystem>
 #include <vector>
-namespace duck {
-namespace fs = std::filesystem;
 
-class FileManager {
+export module duck.filemanager;
+
+namespace duck {
+export namespace fs = std::filesystem;
+
+export class FileManager {
 private:
   fs::path current_path_;
   fs::path previous_path_;

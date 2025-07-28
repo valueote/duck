@@ -1,4 +1,4 @@
-#pragma once
+module;
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -11,9 +11,11 @@
 #include <utility>
 #include <vector>
 
+export module duck.ui;
+
 namespace duck {
 
-class Ui {
+export class Ui {
 private:
   std::vector<std::string> curdir_string_entries_;
   std::vector<std::string> previewdir_string_entries_;

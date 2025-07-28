@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 4.0.0)
 project(duck)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 find_package(Boost REQUIRED COMPONENTS process)
 set(CMAKE_BUILD_TYPE Debug)
@@ -17,14 +18,28 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(
   duck
   src/main.cpp
-  src/ui.cpp
-  src/filemanager.cpp
-  src/inputhandler.cpp
-  src/contentprovider.cpp
-  src/duck.cpp
-  src/colorscheme.cpp)
+  src/duck.ui.cpp
+  src/duck.filemanager.cpp
+  src/duck.inputhandler.cpp
+  src/duck.contentprovider.cpp
+  src/duck.core.cpp
+  src/duck.colorscheme.cpp)
+target_include_directories(duck PRIVATE module)
+target_sources(
+  duck
+  PUBLIC FILE_SET
+         cxx_modules
+         TYPE
+         CXX_MODULES
+         FILES
+         module/duck.core.cppm
+         module/duck.ui.cppm
+         module/duck.filemanager.cppm
+         module/duck.inputhandler.cppm
+         module/duck.colorscheme.cppm
+         module/duck.contentprovider.cppm)
 
-target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(duck PUBLIC cxx_std_23)
 
-target_link_libraries(duck PRIVATE ftxui::screen ftxui::dom ftxui::component
+target_link_libraries(duck PRIVATE ftxui::screen ftxui::component ftxui::dom
                                    Boost::process)

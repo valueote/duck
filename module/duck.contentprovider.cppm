@@ -1,12 +1,18 @@
-#pragma once
-#include "colorscheme.h"
-#include "filemanager.h"
-#include "ui.h"
+module;
+
+#include <filesystem>
+#include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/node.hpp>
-#include <functional>
+
+export module duck.contentprovider;
+
+import duck.ui;
+import duck.filemanager;
+import duck.colorscheme;
+
 namespace duck {
-class ContentProvider {
+export class ContentProvider {
 private:
   Ui &ui_;
   FileManager &file_manager_;

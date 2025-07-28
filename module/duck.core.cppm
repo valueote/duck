@@ -1,12 +1,15 @@
-#pragma once
-#include "colorscheme.h"
-#include "contentprovider.h"
-#include "filemanager.h"
-#include "inputhandler.h"
-#include "ui.h"
+module;
+
+export module duck.core;
+
+import duck.colorscheme;
+import duck.filemanager;
+import duck.contentprovider;
+import duck.inputhandler;
+import duck.ui;
 
 namespace duck {
-class Duck {
+export class Duck {
 private:
   FileManager file_manager_;
   ColorScheme color_scheme_;

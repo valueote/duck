@@ -1,10 +1,14 @@
-#pragma once
-#include "filemanager.h"
-#include "ui.h"
+module;
 #include <ftxui/component/event.hpp>
+#include <functional>
+
+export module duck.inputhandler;
+
+import duck.ui;
+import duck.filemanager;
 
 namespace duck {
-class InputHandler {
+export class InputHandler {
 private:
   FileManager &file_manager_;
   Ui &ui_;

@@ -1,4 +1,4 @@
-#include "filemanager.h"
+module;
 #include <algorithm>
 #include <filesystem>
 #include <format>
@@ -7,6 +7,7 @@
 #include <print>
 #include <ranges>
 #include <unordered_map>
+module duck.filemanager;
 namespace duck {
 FileManager::FileManager()
     : current_path_{fs::current_path()},

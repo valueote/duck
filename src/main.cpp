@@ -1,4 +1,4 @@
-#include "duck.h"
+import duck.core;
 int main() {
   duck::Duck d;
   d.run();

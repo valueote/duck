@@ -1,14 +1,16 @@
-#pragma once
+module;
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/color_info.hpp>
 #include <unordered_map>
 
+export module duck.colorscheme;
+
 namespace duck {
 
 enum class Theme { CatppuccinFrappe };
 
-class ColorScheme {
+export class ColorScheme {
 private:
   struct CatppuccinFrappe {
     ftxui::Color Rosewater = ftxui::Color::RGB(242, 213, 207); // #f2d5cf

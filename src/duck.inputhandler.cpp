@@ -1,10 +1,11 @@
-#include "inputhandler.h"
-#include "filemanager.h"
+module;
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <print>
 #include <sys/wait.h>
+module duck.inputhandler;
+import duck.filemanager;
 
 namespace duck {
 InputHandler::InputHandler(FileManager &file_manager, Ui &ui)

@@ -1,5 +1,7 @@
-#include "colorscheme.h"
+module;
 #include <ftxui/screen/color.hpp>
+module duck.colorscheme;
+
 namespace duck {
 ftxui::Color ColorScheme::text() const { return color_map_.at("text"); }
 
