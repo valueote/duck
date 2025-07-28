@@ -1,14 +1,17 @@
 cmake_minimum_required(VERSION 4.0.0)
+
+set(CMAKE_CXX_COMPILER clang++)
+
 project(duck)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
+
 find_package(Boost REQUIRED COMPONENTS process)
 set(CMAKE_BUILD_TYPE Debug)
 
 include(FetchContent)
-
 FetchContent_Declare(
   ftxui
   GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
