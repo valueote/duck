@@ -36,7 +36,8 @@ add_executable(
   src/inputhandler.cpp
   src/contentprovider.cpp
   src/duck.cpp
-  src/colorscheme.cpp)
+  src/colorscheme.cpp
+  src/scheduler.cpp)
 
 target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

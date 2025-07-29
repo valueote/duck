@@ -1,4 +1,5 @@
 #pragma once
+#include "stdexec/__detail/__run_loop.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -29,6 +30,8 @@ private:
   std::stack<int> previous_selected_;
   int selected_;
   bool show_deletion_dialog_;
+
+  stdexec::run_loop loop_;
 
 public:
   Ui();

@@ -1,0 +1,30 @@
+#pragma once
+
+#include <exec/static_thread_pool.hpp>
+#include <stdexec/concepts.hpp>
+#include <stdexec/execution.hpp>
+
+namespace duck {
+
+class Scheduler {
+private:
+  exec::static_thread_pool io_pool_;
+  exec::static_thread_pool cpu_pool_;
+  exec::static_thread_pool priority_pool_;
+
+  Scheduler();
+
+  static Scheduler &get_instance();
+
+public:
+  Scheduler(const Scheduler &) = delete;
+  Scheduler &operator=(const Scheduler &) = delete;
+  Scheduler(Scheduler &&) = delete;
+  Scheduler &operator=(Scheduler &&) = delete;
+
+  static stdexec::scheduler auto io_scheduler();
+  static stdexec::scheduler auto cpu_scheduler();
+  static stdexec::scheduler auto priority_scheduler();
+};
+
+} // namespace duck
