@@ -1,5 +1,7 @@
 #include "inputhandler.h"
 #include "filemanager.h"
+#include "scheduler.h"
+#include "stdexec/__detail/__sync_wait.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -50,6 +52,10 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character('h')) {
       file_manager_.update_current_path(file_manager_.cur_parent_path());
+      auto task = file_manager_.update_current_path_async(
+          file_manager_.cur_parent_path());
+
+      stdexec::sync_wait(task);
       ui_.leave_direcotry(file_manager_.curdir_entries_string(),
                           file_manager_.get_previous_path_index());
       return true;

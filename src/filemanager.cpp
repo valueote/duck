@@ -1,3 +1,4 @@
+#include "scheduler.h"
 #include "filemanager.h"
 #include <algorithm>
 #include <filesystem>
@@ -6,7 +7,9 @@
 #include <optional>
 #include <print>
 #include <ranges>
+#include <stdexec/execution.hpp>
 #include <unordered_map>
+#include <vector>
 namespace duck {
 FileManager::FileManager()
     : current_path_{fs::current_path()},
@@ -46,14 +49,8 @@ std::vector<std::string> FileManager::curdir_entries_string() const {
          std::ranges::to<std::vector>();
 }
 
-std::vector<std::string> FileManager::preview_entries_string() const {
-  return {};
-}
-std::vector<std::string> FileManager::marked_entries_string() const {
-  return {};
-}
 
-int FileManager::get_previous_path_index() const {
+  int FileManager::get_previous_path_index() const {
   if (auto it = std::ranges::find(curdir_entries_, previous_path_);
       it != curdir_entries_.end()) {
     return static_cast<int>(std::distance(curdir_entries_.begin(), it));
@@ -248,5 +245,15 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
 
   return selected_marker + entry_name_with_icon(entry);
 }
+
+
+
+stdexec::sender auto FileManager::update_curdir_entries_async(){
+return stdexec::just(std::move(current_path_), show_hidden_)
+        | stdexec::then([this](fs::path path, bool show_hidden) {
+            return load_directory_entries_async(path, show_hidden);
+        });
+}
+
 
 } // namespace duck
