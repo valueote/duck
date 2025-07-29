@@ -1,81 +1,99 @@
 [
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/main.cpp.o.modmap -o CMakeFiles/duck.dir/src/main.cpp.o -c /home/vivy/cs/duck/src/main.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/main.cpp.o.modmap -o CMakeFiles/duck.dir/src/main.cpp.o -c /home/vivy/cs/duck/src/main.cpp",
   "file": "/home/vivy/cs/duck/src/main.cpp",
   "output": "CMakeFiles/duck.dir/src/main.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.ui.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.ui.cpp.o -c /home/vivy/cs/duck/src/duck.ui.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.ui.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.ui.cpp.o -c /home/vivy/cs/duck/src/duck.ui.cpp",
   "file": "/home/vivy/cs/duck/src/duck.ui.cpp",
   "output": "CMakeFiles/duck.dir/src/duck.ui.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.filemanager.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.filemanager.cpp.o -c /home/vivy/cs/duck/src/duck.filemanager.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.filemanager.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.filemanager.cpp.o -c /home/vivy/cs/duck/src/duck.filemanager.cpp",
   "file": "/home/vivy/cs/duck/src/duck.filemanager.cpp",
   "output": "CMakeFiles/duck.dir/src/duck.filemanager.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.inputhandler.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.inputhandler.cpp.o -c /home/vivy/cs/duck/src/duck.inputhandler.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.inputhandler.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.inputhandler.cpp.o -c /home/vivy/cs/duck/src/duck.inputhandler.cpp",
   "file": "/home/vivy/cs/duck/src/duck.inputhandler.cpp",
   "output": "CMakeFiles/duck.dir/src/duck.inputhandler.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.contentprovider.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.contentprovider.cpp.o -c /home/vivy/cs/duck/src/duck.contentprovider.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.contentprovider.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.contentprovider.cpp.o -c /home/vivy/cs/duck/src/duck.contentprovider.cpp",
   "file": "/home/vivy/cs/duck/src/duck.contentprovider.cpp",
   "output": "CMakeFiles/duck.dir/src/duck.contentprovider.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.core.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.core.cpp.o -c /home/vivy/cs/duck/src/duck.core.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.core.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.core.cpp.o -c /home/vivy/cs/duck/src/duck.core.cpp",
   "file": "/home/vivy/cs/duck/src/duck.core.cpp",
   "output": "CMakeFiles/duck.dir/src/duck.core.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.colorscheme.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.colorscheme.cpp.o -c /home/vivy/cs/duck/src/duck.colorscheme.cpp",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.colorscheme.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.colorscheme.cpp.o -c /home/vivy/cs/duck/src/duck.colorscheme.cpp",
   "file": "/home/vivy/cs/duck/src/duck.colorscheme.cpp",
   "output": "CMakeFiles/duck.dir/src/duck.colorscheme.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.core.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.core.cppm.o -c /home/vivy/cs/duck/module/duck.core.cppm",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/src/duck.scheduler.cpp.o.modmap -o CMakeFiles/duck.dir/src/duck.scheduler.cpp.o -c /home/vivy/cs/duck/src/duck.scheduler.cpp",
+  "file": "/home/vivy/cs/duck/src/duck.scheduler.cpp",
+  "output": "CMakeFiles/duck.dir/src/duck.scheduler.cpp.o"
+},
+{
+  "directory": "/home/vivy/cs/duck/build",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.core.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.core.cppm.o -c /home/vivy/cs/duck/module/duck.core.cppm",
   "file": "/home/vivy/cs/duck/module/duck.core.cppm",
   "output": "CMakeFiles/duck.dir/module/duck.core.cppm.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.ui.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.ui.cppm.o -c /home/vivy/cs/duck/module/duck.ui.cppm",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.ui.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.ui.cppm.o -c /home/vivy/cs/duck/module/duck.ui.cppm",
   "file": "/home/vivy/cs/duck/module/duck.ui.cppm",
   "output": "CMakeFiles/duck.dir/module/duck.ui.cppm.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.filemanager.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.filemanager.cppm.o -c /home/vivy/cs/duck/module/duck.filemanager.cppm",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.filemanager.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.filemanager.cppm.o -c /home/vivy/cs/duck/module/duck.filemanager.cppm",
   "file": "/home/vivy/cs/duck/module/duck.filemanager.cppm",
   "output": "CMakeFiles/duck.dir/module/duck.filemanager.cppm.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.inputhandler.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.inputhandler.cppm.o -c /home/vivy/cs/duck/module/duck.inputhandler.cppm",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.inputhandler.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.inputhandler.cppm.o -c /home/vivy/cs/duck/module/duck.inputhandler.cppm",
   "file": "/home/vivy/cs/duck/module/duck.inputhandler.cppm",
   "output": "CMakeFiles/duck.dir/module/duck.inputhandler.cppm.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.colorscheme.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.colorscheme.cppm.o -c /home/vivy/cs/duck/module/duck.colorscheme.cppm",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.colorscheme.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.colorscheme.cppm.o -c /home/vivy/cs/duck/module/duck.colorscheme.cppm",
   "file": "/home/vivy/cs/duck/module/duck.colorscheme.cppm",
   "output": "CMakeFiles/duck.dir/module/duck.colorscheme.cppm.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
-  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.contentprovider.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.contentprovider.cppm.o -c /home/vivy/cs/duck/module/duck.contentprovider.cppm",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.contentprovider.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.contentprovider.cppm.o -c /home/vivy/cs/duck/module/duck.contentprovider.cppm",
   "file": "/home/vivy/cs/duck/module/duck.contentprovider.cppm",
   "output": "CMakeFiles/duck.dir/module/duck.contentprovider.cppm.o"
+},
+{
+  "directory": "/home/vivy/cs/duck/build",
+  "command": "/usr/bin/clang++ -DBOOST_CONTEXT_DYN_LINK -DBOOST_CONTEXT_NO_LIB -DBOOST_DATE_TIME_DYN_LINK -DBOOST_DATE_TIME_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_PROCESS_DYN_LINK -DBOOST_PROCESS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/vivy/cs/duck/module -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -isystem /home/vivy/cs/duck/build/_deps/ftxui-src/include -g -std=gnu++23 @CMakeFiles/duck.dir/module/duck.scheduler.cppm.o.modmap -o CMakeFiles/duck.dir/module/duck.scheduler.cppm.o -c /home/vivy/cs/duck/module/duck.scheduler.cppm",
+  "file": "/home/vivy/cs/duck/module/duck.scheduler.cppm",
+  "output": "CMakeFiles/duck.dir/module/duck.scheduler.cppm.o"
+},
+{
+  "directory": "/home/vivy/cs/duck/build",
+  "command": "/usr/bin/clang++ -I/home/vivy/cs/duck/build/_deps/stdexec-src/include -I/home/vivy/cs/duck/build/_deps/stdexec-build/include -O3 -DNDEBUG -std=c++20 -o _deps/stdexec-build/CMakeFiles/system_context.dir/src/system_context/system_context.cpp.o -c /home/vivy/cs/duck/build/_deps/stdexec-src/src/system_context/system_context.cpp",
+  "file": "/home/vivy/cs/duck/build/_deps/stdexec-src/src/system_context/system_context.cpp",
+  "output": "_deps/stdexec-build/CMakeFiles/system_context.dir/src/system_context/system_context.cpp.o"
 },
 {
   "directory": "/home/vivy/cs/duck/build",
