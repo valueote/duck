@@ -1,4 +1,3 @@
-#include "scheduler.h"
 #include "filemanager.h"
 #include <algorithm>
 #include <filesystem>
@@ -49,8 +48,7 @@ std::vector<std::string> FileManager::curdir_entries_string() const {
          std::ranges::to<std::vector>();
 }
 
-
-  int FileManager::get_previous_path_index() const {
+int FileManager::get_previous_path_index() const {
   if (auto it = std::ranges::find(curdir_entries_, previous_path_);
       it != curdir_entries_.end()) {
     return static_cast<int>(std::distance(curdir_entries_.begin(), it));
@@ -116,7 +114,7 @@ void FileManager::update_current_path(const fs::path &new_path) {
   previous_path_ = current_path_;
   current_path_ = new_path;
   parent_path_ = current_path_.parent_path();
-  update_curdir_entries();
+  // update_curdir_entries();
 }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
@@ -245,15 +243,5 @@ FileManager::format_directory_entries(const fs::directory_entry &entry) const {
 
   return selected_marker + entry_name_with_icon(entry);
 }
-
-
-
-stdexec::sender auto FileManager::update_curdir_entries_async(){
-return stdexec::just(std::move(current_path_), show_hidden_)
-        | stdexec::then([this](fs::path path, bool show_hidden) {
-            return load_directory_entries_async(path, show_hidden);
-        });
-}
-
 
 } // namespace duck

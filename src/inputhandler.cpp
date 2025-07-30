@@ -1,12 +1,20 @@
 #include "inputhandler.h"
 #include "filemanager.h"
 #include "scheduler.h"
+#include "stdexec/__detail/__execution_fwd.hpp"
+#include "stdexec/__detail/__just.hpp"
+#include "stdexec/__detail/__start_detached.hpp"
 #include "stdexec/__detail/__sync_wait.hpp"
+#include "stdexec/__detail/__then.hpp"
+#include <chrono>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <print>
+#include <string>
 #include <sys/wait.h>
+#include <thread>
+#include <vector>
 
 namespace duck {
 InputHandler::InputHandler(FileManager &file_manager, Ui &ui)
@@ -45,19 +53,22 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
         file_manager_.update_current_path(fs::canonical(
             file_manager_.get_selected_entry(ui_.selected()).value().path()));
+
+        file_manager_.update_curdir_entries();
         ui_.enter_direcotry(file_manager_.curdir_entries_string());
       }
       return true;
     }
 
     if (event == ftxui::Event::Character('h')) {
-      file_manager_.update_current_path(file_manager_.cur_parent_path());
-      auto task = file_manager_.update_current_path_async(
-          file_manager_.cur_parent_path());
-
-      stdexec::sync_wait(task);
-      ui_.leave_direcotry(file_manager_.curdir_entries_string(),
-                          file_manager_.get_previous_path_index());
+      auto task =
+          file_manager_.update_current_path_async(
+              file_manager_.cur_parent_path()) |
+          stdexec::then([this](std::vector<std::string> entries) {
+            ui_.leave_direcotry(std::move(entries),
+                                file_manager_.get_previous_path_index());
+          });
+      stdexec::sync_wait(std::move(task));
       return true;
     }
 
