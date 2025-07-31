@@ -7,3 +7,4 @@ test
 core
 RAPIDS.cmake
 cpm-package-lock.cmake
+.vscode

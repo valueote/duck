@@ -1,8 +1,8 @@
 #pragma once
 #include "colorscheme.h"
-#include "contentprovider.h"
-#include "filemanager.h"
-#include "inputhandler.h"
+#include "content_provider.h"
+#include "file_manager.h"
+#include "input_handler.h"
 #include "ui.h"
 
 namespace duck {

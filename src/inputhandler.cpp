@@ -1,19 +1,16 @@
-#include "inputhandler.h"
-#include "filemanager.h"
+#include "duck_event.h"
+#include "file_manager.h"
+#include "input_handler.h"
 #include "scheduler.h"
 #include "stdexec/__detail/__execution_fwd.hpp"
-#include "stdexec/__detail/__just.hpp"
 #include "stdexec/__detail/__start_detached.hpp"
-#include "stdexec/__detail/__sync_wait.hpp"
 #include "stdexec/__detail/__then.hpp"
-#include <chrono>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <print>
 #include <string>
 #include <sys/wait.h>
-#include <thread>
 #include <vector>
 
 namespace duck {
@@ -68,7 +65,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
             ui_.leave_direcotry(std::move(entries),
                                 file_manager_.get_previous_path_index());
           });
-      stdexec::sync_wait(std::move(task));
+      stdexec::start_detached(std::move(task));
       return true;
     }
 
@@ -103,13 +100,24 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       file_manager_.toggle_hidden_entries();
       file_manager_.update_curdir_entries();
       ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      return true;
     }
 
     if (event == ftxui::Event::Escape) {
       file_manager_.clear_marked_entries();
       ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      return true;
     }
 
+    return false;
+  };
+}
+
+std::function<bool(ftxui::Event)> InputHandler::test_handler() {
+  return [this](ftxui::Event event) {
+    if (event == ftxui::Event::Special(FileEvent::leave_dir)) {
+      ui_.exit();
+    }
     return false;
   };
 }

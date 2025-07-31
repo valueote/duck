@@ -1,5 +1,5 @@
-#include "contentprovider.h"
 #include "colorscheme.h"
+#include "content_provider.h"
 #include "ui.h"
 #include <boost/asio.hpp>
 #include <boost/process.hpp>

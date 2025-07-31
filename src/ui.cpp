@@ -23,8 +23,9 @@ void Ui::set_menu(
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
-void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
-  menu_ = menu_ | ftxui::CatchEvent(handler);
+void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler,
+                           const std::function<bool(ftxui::Event)> test) {
+  menu_ = menu_ | ftxui::CatchEvent(handler) | ftxui::CatchEvent(test);
 }
 
 void Ui::set_layout(const std::function<ftxui::Element()> preview) {

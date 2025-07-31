@@ -1,6 +1,6 @@
 #pragma once
 #include "colorscheme.h"
-#include "filemanager.h"
+#include "file_manager.h"
 #include "ui.h"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/node.hpp>

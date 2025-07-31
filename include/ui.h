@@ -37,7 +37,8 @@ public:
   Ui();
   void set_menu(std::function<ftxui::Element(const ftxui::EntryState &state)>);
   void set_layout(const std::function<ftxui::Element()> preview);
-  void set_input_handler(const std::function<bool(ftxui::Event)> handler);
+  void set_input_handler(const std::function<bool(ftxui::Event)> handler,
+                         const std::function<bool(ftxui::Event)> test);
   void set_deletion_dialog(const ftxui::Component deletion_dialog,
                            const std::function<bool(ftxui::Event)> handler);
   void move_selected_up(const int max);
