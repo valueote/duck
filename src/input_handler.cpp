@@ -77,7 +77,9 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
           file_manager_.update_current_path_async(
               file_manager_.cur_parent_path()) |
               stdexec::then([this](std::vector<std::string> entries) {
-                ui_.post_event(FileEvent::leave_dir);
+                ui_.post_task(
+                    [this, entries]() { ui_.leave_direcotry(entries, 0); });
+                ui_.post_event(ftxui::Event::Custom);
                 return;
               }));
       stdexec::start_detached(std::move(task));
