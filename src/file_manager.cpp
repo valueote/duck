@@ -42,6 +42,7 @@ const fs::path &FileManager::previous_path() const {
 }
 
 const std::vector<fs::directory_entry> &FileManager::curdir_entries() const {
+  std::shared_lock lock(mutex_);
   return curdir_entries_;
 }
 
@@ -73,18 +74,28 @@ int FileManager::get_previous_path_index() const {
   return 0;
 }
 
-bool FileManager::yanking() const { return is_yanking_; }
-bool FileManager::cutting() const { return is_cutting_; }
+bool FileManager::yanking() const {
+
+  std::shared_lock lock(mutex_);
+  return is_yanking_;
+}
+bool FileManager::cutting() const {
+
+  std::shared_lock lock(mutex_);
+  return is_cutting_;
+}
 
 std::expected<fs::directory_entry, std::string>
 FileManager::get_selected_entry(const int &selected) const {
   std::shared_lock lock(mutex_);
   if (curdir_entries_.empty()) {
     return std::unexpected("No entries in current directory");
-  } else if (selected < 0 || selected >= curdir_entries_.size()) {
+  }
+  if (selected < 0 || selected >= curdir_entries_.size()) {
     return std::unexpected("Selected index out of range: " +
                            std::to_string(selected));
-  } else if (not fs::is_directory(curdir_entries_[selected])) {
+  }
+  if (not fs::is_directory(curdir_entries_[selected])) {
     return std::unexpected("Selected entry is a directory, not a file");
   }
   return curdir_entries_[selected];
@@ -124,20 +135,24 @@ void FileManager::load_directory_entries(
 }
 
 void FileManager::update_curdir_entries() {
+  std::unique_lock lock{mutex_};
   load_directory_entries(current_path_, curdir_entries_);
 }
 
 void FileManager::update_preview_entries(const int &selected) {
+  std::unique_lock lock{mutex_};
   load_directory_entries(curdir_entries_[selected].path(), preview_entries_);
 }
 
-void FileManager::update_current_path(const fs::path &new_path) {
-  previous_path_ = current_path_;
-  current_path_ = new_path;
-  parent_path_ = current_path_.parent_path();
-}
+//
+// void FileManager::update_current_path(const fs::path &new_path) {
+//   previous_path_ = current_path_;
+//   current_path_ = new_path;
+//   parent_path_ = current_path_.parent_path();
+// }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
+  std::unique_lock lock{mutex_};
   if (curdir_entries_.empty() || selected < 0 ||
       selected >= curdir_entries_.size()) {
     return;
@@ -151,14 +166,19 @@ void FileManager::toggle_mark_on_selected(const int &selected) {
   }
 }
 
-void FileManager::toggle_hidden_entries() { show_hidden_ = !show_hidden_; }
+void FileManager::toggle_hidden_entries() {
+  std::unique_lock lock{mutex_};
+  show_hidden_ = !show_hidden_;
+}
 
 void FileManager::start_yanking() {
+  std::unique_lock lock{mutex_};
   is_yanking_ = true;
   is_cutting_ = false;
 }
 
 void FileManager::start_cutting() {
+  std::unique_lock lock{mutex_};
   is_cutting_ = true;
   is_yanking_ = false;
 }
@@ -169,6 +189,7 @@ void FileManager::paste(const int &selected) {
     return;
   }
 
+  std::unique_lock lock{mutex_};
   if (marked_entires_.empty()) {
     clipboard_entries_.push_back(curdir_entries_[selected]);
   } else {
@@ -198,6 +219,7 @@ bool FileManager::is_marked(const fs::directory_entry &entry) const {
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
+  std::unique_lock lock{mutex_};
   return delete_entry(curdir_entries_[selected]);
 }
 
