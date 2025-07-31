@@ -31,33 +31,30 @@ ContentProvider::entries_transform() {
 
 std::function<ftxui::Element()> ContentProvider::preview() {
   return [this]() {
+    auto screen_size = ui_.screen_size();
     auto left_pane =
         window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
                    ftxui::bold,
-               ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame |
-                   ftxui::flex) |
-        ftxui::flex;
+               ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame) |
+        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     auto right_pane =
-        window(ftxui::text(" Coneten Preview ") | ftxui::bold,
-               [this] {
-                 const auto selected_path =
-                     file_manager_.get_selected_entry(ui_.selected());
-                 if (not selected_path) {
-                   return ftxui::text("No item selected");
-                 }
-                 if (fs::is_directory(selected_path.value())) {
-                   return get_directory_preview(selected_path.value()) |
-                          ftxui::color(color_scheme_.text());
-                 }
-                 return ftxui::paragraph(
-                            get_text_preview(selected_path.value(), 100, 80)) |
-                        ftxui::color(color_scheme_.text()) |
-                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
-                        ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
-               }() |
-                   ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
-        ftxui::flex;
+        window(ftxui::text(" Coneten Preview ") | ftxui::bold, [this] {
+          const auto selected_path =
+              file_manager_.get_selected_entry(ui_.selected());
+          if (not selected_path) {
+            return ftxui::text("No item selected");
+          }
+          if (fs::is_directory(selected_path.value())) {
+            return get_directory_preview(selected_path.value()) |
+                   ftxui::color(color_scheme_.text());
+          }
+          return ftxui::paragraph(
+                     get_text_preview(selected_path.value(), 100, 80)) |
+                 ftxui::color(color_scheme_.text()) |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
+        }() | ftxui::vscroll_indicator | ftxui::frame | ftxui::flex);
 
     return hbox(left_pane, ftxui::separator(), right_pane);
   };
