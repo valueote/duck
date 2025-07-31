@@ -59,12 +59,16 @@ int FileManager::get_previous_path_index() const {
 bool FileManager::yanking() const { return is_yanking_; }
 bool FileManager::cutting() const { return is_cutting_; }
 
-std::optional<fs::directory_entry>
+std::expected<fs::directory_entry, std::string>
 FileManager::get_selected_entry(const int &selected) const {
-  if (curdir_entries_.empty()) {
-    return std::nullopt;
+  if (not fs::is_directory(curdir_entries_[selected])) {
+    return std::unexpected("Selected entry is a directory, not a file");
+    ;
+  } else if (curdir_entries_.empty()) {
+    return std::unexpected("No entries in current directory");
   } else if (selected < 0 || selected >= curdir_entries_.size()) {
-    return std::nullopt;
+    return std::unexpected("Selected index out of range: " +
+                           std::to_string(selected));
   }
   return curdir_entries_[selected];
 }

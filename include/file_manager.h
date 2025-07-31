@@ -1,5 +1,6 @@
 #pragma once
 #include "scheduler.h"
+#include <expected>
 #include <filesystem>
 #include <print>
 #include <stdexec/execution.hpp>
@@ -54,7 +55,7 @@ public:
   void update_curdir_entries();
   void toggle_hidden_entries();
 
-  std::optional<fs::directory_entry>
+  std::expected<fs::directory_entry, std::string>
   get_selected_entry(const int &selected) const;
   std::string entry_name_with_icon(const fs::directory_entry &entry) const;
   std::string format_directory_entries(const fs::directory_entry &entry) const;
@@ -62,50 +63,49 @@ public:
   stdexec::sender auto
   load_directory_entries_async(const fs::path &path,
                                std::vector<fs::directory_entry> &entries) {
-    return Scheduler::io_scheduler(),
-           stdexec::just(path, std::ref(entries)) |
-               stdexec::then([this](const fs::path &path,
-                                    std::vector<fs::directory_entry> &entries) {
-                 if (!fs::is_directory(path)) {
-                   return std::vector<fs::directory_entry>{};
+    return stdexec::just(path, std::ref(entries)) |
+           stdexec::then([this](const fs::path &path,
+                                std::vector<fs::directory_entry> &entries) {
+             if (!fs::is_directory(path)) {
+               return std::vector<fs::directory_entry>{};
+             }
+             entries.clear();
+             try {
+               std::vector<fs::directory_entry> dirs;
+               std::vector<fs::directory_entry> files;
+
+               dirs.reserve(128);
+               files.reserve(128);
+
+               for (const auto &entry : fs::directory_iterator(path)) {
+                 if (entry.path().filename().string().starts_with('.') &&
+                     !show_hidden_) {
+                   continue;
                  }
-                 entries.clear();
-                 try {
-                   std::vector<fs::directory_entry> dirs;
-                   std::vector<fs::directory_entry> files;
+                 (entry.is_directory() ? dirs : files).push_back(entry);
+               }
 
-                   dirs.reserve(128);
-                   files.reserve(128);
+               entries.reserve(dirs.size() + files.size());
+               std::ranges::sort(dirs);
+               std::ranges::sort(files);
+               std::ranges::copy(dirs, std::back_inserter(entries));
+               std::ranges::copy(files, std::back_inserter(entries));
 
-                   for (const auto &entry : fs::directory_iterator(path)) {
-                     if (entry.path().filename().string().starts_with('.') &&
-                         !show_hidden_) {
-                       continue;
-                     }
-                     (entry.is_directory() ? dirs : files).push_back(entry);
-                   }
-
-                   entries.reserve(dirs.size() + files.size());
-                   std::ranges::sort(dirs);
-                   std::ranges::sort(files);
-                   std::ranges::copy(dirs, std::back_inserter(entries));
-                   std::ranges::copy(files, std::back_inserter(entries));
-
-                 } catch (const std::exception &e) {
-                   std::println(stderr, "[ERROR]: {} in load_directory_entries",
-                                e.what());
-                 }
-                 return entries;
-               }) |
-               stdexec::then(
-                   [this](const std::vector<fs::directory_entry> entries) {
-                     return entries |
-                            std::views::transform(
-                                [this](const fs::directory_entry &entry) {
-                                  return format_directory_entries(entry);
-                                }) |
-                            std::ranges::to<std::vector>();
-                   });
+             } catch (const std::exception &e) {
+               std::println(stderr, "[ERROR]: {} in load_directory_entries",
+                            e.what());
+             }
+             return entries;
+           }) |
+           stdexec::then(
+               [this](const std::vector<fs::directory_entry> entries) {
+                 return entries |
+                        std::views::transform(
+                            [this](const fs::directory_entry &entry) {
+                              return format_directory_entries(entry);
+                            }) |
+                        std::ranges::to<std::vector>();
+               });
   }
 
   stdexec::sender auto update_curdir_entries_async() {

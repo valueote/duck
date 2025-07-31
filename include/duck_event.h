@@ -12,8 +12,8 @@ struct DirectoryChangedEvent : public ftxui::Event {
 };
 
 struct FileEvent {
-  inline static std::string leave_dir = "LEAVE_DIR";
-  inline static std::string enter_dir = "ENTER_DIR";
+  inline static ftxui::Event leave_dir{ftxui::Event::Special("LEAVE_DIR")};
+  inline static ftxui::Event enter_dir{ftxui::Event::Special("ENTER_DIR")};
 };
 
 } // namespace duck

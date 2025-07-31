@@ -1,6 +1,6 @@
+#include "input_handler.h"
 #include "duck_event.h"
 #include "file_manager.h"
-#include "input_handler.h"
 #include "scheduler.h"
 #include "stdexec/__detail/__execution_fwd.hpp"
 #include "stdexec/__detail/__start_detached.hpp"
@@ -44,27 +44,35 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('l')) {
-      if (file_manager_.get_selected_entry(ui_.selected()).has_value() &&
-          fs::is_directory(
-              file_manager_.get_selected_entry(ui_.selected()).value())) {
-
-        file_manager_.update_current_path(fs::canonical(
-            file_manager_.get_selected_entry(ui_.selected()).value().path()));
-
+      auto entry =
+          file_manager_.get_selected_entry(ui_.selected())
+              .and_then([](const fs::directory_entry &entry) {
+                if (fs::is_directory(entry)) {
+                  return std::expected<fs::directory_entry, std::string>(entry);
+                } else {
+                  return std::expected<fs::directory_entry, std::string>(
+                      "Selected entry is not a directory");
+                }
+              });
+      if (entry) {
+        file_manager_.update_current_path(fs::canonical(entry.value().path()));
         file_manager_.update_curdir_entries();
         ui_.enter_direcotry(file_manager_.curdir_entries_string());
+      } else {
+        std::println(stderr, "[ERROR]: {}", entry.error());
       }
       return true;
     }
 
     if (event == ftxui::Event::Character('h')) {
-      auto task =
+      auto task = stdexec::on(
+          Scheduler::io_scheduler(),
           file_manager_.update_current_path_async(
               file_manager_.cur_parent_path()) |
-          stdexec::then([this](std::vector<std::string> entries) {
-            ui_.leave_direcotry(std::move(entries),
-                                file_manager_.get_previous_path_index());
-          });
+              stdexec::then([this](std::vector<std::string> entries) {
+                ui_.post_event(FileEvent::leave_dir);
+                return;
+              }));
       stdexec::start_detached(std::move(task));
       return true;
     }
@@ -115,9 +123,16 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
 std::function<bool(ftxui::Event)> InputHandler::test_handler() {
   return [this](ftxui::Event event) {
-    if (event == ftxui::Event::Special(FileEvent::leave_dir)) {
+    if (event == FileEvent::leave_dir) {
       ui_.exit();
+      return true;
     }
+
+    if (event == FileEvent::enter_dir) {
+      ui_.enter_direcotry(file_manager_.curdir_entries_string());
+      return true;
+    }
+
     return false;
   };
 }
