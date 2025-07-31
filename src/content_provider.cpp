@@ -1,5 +1,5 @@
-#include "colorscheme.h"
 #include "content_provider.h"
+#include "colorscheme.h"
 #include "ui.h"
 #include <boost/asio.hpp>
 #include <boost/process.hpp>
@@ -41,16 +41,20 @@ std::function<ftxui::Element()> ContentProvider::preview() {
     auto right_pane =
         window(ftxui::text(" Coneten Preview ") | ftxui::bold,
                [this] {
-                 const auto selected_path_opt =
+                 const auto selected_path =
                      file_manager_.get_selected_entry(ui_.selected());
-                 if (!selected_path_opt.has_value()) {
+                 if (not selected_path) {
                    return ftxui::text("No item selected");
                  }
-                 if (fs::is_directory(selected_path_opt.value())) {
-                   return get_directory_preview(selected_path_opt) |
+                 if (fs::is_directory(selected_path.value())) {
+                   return get_directory_preview(selected_path.value()) |
                           ftxui::color(color_scheme_.text());
                  }
-                 return ftxui::paragraph(get_text_preview(selected_path_opt));
+                 return ftxui::paragraph(
+                            get_text_preview(selected_path.value(), 100, 80)) |
+                        ftxui::color(color_scheme_.text()) |
+                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
+                        ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
                }() |
                    ftxui::vscroll_indicator | ftxui::frame | ftxui::flex) |
         ftxui::flex;
@@ -125,17 +129,10 @@ ftxui::Component ContentProvider::deletion_dialog() {
   return dialog_renderer;
 }
 
-std::string
-ContentProvider::get_text_preview(const std::optional<fs::path> &path,
-                                  size_t max_lines, size_t max_width) {
-  if (!path.has_value()) {
-    return "No file to preview";
-  }
-
-  if (fs::is_directory(path.value()))
-    return "[ERROR]: Call get_text_preview on the directory";
-
-  std::ifstream file(path.value());
+std::string ContentProvider::get_text_preview(const fs::path &path,
+                                              size_t max_lines,
+                                              size_t max_width) {
+  std::ifstream file(path);
 
   std::ostringstream oss;
   std::string line;
@@ -157,51 +154,6 @@ ContentProvider::get_text_preview(const std::optional<fs::path> &path,
     ++lines;
   }
   return oss.str();
-}
-
-std::string
-ContentProvider::bat_text_preview(const std::optional<fs::path> &path,
-                                  size_t max_lines, size_t max_width) {
-  if (!path.has_value()) {
-    return "No file to preview";
-  }
-
-  if (fs::is_directory(path.value())) {
-    return "[ERROR]: Call get_text_preview on the directory";
-  }
-
-  try {
-    namespace bp2 = boost::process::v2;
-    boost::asio::io_context ctx;
-    boost::asio::readable_pipe rp(ctx);
-
-    std::string command_str =
-        std::format("bat --color=always --style=plain --paging=never "
-                    "--line-range=:{:d} \"{}\"",
-                    max_lines, path.value().string());
-
-    bp2::shell cmd(command_str);
-
-    bp2::process proc(ctx.get_executor(), cmd.exe(), cmd.args(),
-                      bp2::process_stdio{{}, rp, {}},
-                      bp2::process_environment(bp2::environment::current()));
-
-    std::string output;
-    boost::system::error_code ec;
-    boost::asio::read(rp, boost::asio::dynamic_buffer(output), ec);
-
-    if (ec && ec != boost::asio::error::eof) {
-      throw boost::system::system_error(ec);
-    }
-
-    proc.wait();
-    return output;
-
-  } catch (const std::exception &e) {
-    std::println(stderr, "[WARN] Failed to use 'bat' with Boost.Process : {}",
-                 e.what());
-    return "[INFO] For syntax highlighting, please install 'bat'.";
-  }
 }
 
 ftxui::Element ContentProvider::get_directory_preview(

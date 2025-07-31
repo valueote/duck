@@ -10,6 +10,7 @@ namespace fs = std::filesystem;
 
 class FileManager {
 private:
+  std::mutex mutex_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
@@ -66,36 +67,9 @@ public:
     return stdexec::just(path, std::ref(entries)) |
            stdexec::then([this](const fs::path &path,
                                 std::vector<fs::directory_entry> &entries) {
-             if (!fs::is_directory(path)) {
-               return std::vector<fs::directory_entry>{};
-             }
-             entries.clear();
-             try {
-               std::vector<fs::directory_entry> dirs;
-               std::vector<fs::directory_entry> files;
-
-               dirs.reserve(128);
-               files.reserve(128);
-
-               for (const auto &entry : fs::directory_iterator(path)) {
-                 if (entry.path().filename().string().starts_with('.') &&
-                     !show_hidden_) {
-                   continue;
-                 }
-                 (entry.is_directory() ? dirs : files).push_back(entry);
-               }
-
-               entries.reserve(dirs.size() + files.size());
-               std::ranges::sort(dirs);
-               std::ranges::sort(files);
-               std::ranges::copy(dirs, std::back_inserter(entries));
-               std::ranges::copy(files, std::back_inserter(entries));
-
-             } catch (const std::exception &e) {
-               std::println(stderr, "[ERROR]: {} in load_directory_entries",
-                            e.what());
-             }
-             return entries;
+             std::unique_lock lock{mutex_};
+             load_directory_entries(path, entries);
+             return curdir_entries_;
            }) |
            stdexec::then(
                [this](const std::vector<fs::directory_entry> entries) {
@@ -109,12 +83,11 @@ public:
   }
 
   stdexec::sender auto update_curdir_entries_async() {
-    return stdexec::on(
-        Scheduler::io_scheduler(),
-        load_directory_entries_async(current_path_, curdir_entries_));
+    return load_directory_entries_async(current_path_, curdir_entries_);
   }
 
   stdexec::sender auto update_current_path_async(const fs::path &new_path) {
+    std::unique_lock lock{mutex_};
     previous_path_ = current_path_;
     current_path_ = new_path;
     parent_path_ = current_path_.parent_path();

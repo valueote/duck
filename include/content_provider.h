@@ -12,8 +12,8 @@ private:
   FileManager &file_manager_;
   const ColorScheme &color_scheme_;
 
-  std::string get_text_preview(const std::optional<fs::path> &path,
-                               size_t max_lines = 100, size_t max_width = 80);
+  std::string get_text_preview(const fs::path &path, size_t max_lines = 100,
+                               size_t max_width = 80);
 
   std::string bat_text_preview(const std::optional<fs::path> &path,
                                size_t max_lines = 100, size_t max_width = 80);

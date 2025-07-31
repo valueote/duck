@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
-#include <optional>
 #include <print>
 #include <ranges>
 #include <stdexec/execution.hpp>
@@ -61,14 +60,13 @@ bool FileManager::cutting() const { return is_cutting_; }
 
 std::expected<fs::directory_entry, std::string>
 FileManager::get_selected_entry(const int &selected) const {
-  if (not fs::is_directory(curdir_entries_[selected])) {
-    return std::unexpected("Selected entry is a directory, not a file");
-    ;
-  } else if (curdir_entries_.empty()) {
+  if (curdir_entries_.empty()) {
     return std::unexpected("No entries in current directory");
   } else if (selected < 0 || selected >= curdir_entries_.size()) {
     return std::unexpected("Selected index out of range: " +
                            std::to_string(selected));
+  } else if (not fs::is_directory(curdir_entries_[selected])) {
+    return std::unexpected("Selected entry is a directory, not a file");
   }
   return curdir_entries_[selected];
 }

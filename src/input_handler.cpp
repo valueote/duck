@@ -54,10 +54,17 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
                       "Selected entry is not a directory");
                 }
               });
+
       if (entry) {
-        file_manager_.update_current_path(fs::canonical(entry.value().path()));
-        file_manager_.update_curdir_entries();
-        ui_.enter_direcotry(file_manager_.curdir_entries_string());
+        auto task = stdexec::on(
+            Scheduler::io_scheduler(),
+            file_manager_.update_current_path_async(entry.value().path()) |
+                stdexec::then([this](std::vector<std::string> entries) {
+                  ui_.post_event(FileEvent::enter_dir);
+                  return;
+                }));
+        stdexec::start_detached(std::move(task));
+
       } else {
         std::println(stderr, "[ERROR]: {}", entry.error());
       }
@@ -124,7 +131,8 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 std::function<bool(ftxui::Event)> InputHandler::test_handler() {
   return [this](ftxui::Event event) {
     if (event == FileEvent::leave_dir) {
-      ui_.exit();
+      ui_.leave_direcotry(file_manager_.curdir_entries_string(),
+                          file_manager_.get_previous_path_index());
       return true;
     }
 
