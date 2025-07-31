@@ -3,8 +3,11 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
+#include <memory>
+#include <mutex>
 #include <print>
 #include <ranges>
+#include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <unordered_map>
 #include <vector>
@@ -21,25 +24,39 @@ FileManager::FileManager()
   clipboard_entries_.reserve(64);
 }
 
-const fs::path &FileManager::current_path() const { return current_path_; }
+const fs::path &FileManager::current_path() const {
+  std::shared_lock lock(mutex_);
+  return current_path_;
+}
 
-const fs::path &FileManager::cur_parent_path() const { return parent_path_; }
+const fs::path &FileManager::cur_parent_path() const {
 
-const fs::path &FileManager::previous_path() const { return previous_path_; }
+  std::shared_lock lock(mutex_);
+  return parent_path_;
+}
+
+const fs::path &FileManager::previous_path() const {
+
+  std::shared_lock lock(mutex_);
+  return previous_path_;
+}
 
 const std::vector<fs::directory_entry> &FileManager::curdir_entries() const {
   return curdir_entries_;
 }
 
 const std::vector<fs::directory_entry> &FileManager::preview_entries() const {
+  std::shared_lock lock(mutex_);
   return preview_entries_;
 }
 
 const std::vector<fs::directory_entry> &FileManager::marked_entries() const {
+  std::shared_lock lock(mutex_);
   return marked_entires_;
 }
 
 std::vector<std::string> FileManager::curdir_entries_string() const {
+  std::shared_lock lock(mutex_);
   return curdir_entries_ |
          std::views::transform([this](const fs::directory_entry &entry) {
            return format_directory_entries(entry);
@@ -48,6 +65,7 @@ std::vector<std::string> FileManager::curdir_entries_string() const {
 }
 
 int FileManager::get_previous_path_index() const {
+  std::shared_lock lock(mutex_);
   if (auto it = std::ranges::find(curdir_entries_, previous_path_);
       it != curdir_entries_.end()) {
     return static_cast<int>(std::distance(curdir_entries_.begin(), it));
@@ -60,6 +78,7 @@ bool FileManager::cutting() const { return is_cutting_; }
 
 std::expected<fs::directory_entry, std::string>
 FileManager::get_selected_entry(const int &selected) const {
+  std::shared_lock lock(mutex_);
   if (curdir_entries_.empty()) {
     return std::unexpected("No entries in current directory");
   } else if (selected < 0 || selected >= curdir_entries_.size()) {
@@ -116,7 +135,6 @@ void FileManager::update_current_path(const fs::path &new_path) {
   previous_path_ = current_path_;
   current_path_ = new_path;
   parent_path_ = current_path_.parent_path();
-  // update_curdir_entries();
 }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
@@ -175,6 +193,7 @@ void FileManager::paste(const int &selected) {
   }
 }
 bool FileManager::is_marked(const fs::directory_entry &entry) const {
+  std::shared_lock lock(mutex_);
   return std::ranges::find(marked_entires_, entry) != marked_entires_.end();
 }
 
@@ -188,6 +207,7 @@ bool FileManager::delete_marked_entries() {
     return false;
   }
 
+  std::unique_lock lock(mutex_);
   for (auto &entry : marked_entires_) {
     delete_entry(entry);
   }
@@ -196,7 +216,10 @@ bool FileManager::delete_marked_entries() {
   return true;
 }
 
-void FileManager::clear_marked_entries() { marked_entires_.clear(); }
+void FileManager::clear_marked_entries() {
+  std::unique_lock lock(mutex_);
+  marked_entires_.clear();
+}
 
 bool FileManager::delete_entry(fs::directory_entry &entry) {
   if (!fs::exists(entry)) {

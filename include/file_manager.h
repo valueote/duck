@@ -3,6 +3,7 @@
 #include <expected>
 #include <filesystem>
 #include <print>
+#include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <vector>
 namespace duck {
@@ -10,7 +11,7 @@ namespace fs = std::filesystem;
 
 class FileManager {
 private:
-  std::mutex mutex_;
+  mutable std::shared_mutex mutex_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
