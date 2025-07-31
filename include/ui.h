@@ -55,8 +55,9 @@ public:
   void exit();
   int selected();
   bool show_hidden();
-  void post_event(const ftxui::Event &event);
-  void restored_io(const std::function<void()> closure);
+  void post_event(ftxui::Event event);
+  void post_task(std::function<void()> task);
+  void restored_io(std::function<void()> closure);
   std::pair<int, int> screen_size();
   ftxui::Component &menu();
 };
