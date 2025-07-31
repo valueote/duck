@@ -32,9 +32,9 @@ add_executable(
   duck
   src/main.cpp
   src/ui.cpp
-  src/filemanager.cpp
-  src/inputhandler.cpp
-  src/contentprovider.cpp
+  src/file_manager.cpp
+  src/input_handler.cpp
+  src/content_provider.cpp
   src/duck.cpp
   src/colorscheme.cpp
   src/scheduler.cpp)
