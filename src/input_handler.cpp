@@ -23,7 +23,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       open_file();
       return true;
     }
-    
+
     if (event == ftxui::Event::Character(' ')) {
       file_manager_.toggle_mark_on_selected(ui_.selected());
       ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
@@ -72,15 +72,25 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('h')) {
-      auto task = stdexec::on(
-          Scheduler::io_scheduler(),
-          file_manager_.update_current_path_async(
-              file_manager_.cur_parent_path()) |
-              stdexec::then([this](std::vector<std::string> entries) {
-                ui_.post_task(
-                    [this, entries]() { ui_.leave_direcotry(entries, 0); });
+      auto task =
+          stdexec::on(
+              Scheduler::io_scheduler(),
+              file_manager_.update_current_path_async(
+                  file_manager_.cur_parent_path()) |
+                  stdexec::then([this](std::vector<std::string> entries) {
+                    return std::make_pair(
+                        std::move(entries),
+                        file_manager_.get_previous_path_index());
+                  })) |
+          stdexec::then(
+              [this](
+                  std::pair<std::vector<std::string>, int> entries_and_index) {
+                ui_.post_task([this, entries_and_index]() {
+                  ui_.leave_direcotry(entries_and_index.first,
+                                      entries_and_index.second);
+                });
                 ui_.post_event(DuckEvent::refresh);
-              }));
+              });
       stdexec::start_detached(std::move(task));
       return true;
     }
