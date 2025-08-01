@@ -20,7 +20,7 @@ private:
   std::vector<std::string> curdir_string_entries_;
 
   std::string text_preview_content_;
-  ftxui::Element entries_preview;
+  ftxui::Element entries_preview_;
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
@@ -52,6 +52,7 @@ public:
   void
   update_curdir_entries_string(std::vector<std::string> curdir_entries_string);
   void update_entries_preview(ftxui::Element new_entries);
+  ftxui::Element entries_preview();
 
   void render();
   void exit();

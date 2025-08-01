@@ -80,8 +80,7 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
           if (fs::is_directory(selected_path.value())) {
             auto task = get_directory_preview_async(selected_path.value());
             stdexec::start_detached(std::move(task));
-            return get_directory_preview(selected_path.value()) |
-                   ftxui::color(color_scheme_.text());
+            return ui_.entries_preview() | ftxui::color(color_scheme_.text());
           }
           return ftxui::paragraph(
                      get_text_preview(selected_path.value(), 100, 80)) |

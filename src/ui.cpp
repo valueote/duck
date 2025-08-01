@@ -14,6 +14,7 @@ namespace duck {
 
 Ui::Ui()
     : selected_{0}, show_deletion_dialog_{false},
+      entries_preview_{ftxui::emptyElement()},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
 void Ui::set_menu(
@@ -85,8 +86,10 @@ void Ui::update_curdir_entries_string(
 }
 
 void Ui::update_entries_preview(ftxui::Element new_entries) {
-  entries_preview = std::move(new_entries);
+  entries_preview_ = std::move(new_entries);
 }
+
+ftxui::Element Ui::entries_preview() { return entries_preview_; }
 
 void Ui::render() { screen_.Loop(modal_); }
 
