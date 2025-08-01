@@ -69,10 +69,13 @@ public:
                                 std::vector<fs::directory_entry> &entries) {
              std::unique_lock lock{mutex_};
              load_directory_entries_without_lock(path, entries);
-             return curdir_entries_;
+             
+             return entries;
            }) |
            stdexec::then(
-               [this](const std::vector<fs::directory_entry> entries) {
+               [this](const std::vector<fs::directory_entry>& entries) {
+                if(entries.empty()) 
+                  return std::vector<std::string>{{"[Empty folder]"}};
                  return entries |
                         std::views::transform(
                             [this](const fs::directory_entry &entry) {

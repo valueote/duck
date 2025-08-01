@@ -57,6 +57,9 @@ const std::vector<fs::directory_entry> &FileManager::marked_entries() const {
 
 std::vector<std::string> FileManager::curdir_entries_string() const {
   std::shared_lock lock(mutex_);
+  if (curdir_entries_.empty()) {
+    return {"[Empty folder]"};
+  }
   return curdir_entries_ |
          std::views::transform([this](const fs::directory_entry &entry) {
            return format_directory_entries(entry);

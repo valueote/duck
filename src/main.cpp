@@ -11,3 +11,4 @@ int main() {
 // TODO: implement better color scheme
 // TODO: Add async to implement better performance
 // TODO: Add realtime response for filesystem changing;
+// TODO: Implement better log

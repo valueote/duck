@@ -2,9 +2,6 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
-#include "stdexec/__detail/__execution_fwd.hpp"
-#include "stdexec/__detail/__start_detached.hpp"
-#include "stdexec/__detail/__then.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -43,6 +40,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       return true;
     }
 
+    // FIX: crash when enter enmpty dir
     if (event == ftxui::Event::Character('l')) {
       auto entry =
           file_manager_.get_selected_entry(ui_.selected())
@@ -62,7 +60,9 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
             Scheduler::io_scheduler(),
             file_manager_.update_current_path_async(entry.value().path()) |
                 stdexec::then([this](std::vector<std::string> entries) {
-                  ui_.post_event(DuckEvent::enter_dir);
+                  ui_.post_task([this]() {
+                    ui_.enter_direcotry(file_manager_.curdir_entries_string());
+                  });
                   ui_.post_event(DuckEvent::refresh);
                 }));
         stdexec::start_detached(std::move(task));
