@@ -16,6 +16,7 @@ namespace duck {
 
 class Ui {
 private:
+  std::mutex post_mutex_;
   std::vector<std::string> curdir_string_entries_;
   std::vector<std::string> previewdir_string_entries_;
   std::string file_preview_content_;

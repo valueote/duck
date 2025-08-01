@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
-#include <memory>
 #include <mutex>
 #include <print>
 #include <ranges>
@@ -95,13 +94,10 @@ FileManager::get_selected_entry(const int &selected) const {
     return std::unexpected("Selected index out of range: " +
                            std::to_string(selected));
   }
-  if (not fs::is_directory(curdir_entries_[selected])) {
-    return std::unexpected("Selected entry is a directory, not a file");
-  }
   return curdir_entries_[selected];
 }
 
-void FileManager::load_directory_entries(
+void FileManager::load_directory_entries_without_lock(
     const fs::path &path, std::vector<fs::directory_entry> &entries) {
   if (!fs::is_directory(path)) {
     return;
@@ -136,12 +132,22 @@ void FileManager::load_directory_entries(
 
 void FileManager::update_curdir_entries() {
   std::unique_lock lock{mutex_};
-  load_directory_entries(current_path_, curdir_entries_);
+  load_directory_entries_without_lock(current_path_, curdir_entries_);
 }
 
 void FileManager::update_preview_entries(const int &selected) {
   std::unique_lock lock{mutex_};
-  load_directory_entries(curdir_entries_[selected].path(), preview_entries_);
+  if (curdir_entries_.empty()) {
+    return;
+  }
+  if (selected < 0 || selected >= curdir_entries_.size()) {
+    return;
+  }
+  if (not fs::is_directory(curdir_entries_[selected])) {
+    return;
+  }
+  load_directory_entries_without_lock(curdir_entries_[selected].path(),
+                                      preview_entries_);
 }
 
 //

@@ -23,8 +23,8 @@ private:
   bool is_cutting_;
   bool show_hidden_;
 
-  void load_directory_entries(const fs::path &path,
-                              std::vector<fs::directory_entry> &entries);
+  void load_directory_entries_without_lock(
+      const fs::path &path, std::vector<fs::directory_entry> &entries);
   bool delete_entry(fs::directory_entry &entry);
 
 public:
@@ -68,7 +68,7 @@ public:
            stdexec::then([this](const fs::path &path,
                                 std::vector<fs::directory_entry> &entries) {
              std::unique_lock lock{mutex_};
-             load_directory_entries(path, entries);
+             load_directory_entries_without_lock(path, entries);
              return curdir_entries_;
            }) |
            stdexec::then(

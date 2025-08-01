@@ -46,12 +46,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('l')) {
       auto entry =
           file_manager_.get_selected_entry(ui_.selected())
-              .and_then([](const fs::directory_entry &entry) {
+              .and_then([](fs::directory_entry entry)
+                            -> std::expected<fs::directory_entry, std::string> {
                 if (fs::is_directory(entry)) {
-                  return std::expected<fs::directory_entry, std::string>(entry);
+                  return std::expected<fs::directory_entry, std::string>{
+                      std::move(entry)};
                 } else {
-                  return std::expected<fs::directory_entry, std::string>(
-                      "Selected entry is not a directory");
+                  return std::unexpected<std::string>{
+                      "Selected entry is not a directory"};
                 }
               });
 
@@ -68,6 +70,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       } else {
         std::println(stderr, "[ERROR]: {}", entry.error());
       }
+
       return true;
     }
 

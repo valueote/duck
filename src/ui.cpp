@@ -6,6 +6,7 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <mutex>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -88,7 +89,10 @@ void Ui::exit() { screen_.Exit(); }
 
 int Ui::selected() { return selected_; }
 
-void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
+void Ui::post_task(std::function<void()> task) {
+  std::unique_lock lock(post_mutex_);
+  screen_.Post(task);
+}
 
 std::pair<int, int> Ui::screen_size() {
   return {screen_.dimx(), screen_.dimy()};
