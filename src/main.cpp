@@ -12,3 +12,4 @@ int main() {
 // TODO: Add async to implement better performance
 // TODO: Add realtime response for filesystem changing;
 // TODO: Implement better log
+// TODO: Forbid delete current dir when navigating to it

@@ -18,9 +18,9 @@ class Ui {
 private:
   std::mutex post_mutex_;
   std::vector<std::string> curdir_string_entries_;
-  std::vector<std::string> previewdir_string_entries_;
-  std::string file_preview_content_;
-  std::vector<std::string> dir_preview_content_;
+
+  std::string text_preview_content_;
+  ftxui::Element entries_preview;
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
@@ -51,6 +51,7 @@ public:
                        const int &previous_path_index);
   void
   update_curdir_entries_string(std::vector<std::string> curdir_entries_string);
+  void update_entries_preview(ftxui::Element new_entries);
 
   void render();
   void exit();

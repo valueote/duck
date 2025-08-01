@@ -40,7 +40,6 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       return true;
     }
 
-    // FIX: crash when enter enmpty dir
     if (event == ftxui::Event::Character('l')) {
       auto entry =
           file_manager_.get_selected_entry(ui_.selected())
@@ -50,8 +49,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
                   return std::expected<fs::directory_entry, std::string>{
                       std::move(entry)};
                 } else {
-                  return std::unexpected<std::string>{
-                      "Selected entry is not a directory"};
+                  return std::unexpected<std::string>{{}};
                 }
               });
 

@@ -83,6 +83,11 @@ void Ui::update_curdir_entries_string(
     std::vector<std::string> curdir_entries_string) {
   curdir_string_entries_ = std::move(curdir_entries_string);
 }
+
+void Ui::update_entries_preview(ftxui::Element new_entries) {
+  entries_preview = std::move(new_entries);
+}
+
 void Ui::render() { screen_.Loop(modal_); }
 
 void Ui::exit() { screen_.Exit(); }

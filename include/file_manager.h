@@ -69,7 +69,6 @@ public:
                                 std::vector<fs::directory_entry> &entries) {
              std::unique_lock lock{mutex_};
              load_directory_entries_without_lock(path, entries);
-
              return entries;
            }) |
            stdexec::then(
