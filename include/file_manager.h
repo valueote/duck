@@ -83,16 +83,12 @@ public:
                });
   }
 
-  stdexec::sender auto update_curdir_entries_async() {
-    return load_directory_entries_async(current_path_, curdir_entries_);
-  }
-
   stdexec::sender auto update_current_path_async(const fs::path &new_path) {
     std::unique_lock lock{mutex_};
     previous_path_ = current_path_;
     current_path_ = new_path;
     parent_path_ = current_path_.parent_path();
-    return update_curdir_entries_async();
+    return load_directory_entries_async(current_path_, curdir_entries_);
   }
 };
 } // namespace duck
