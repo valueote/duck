@@ -60,8 +60,8 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
             Scheduler::io_scheduler(),
             file_manager_.update_current_path_async(entry.value().path()) |
                 stdexec::then([this](std::vector<std::string> entries) {
-                  ui_.post_task([this]() {
-                    ui_.enter_direcotry(file_manager_.curdir_entries_string());
+                  ui_.post_task([this, entries]() {
+                    ui_.enter_direcotry(std::move(entries));
                   });
                   ui_.post_event(DuckEvent::refresh);
                 }));
@@ -143,20 +143,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 }
 
 std::function<bool(ftxui::Event)> InputHandler::test_handler() {
-  return [this](ftxui::Event event) {
-    if (event == DuckEvent::leave_dir) {
-      ui_.leave_direcotry(file_manager_.curdir_entries_string(),
-                          file_manager_.get_previous_path_index());
-      return true;
-    }
-
-    if (event == DuckEvent::enter_dir) {
-      ui_.enter_direcotry(file_manager_.curdir_entries_string());
-      return true;
-    }
-
-    return false;
-  };
+  return [this](ftxui::Event event) { return false; };
 }
 
 std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
