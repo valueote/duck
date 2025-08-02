@@ -7,6 +7,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
+#include <shared_mutex>
 #include <stack>
 #include <string>
 #include <utility>
@@ -17,6 +18,7 @@ namespace duck {
 class Ui {
 private:
   std::mutex post_mutex_;
+  std::shared_mutex data_mutex_;
   std::vector<std::string> curdir_string_entries_;
 
   std::string text_preview_content_;

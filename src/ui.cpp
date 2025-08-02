@@ -7,6 +7,7 @@
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -95,7 +96,10 @@ void Ui::render() { screen_.Loop(modal_); }
 
 void Ui::exit() { screen_.Exit(); }
 
-int Ui::selected() { return selected_; }
+int Ui::selected() {
+  std::shared_lock lock{data_mutex_};
+  return selected_;
+}
 
 void Ui::post_task(std::function<void()> task) {
   std::unique_lock lock(post_mutex_);

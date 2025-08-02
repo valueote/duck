@@ -116,6 +116,9 @@ void FileManager::load_directory_entries_without_lock(
     files.reserve(128);
 
     for (const auto &entry : fs::directory_iterator(path)) {
+      if (entry.path().empty()) {
+        continue;
+      }
       if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
         continue;
       }
@@ -276,6 +279,10 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
       {".log", "\uf4ed"}, {".csv", "\ueefc"},
   };
 
+  if (!fs::exists(entry) || entry.path().empty()) {
+    return "";
+  }
+
   const auto filename = entry.path().filename().string();
   if (fs::is_directory(entry)) {
     return std::format("\uf4d3 {}", filename);
@@ -295,6 +302,7 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
 
 std::string
 FileManager::format_directory_entries(const fs::directory_entry &entry) const {
+  std::shared_lock lock(mutex_);
   const std::string selected_marker = is_marked(entry) ? "█ " : "  ";
 
   return selected_marker + entry_name_with_icon(entry);
