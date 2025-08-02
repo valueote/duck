@@ -8,3 +8,6 @@ RAPIDS.cmake
 cpm-package-lock.cmake
 .vscode
 log
+debug
+gdb.txt
+test_speed
