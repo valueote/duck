@@ -10,7 +10,7 @@
 #include <functional>
 #include <stdexec/execution.hpp>
 #include <string>
-#include <vector>
+
 namespace duck {
 class ContentProvider {
 private:
@@ -33,14 +33,15 @@ public:
 
   std::function<ftxui::Element(const ftxui::EntryState &state)>
   entries_transform();
-  std::function<ftxui::Element()> preview();
+
   ftxui::Component deletion_dialog();
 
   stdexec::sender auto get_directory_preview_async(const fs::path &dir_path) {
     return stdexec::on(
         Scheduler::io_scheduler(),
         stdexec::just(dir_path) | stdexec::then([this](fs::path dir_path) {
-          return get_directory_preview(std::move(dir_path));
+          return file_manager_.get_directory_preview(ui_.selected(),
+                                                     std::move(dir_path));
         }) | stdexec::then([this](ftxui::Element preview) {
           ui_.post_task([this, preview]() {
             ui_.update_entries_preview(std::move(preview));

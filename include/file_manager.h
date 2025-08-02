@@ -61,7 +61,8 @@ public:
   std::expected<fs::directory_entry, std::string>
   get_selected_entry(const int &selected) const;
   std::string entry_name_with_icon(const fs::directory_entry &entry) const;
-  std::string format_directory_entries(const fs::directory_entry &entry) const;
+  std::string
+  format_directory_entries_without_lock(const fs::directory_entry &entry) const;
 
   ftxui::Element get_directory_preview(const int &selected,
                                        const fs::path &dir_path);
@@ -75,18 +76,18 @@ public:
              load_directory_entries_without_lock(path, entries);
              return entries;
            }) |
-           stdexec::then(
-               [this](const std::vector<fs::directory_entry> &entries) {
-                 if (entries.empty()) {
-                   return std::vector<std::string>{"[No items]"};
-                 }
-                 return entries |
-                        std::views::transform(
-                            [this](const fs::directory_entry &entry) {
-                              return format_directory_entries(entry);
-                            }) |
-                        std::ranges::to<std::vector>();
-               });
+           stdexec::then([this](
+                             const std::vector<fs::directory_entry> &entries) {
+             if (entries.empty()) {
+               return std::vector<std::string>{"[No items]"};
+             }
+             return entries |
+                    std::views::transform(
+                        [this](const fs::directory_entry &entry) {
+                          return format_directory_entries_without_lock(entry);
+                        }) |
+                    std::ranges::to<std::vector>();
+           });
   }
 
   stdexec::sender auto update_current_path_async(const fs::path &new_path) {

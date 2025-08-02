@@ -15,10 +15,12 @@ FileManager::FileManager()
     : current_path_{fs::current_path()},
       parent_path_{current_path_.parent_path()}, is_yanking_{false},
       is_cutting_{false}, show_hidden_{false} {
+
   update_curdir_entries();
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries(0);
   }
+
   marked_entires_.reserve(64);
   clipboard_entries_.reserve(64);
 }
@@ -62,7 +64,7 @@ std::vector<std::string> FileManager::curdir_entries_string() const {
   }
   return curdir_entries_ |
          std::views::transform([this](const fs::directory_entry &entry) {
-           return format_directory_entries(entry);
+           return format_directory_entries_without_lock(entry);
          }) |
          std::ranges::to<std::vector>();
 }
@@ -220,6 +222,7 @@ void FileManager::paste(const int &selected) {
     std::println(stderr, "[ERORR] {}", e.what());
   }
 }
+
 bool FileManager::is_marked(const fs::directory_entry &entry) const {
   std::shared_lock lock(mutex_);
   return std::ranges::find(marked_entires_, entry) != marked_entires_.end();
@@ -271,14 +274,15 @@ ftxui::Element FileManager::get_directory_preview(const int &selected,
   }
   std::unique_lock lock{mutex_};
   update_preview_entries_without_lock(selected);
-  auto entries = preview_entries_ |
-                 std::views::transform([this](fs::directory_entry entry) {
-                   if (entry.path().empty() || !fs::exists(entry)) {
-                     return ftxui::text("[Invalid Entry]");
-                   }
-                   return ftxui::text(format_directory_entries(entry));
-                 }) |
-                 std::ranges::to<std::vector>();
+  auto entries =
+      preview_entries_ |
+      std::views::transform([this](fs::directory_entry entry) {
+        if (entry.path().empty() || !fs::exists(entry)) {
+          return ftxui::text("[Invalid Entry]");
+        }
+        return ftxui::text(format_directory_entries_without_lock(entry));
+      }) |
+      std::ranges::to<std::vector>();
   if (entries.empty()) {
     entries.push_back(ftxui::text("[Empty folder]"));
   }
@@ -322,9 +326,12 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
   return std::format("{} {}", icon, filename);
 }
 
-std::string
-FileManager::format_directory_entries(const fs::directory_entry &entry) const {
-  const std::string selected_marker = is_marked(entry) ? "█ " : "  ";
+std::string FileManager::format_directory_entries_without_lock(
+    const fs::directory_entry &entry) const {
+  std::string selected_marker = "  ";
+  if (std::ranges::find(marked_entires_, entry) != marked_entires_.end()) {
+    selected_marker = "█ ";
+  }
   return selected_marker + entry_name_with_icon(entry);
 }
 
