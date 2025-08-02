@@ -70,24 +70,29 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     auto right_pane =
-        window(ftxui::text(" Coneten Preview ") | ftxui::bold, [this] {
-          const auto selected_path =
-              file_manager_.get_selected_entry(ui_.selected());
-          if (not selected_path) {
-            return ftxui::text("No item selected");
-          }
+        window(ftxui::text(" Coneten Preview ") | ftxui::bold,
+               [this] {
+                 const auto selected_path =
+                     file_manager_.get_selected_entry(ui_.selected());
+                 if (not selected_path) {
+                   return ftxui::text("No item selected");
+                 }
 
-          if (fs::is_directory(selected_path.value())) {
-            auto task = get_directory_preview_async(selected_path.value());
-            stdexec::start_detached(std::move(task));
-            return ui_.entries_preview() | ftxui::color(color_scheme_.text());
-          }
-          return ftxui::paragraph(
-                     get_text_preview(selected_path.value(), 100, 80)) |
-                 ftxui::color(color_scheme_.text()) |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
-                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
-        }() | ftxui::vscroll_indicator | ftxui::frame | ftxui::flex);
+                 if (fs::is_directory(selected_path.value())) {
+                   auto task =
+                       get_directory_preview_async(selected_path.value());
+                   stdexec::start_detached(std::move(task));
+                   return ui_.entries_preview() |
+                          ftxui::color(color_scheme_.text());
+                 }
+                 return ftxui::paragraph(
+                            get_text_preview(selected_path.value(), 100, 80)) |
+                        ftxui::color(color_scheme_.text()) |
+                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
+                        ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
+               }() |
+                   ftxui::vscroll_indicator | ftxui::frame) |
+        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     return hbox(left_pane, ftxui::separator(), right_pane);
   };
@@ -191,21 +196,24 @@ ContentProvider::get_directory_preview(const fs::path &dir_path) {
   if (!fs::is_directory(dir_path)) {
     return ftxui::text("[ERROR]: Call get_directory_preview on the file");
   }
-
+  std::unique_lock lock{mutex_};
   file_manager_.update_preview_entries(ui_.selected());
+  auto preview_entries = file_manager_.preview_entries();
+  auto node_transform =
+      [this](fs::directory_entry entry) -> std::shared_ptr<ftxui::Node> {
+    if (entry.path().empty() || !fs::exists(entry)) {
+      return ftxui::text("[Invalid Entry]");
+    }
+    return ftxui::text(file_manager_.format_directory_entries(entry));
+  };
+  auto nodes = preview_entries | std::views::transform(node_transform) |
+               std::ranges::to<std::vector>();
 
-  std::vector<ftxui::Element> lines =
-      file_manager_.preview_entries() |
-      std::views::transform([this](const fs::directory_entry &entry) {
-        return ftxui::text(file_manager_.format_directory_entries(entry));
-      }) |
-      std::ranges::to<std::vector>();
-
-  if (lines.empty()) {
-    lines.push_back(ftxui::text("[Empty folder]"));
+  if (nodes.empty()) {
+    nodes.push_back(ftxui::text("[Empty folder]"));
   }
 
-  return ftxui::vbox(std::move(lines));
+  return ftxui::vbox(std::move(nodes));
 }
 
 } // namespace duck

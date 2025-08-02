@@ -17,6 +17,7 @@ private:
   Ui &ui_;
   FileManager &file_manager_;
   const ColorScheme &color_scheme_;
+  std::mutex mutex_;
 
   std::string get_text_preview(const fs::path &path, size_t max_lines = 100,
                                size_t max_width = 80);

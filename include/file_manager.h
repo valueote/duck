@@ -1,6 +1,7 @@
 #pragma once
 #include <expected>
 #include <filesystem>
+#include <ftxui/component/component.hpp>
 #include <ranges>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
@@ -25,7 +26,7 @@ private:
 
   void load_directory_entries_without_lock(
       const fs::path &path, std::vector<fs::directory_entry> &entries);
-  bool delete_entry(fs::directory_entry &entry);
+  bool delete_entry_without_lock(fs::directory_entry &entry);
 
 public:
   FileManager();
@@ -53,6 +54,7 @@ public:
   bool delete_marked_entries();
   void update_current_path(const fs::path &new_path);
   void update_preview_entries(const int &selected);
+  void update_preview_entries_without_lock(const int &selected);
   void update_curdir_entries();
   void toggle_hidden_entries();
 
@@ -61,6 +63,8 @@ public:
   std::string entry_name_with_icon(const fs::directory_entry &entry) const;
   std::string format_directory_entries(const fs::directory_entry &entry) const;
 
+  ftxui::Element get_directory_preview(const int &selected,
+                                       const fs::path &dir_path);
   stdexec::sender auto
   load_directory_entries_async(const fs::path &path,
                                std::vector<fs::directory_entry> &entries) {

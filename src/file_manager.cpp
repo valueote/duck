@@ -105,9 +105,7 @@ void FileManager::load_directory_entries_without_lock(
   if (!fs::is_directory(path)) {
     return;
   }
-
   entries.clear();
-
   try {
     std::vector<fs::directory_entry> dirs;
     std::vector<fs::directory_entry> files;
@@ -116,7 +114,7 @@ void FileManager::load_directory_entries_without_lock(
     files.reserve(128);
 
     for (const auto &entry : fs::directory_iterator(path)) {
-      if (entry.path().empty()) {
+      if (entry.path().empty() || !fs::exists(entry)) {
         continue;
       }
       if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
@@ -143,6 +141,10 @@ void FileManager::update_curdir_entries() {
 
 void FileManager::update_preview_entries(const int &selected) {
   std::unique_lock lock{mutex_};
+  update_preview_entries_without_lock(selected);
+}
+
+void FileManager::update_preview_entries_without_lock(const int &selected) {
   if (curdir_entries_.empty()) {
     return;
   }
@@ -155,13 +157,6 @@ void FileManager::update_preview_entries(const int &selected) {
   load_directory_entries_without_lock(curdir_entries_[selected].path(),
                                       preview_entries_);
 }
-
-//
-// void FileManager::update_current_path(const fs::path &new_path) {
-//   previous_path_ = current_path_;
-//   current_path_ = new_path;
-//   parent_path_ = current_path_.parent_path();
-// }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
   std::unique_lock lock{mutex_};
@@ -232,18 +227,19 @@ bool FileManager::is_marked(const fs::directory_entry &entry) const {
 
 bool FileManager::delete_selected_entry(const int selected) {
   std::unique_lock lock{mutex_};
-  return delete_entry(curdir_entries_[selected]);
+  return delete_entry_without_lock(curdir_entries_[selected]);
 }
 
 bool FileManager::delete_marked_entries() {
+
+  std::unique_lock lock(mutex_);
   if (marked_entires_.empty()) {
     std::println(stderr, "[ERROR] try to delete empty file");
     return false;
   }
 
-  std::unique_lock lock(mutex_);
   for (auto &entry : marked_entires_) {
-    delete_entry(entry);
+    delete_entry_without_lock(entry);
   }
 
   marked_entires_.clear();
@@ -255,7 +251,7 @@ void FileManager::clear_marked_entries() {
   marked_entires_.clear();
 }
 
-bool FileManager::delete_entry(fs::directory_entry &entry) {
+bool FileManager::delete_entry_without_lock(fs::directory_entry &entry) {
   if (!fs::exists(entry)) {
     std::println(stderr, "[ERROR] try to delete an unexisted file");
     return false;
@@ -268,8 +264,34 @@ bool FileManager::delete_entry(fs::directory_entry &entry) {
   return true;
 }
 
+ftxui::Element FileManager::get_directory_preview(const int &selected,
+                                                  const fs::path &dir_path) {
+  if (!fs::is_directory(dir_path)) {
+    return ftxui::text("[ERROR]: Call get_directory_preview on the file");
+  }
+  std::unique_lock lock{mutex_};
+  update_preview_entries_without_lock(selected);
+  auto entries = preview_entries_ |
+                 std::views::transform([this](fs::directory_entry entry) {
+                   if (entry.path().empty() || !fs::exists(entry)) {
+                     return ftxui::text("[Invalid Entry]");
+                   }
+                   return ftxui::text(format_directory_entries(entry));
+                 }) |
+                 std::ranges::to<std::vector>();
+  if (entries.empty()) {
+    entries.push_back(ftxui::text("[Empty folder]"));
+  }
+
+  return ftxui::vbox(std::move(entries));
+}
+
 std::string
 FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
+  if (entry.path().empty()) {
+    return "[Invalid Entry]";
+  }
+
   static const std::unordered_map<std::string, std::string> extension_icons{
       {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
       {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
@@ -302,9 +324,7 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) const {
 
 std::string
 FileManager::format_directory_entries(const fs::directory_entry &entry) const {
-  std::shared_lock lock(mutex_);
   const std::string selected_marker = is_marked(entry) ? "█ " : "  ";
-
   return selected_marker + entry_name_with_icon(entry);
 }
 
