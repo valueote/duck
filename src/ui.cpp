@@ -6,7 +6,6 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
-#include <mutex>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -14,7 +13,7 @@ namespace duck {
 
 Ui::Ui()
     : selected_{0}, show_deletion_dialog_{false},
-      entries_preview_{ftxui::emptyElement()},
+      entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
 void Ui::set_menu(
@@ -91,16 +90,18 @@ void Ui::update_entries_preview(ftxui::Element new_entries) {
 
 ftxui::Element Ui::entries_preview() { return entries_preview_; }
 
+void Ui::update_text_preview(std::string new_text_preview) {
+  text_preview_ = std::move(new_text_preview);
+}
+std::string Ui::text_preview() { return text_preview_; }
+
 void Ui::render() { screen_.Loop(modal_); }
 
 void Ui::exit() { screen_.Exit(); }
 
 int Ui::selected() { return selected_; }
 
-void Ui::post_task(std::function<void()> task) {
-  std::unique_lock lock(post_mutex_);
-  screen_.Post(task);
-}
+void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
 
 std::pair<int, int> Ui::screen_size() {
   return {screen_.dimx(), screen_.dimy()};

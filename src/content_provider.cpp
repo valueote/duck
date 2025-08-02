@@ -27,6 +27,7 @@ ContentProvider::entries_transform() {
     return ftxui::text(state.label) | style;
   };
 }
+
 std::function<ftxui::Element()> ContentProvider::preview_async() {
   return [this]() {
     auto screen_size = ui_.screen_size();
@@ -52,8 +53,9 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
                    return ui_.entries_preview() |
                           ftxui::color(color_scheme_.text());
                  }
-                 return ftxui::paragraph(
-                            get_text_preview(selected_path.value(), 100, 80)) |
+                 auto task = get_text_preview_async(selected_path.value());
+                 stdexec::start_detached(std::move(task));
+                 return ftxui::paragraph(ui_.text_preview()) |
                         ftxui::color(color_scheme_.text()) |
                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);

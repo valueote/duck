@@ -51,6 +51,18 @@ public:
     ;
   }
 
+  stdexec::sender auto get_text_preview_async(const fs::path &dir_path) {
+    return stdexec::on(
+        Scheduler::io_scheduler(),
+        stdexec::just(dir_path) | stdexec::then([this](fs::path dir_path) {
+          return get_text_preview(dir_path);
+        }) | stdexec::then([this](std::string preview) {
+          ui_.post_task([this, preview]() {
+            ui_.update_text_preview(std::move(preview));
+          });
+        }));
+  }
+
   std::function<ftxui::Element()> preview_async();
 };
 } // namespace duck
