@@ -11,7 +11,6 @@ namespace fs = std::filesystem;
 
 class FileManager {
 private:
-  mutable std::shared_mutex mutex_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
@@ -24,78 +23,87 @@ private:
   bool is_cutting_;
   bool show_hidden_;
 
+  FileManager();
+  static FileManager &instance();
+
   void load_directory_entries_without_lock(
       const fs::path &path, std::vector<fs::directory_entry> &entries);
   bool delete_entry_without_lock(fs::directory_entry &entry);
-
-public:
-  FileManager();
-
-  const fs::path &current_path() const;
-  const fs::path &cur_parent_path() const;
-  const fs::path &previous_path() const;
-  const std::vector<fs::directory_entry> &curdir_entries() const;
-  const std::vector<fs::directory_entry> &preview_entries() const;
-  const std::vector<fs::directory_entry> &marked_entries() const;
-  std::vector<std::string> curdir_entries_string() const;
-  std::vector<std::string> preview_entries_string() const;
-  std::vector<std::string> marked_entries_string() const;
-  int get_previous_path_index() const;
-  bool yanking() const;
-  bool cutting() const;
-
-  void toggle_mark_on_selected(const int &selected);
-  void start_yanking();
-  void start_cutting();
-  void paste(const int &selected);
-  bool is_marked(const fs::directory_entry &entry) const;
-  void clear_marked_entries();
-  bool delete_selected_entry(const int selected);
-  bool delete_marked_entries();
-  void update_current_path(const fs::path &new_path);
-  void update_preview_entries(const int &selected);
   void update_preview_entries_without_lock(const int &selected);
-  void update_curdir_entries();
-  void toggle_hidden_entries();
-
-  std::expected<fs::directory_entry, std::string>
-  get_selected_entry(const int &selected) const;
-  std::string entry_name_with_icon(const fs::directory_entry &entry) const;
   std::string
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
 
-  ftxui::Element get_directory_preview(const int &selected,
-                                       const fs::path &dir_path);
-  stdexec::sender auto
+public:
+  static inline std::shared_mutex FileMutex;
+  static const fs::path &current_path();
+  static const fs::path &cur_parent_path();
+  static const fs::path &previous_path();
+  static const std::vector<fs::directory_entry> &curdir_entries();
+  static const std::vector<fs::directory_entry> &preview_entries();
+  static const std::vector<fs::directory_entry> &marked_entries();
+  static std::vector<std::string> curdir_entries_string();
+  static std::vector<std::string> preview_entries_string();
+  static std::vector<std::string> marked_entries_string();
+  static int get_previous_path_index();
+  static bool yanking();
+  static bool cutting();
+
+  static void start_yanking();
+  static void start_cutting();
+  static void paste(const int &selected);
+  static bool is_marked(const fs::directory_entry &entry);
+
+  static void toggle_mark_on_selected(const int &selected);
+  static void toggle_hidden_entries();
+  static void clear_marked_entries();
+  static bool delete_selected_entry(const int selected);
+  static bool delete_marked_entries();
+  static void update_current_path(const fs::path &new_path);
+  static void update_preview_entries(const int &selected);
+  static void update_curdir_entries();
+  static std::string entry_name_with_icon(const fs::directory_entry &entry);
+  static std::expected<fs::directory_entry, std::string>
+  get_selected_entry(const int &selected);
+  static ftxui::Element get_directory_preview(const int &selected,
+                                              const fs::path &dir_path);
+
+  static stdexec::sender auto
   load_directory_entries_async(const fs::path &path,
                                std::vector<fs::directory_entry> &entries) {
+    auto &instance = FileManager::instance();
     return stdexec::just(path, std::ref(entries)) |
-           stdexec::then([this](const fs::path &path,
-                                std::vector<fs::directory_entry> &entries) {
-             std::unique_lock lock{mutex_};
-             load_directory_entries_without_lock(path, entries);
-             return entries;
-           }) |
-           stdexec::then([this](
+           stdexec::then(
+               [&instance](const fs::path &path,
+                           std::vector<fs::directory_entry> &entries) {
+                 std::unique_lock lock{FileManager::FileMutex};
+                 instance.load_directory_entries_without_lock(path, entries);
+                 return entries;
+               }) |
+           stdexec::then([&instance](
                              const std::vector<fs::directory_entry> &entries) {
              if (entries.empty()) {
                return std::vector<std::string>{"[No items]"};
              }
              return entries |
                     std::views::transform(
-                        [this](const fs::directory_entry &entry) {
-                          return format_directory_entries_without_lock(entry);
+                        [&instance](const fs::directory_entry &entry) {
+                          std::shared_lock lock{FileManager::FileMutex};
+                          return instance.format_directory_entries_without_lock(
+                              entry);
                         }) |
                     std::ranges::to<std::vector>();
            });
   }
 
-  stdexec::sender auto update_current_path_async(const fs::path &new_path) {
-    std::unique_lock lock{mutex_};
-    previous_path_ = current_path_;
-    current_path_ = new_path;
-    parent_path_ = current_path_.parent_path();
-    return load_directory_entries_async(current_path_, curdir_entries_);
+  static stdexec::sender auto
+  update_current_path_async(const fs::path &new_path) {
+    std::unique_lock lock{FileManager::FileMutex};
+    auto &instance = FileManager::instance();
+    instance.previous_path_ = instance.current_path_;
+    instance.current_path_ = new_path;
+    instance.parent_path_ = instance.current_path_.parent_path();
+    return load_directory_entries_async(instance.current_path_,
+                                        instance.curdir_entries_);
   }
 };
 } // namespace duck

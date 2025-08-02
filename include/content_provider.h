@@ -15,7 +15,6 @@ namespace duck {
 class ContentProvider {
 private:
   Ui &ui_;
-  FileManager &file_manager_;
   const ColorScheme &color_scheme_;
   std::mutex mutex_;
 
@@ -28,8 +27,7 @@ private:
   ftxui::Element deleted_entries();
 
 public:
-  ContentProvider(FileManager &file_manager, Ui &ui,
-                  const ColorScheme &color_scheme);
+  ContentProvider(Ui &ui, const ColorScheme &color_scheme);
 
   std::function<ftxui::Element(const ftxui::EntryState &state)>
   entries_transform();
@@ -40,8 +38,8 @@ public:
     return stdexec::on(
         Scheduler::io_scheduler(),
         stdexec::just(dir_path) | stdexec::then([this](fs::path dir_path) {
-          return file_manager_.get_directory_preview(ui_.selected(),
-                                                     std::move(dir_path));
+          return FileManager::get_directory_preview(ui_.selected(),
+                                                    std::move(dir_path));
         }) | stdexec::then([this](ftxui::Element preview) {
           ui_.post_task([this, preview]() {
             ui_.update_entries_preview(std::move(preview));

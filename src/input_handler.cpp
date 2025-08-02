@@ -11,8 +11,7 @@
 #include <vector>
 
 namespace duck {
-InputHandler::InputHandler(FileManager &file_manager, Ui &ui)
-    : file_manager_{file_manager}, ui_{ui} {}
+InputHandler::InputHandler(Ui &ui) : ui_{ui} {}
 
 std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
   return [this](ftxui::Event event) {
@@ -22,27 +21,27 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character(' ')) {
-      file_manager_.toggle_mark_on_selected(ui_.selected());
-      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
-      ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
+      FileManager::toggle_mark_on_selected(ui_.selected());
+      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
+      ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
       return true;
     }
 
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
-      ui_.move_selected_down(file_manager_.curdir_entries().size() - 1);
+      ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
       return true;
     }
 
     if (event == ftxui::Event::Character('k') ||
         event == ftxui::Event::ArrowUp) {
-      ui_.move_selected_up(file_manager_.curdir_entries().size() - 1);
+      ui_.move_selected_up(FileManager::curdir_entries().size() - 1);
       return true;
     }
 
     if (event == ftxui::Event::Character('l')) {
       auto entry =
-          file_manager_.get_selected_entry(ui_.selected())
+          FileManager::get_selected_entry(ui_.selected())
               .and_then([](fs::directory_entry entry)
                             -> std::expected<fs::directory_entry, std::string> {
                 if (fs::is_directory(entry)) {
@@ -56,7 +55,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       if (entry) {
         auto task = stdexec::on(
             Scheduler::io_scheduler(),
-            file_manager_.update_current_path_async(entry.value().path()) |
+            FileManager::update_current_path_async(entry.value().path()) |
                 stdexec::then([this](std::vector<std::string> entries) {
                   ui_.post_task([this, entries]() {
                     ui_.enter_direcotry(std::move(entries));
@@ -76,12 +75,12 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       auto task =
           stdexec::on(
               Scheduler::io_scheduler(),
-              file_manager_.update_current_path_async(
-                  file_manager_.cur_parent_path()) |
+              FileManager::update_current_path_async(
+                  FileManager::cur_parent_path()) |
                   stdexec::then([this](std::vector<std::string> entries) {
                     return std::make_pair(
                         std::move(entries),
-                        file_manager_.get_previous_path_index());
+                        FileManager::get_previous_path_index());
                   })) |
           stdexec::then(
               [this](
@@ -107,32 +106,32 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('y')) {
-      file_manager_.start_yanking();
+      FileManager::start_yanking();
       return true;
     }
 
     if (event == ftxui::Event::Character('x')) {
-      file_manager_.start_cutting();
+      FileManager::start_cutting();
       return true;
     }
 
     if (event == ftxui::Event::Character('p')) {
-      file_manager_.paste(ui_.selected());
-      file_manager_.update_curdir_entries();
-      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      FileManager::paste(ui_.selected());
+      FileManager::update_curdir_entries();
+      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
 
     if (event == ftxui::Event::Character('.')) {
-      file_manager_.toggle_hidden_entries();
-      file_manager_.update_curdir_entries();
-      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      FileManager::toggle_hidden_entries();
+      FileManager::update_curdir_entries();
+      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
 
     if (event == ftxui::Event::Escape) {
-      file_manager_.clear_marked_entries();
-      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      FileManager::clear_marked_entries();
+      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
 
@@ -147,13 +146,13 @@ std::function<bool(ftxui::Event)> InputHandler::test_handler() {
 std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
   return [this](ftxui::Event event) {
     if (event == ftxui::Event::Character('y')) {
-      if (!file_manager_.marked_entries().empty()) {
-        file_manager_.delete_marked_entries();
+      if (!FileManager::marked_entries().empty()) {
+        FileManager::delete_marked_entries();
       } else {
-        file_manager_.delete_selected_entry(ui_.selected());
+        FileManager::delete_selected_entry(ui_.selected());
       }
-      file_manager_.update_curdir_entries();
-      ui_.update_curdir_entries_string(file_manager_.curdir_entries_string());
+      FileManager::update_curdir_entries();
+      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       ui_.toggle_deletion_dialog();
       return true;
     }
@@ -171,7 +170,7 @@ void InputHandler::open_file() {
   const static std::unordered_map<std::string, std::string> handlers = {
       {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
       {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
-  auto selected_file_opt = file_manager_.get_selected_entry(ui_.selected());
+  auto selected_file_opt = FileManager::get_selected_entry(ui_.selected());
   if (!selected_file_opt.has_value()) {
     return;
   }

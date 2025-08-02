@@ -10,21 +10,21 @@ Scheduler::Scheduler()
     : ui_pool_{1}, io_pool_{io_threads}, cpu_pool_{cpu_threads},
       priority_pool_{priority_threads} {}
 
-Scheduler &Scheduler::get_instance() {
+Scheduler &Scheduler::instance() {
   static Scheduler instance;
   return instance;
 }
 
 exec::static_thread_pool::scheduler Scheduler::io_scheduler() {
-  return get_instance().io_pool_.get_scheduler();
+  return instance().io_pool_.get_scheduler();
 }
 
 exec::static_thread_pool::scheduler Scheduler::cpu_scheduler() {
-  return get_instance().cpu_pool_.get_scheduler();
+  return instance().cpu_pool_.get_scheduler();
 }
 
 exec::static_thread_pool::scheduler Scheduler::ui_scheduler() {
-  return get_instance().ui_pool_.get_scheduler();
+  return instance().ui_pool_.get_scheduler();
 }
 
 } // namespace duck

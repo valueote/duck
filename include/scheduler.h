@@ -16,7 +16,7 @@ private:
 
   Scheduler();
 
-  static Scheduler &get_instance();
+  static Scheduler &instance();
 
 public:
   Scheduler(const Scheduler &) = delete;
@@ -24,11 +24,11 @@ public:
   Scheduler(Scheduler &&) = delete;
   Scheduler &operator=(Scheduler &&) = delete;
 
-  static exec::static_thread_pool::scheduler  io_scheduler(); 
+  static exec::static_thread_pool::scheduler io_scheduler();
 
   static exec::static_thread_pool::scheduler cpu_scheduler();
 
-  static exec::static_thread_pool::scheduler  ui_scheduler();
+  static exec::static_thread_pool::scheduler ui_scheduler();
 
   static stdexec::scheduler auto priority_scheduler();
 };

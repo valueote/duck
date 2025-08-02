@@ -1,5 +1,6 @@
 #include "content_provider.h"
 #include "colorscheme.h"
+#include "file_manager.h"
 #include "ui.h"
 #include <boost/asio.hpp>
 #include <boost/process.hpp>
@@ -13,9 +14,8 @@
 
 namespace duck {
 
-ContentProvider::ContentProvider(FileManager &file_manager, Ui &ui,
-                                 const ColorScheme &color_scheme)
-    : file_manager_{file_manager}, ui_{ui}, color_scheme_{color_scheme} {}
+ContentProvider::ContentProvider(Ui &ui, const ColorScheme &color_scheme)
+    : ui_{ui}, color_scheme_{color_scheme} {}
 
 std::function<ftxui::Element(const ftxui::EntryState &state)>
 ContentProvider::entries_transform() {
@@ -32,7 +32,7 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
   return [this]() {
     auto screen_size = ui_.screen_size();
     auto left_pane =
-        window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
+        window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                    ftxui::bold,
                ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame) |
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
@@ -41,7 +41,7 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
         window(ftxui::text(" Coneten Preview ") | ftxui::bold,
                [this] {
                  const auto selected_path =
-                     file_manager_.get_selected_entry(ui_.selected());
+                     FileManager::get_selected_entry(ui_.selected());
                  if (not selected_path) {
                    return ftxui::text("No item selected");
                  }
@@ -68,16 +68,16 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
 }
 
 ftxui::Element ContentProvider::deleted_entries() {
-  if (!file_manager_.marked_entries().empty()) {
+  if (!FileManager::marked_entries().empty()) {
     std::vector<ftxui::Element> lines =
-        file_manager_.marked_entries() |
+        FileManager::marked_entries() |
         std::views::transform([this](const fs::directory_entry &entry) {
-          return ftxui::text(file_manager_.entry_name_with_icon(entry));
+          return ftxui::text(FileManager::entry_name_with_icon(entry));
         }) |
         std::ranges::to<std::vector>();
     return ftxui::vbox({lines});
   } else {
-    auto selected_path = file_manager_.get_selected_entry(ui_.selected());
+    auto selected_path = FileManager::get_selected_entry(ui_.selected());
     if (!selected_path.has_value()) {
       return ftxui::text("[ERROR] No file selected for deletion.");
     }
