@@ -272,17 +272,18 @@ ftxui::Element FileManager::get_directory_preview(const int &selected,
   if (!fs::is_directory(dir_path)) {
     return ftxui::text("[ERROR]: Call get_directory_preview on the file");
   }
+
   std::unique_lock lock{mutex_};
   update_preview_entries_without_lock(selected);
-  auto entries =
-      preview_entries_ |
-      std::views::transform([this](fs::directory_entry entry) {
-        if (entry.path().empty() || !fs::exists(entry)) {
-          return ftxui::text("[Invalid Entry]");
-        }
-        return ftxui::text(format_directory_entries_without_lock(entry));
-      }) |
-      std::ranges::to<std::vector>();
+  auto entries = preview_entries_ |
+                 std::views::transform([this](fs::directory_entry entry) {
+                   if (entry.path().empty() || !fs::exists(entry)) {
+                     return ftxui::text("[Invalid Entry]");
+                   }
+                   return ftxui::text(
+                       format_directory_entries_without_lock(std::move(entry)));
+                 }) |
+                 std::ranges::to<std::vector>();
   if (entries.empty()) {
     entries.push_back(ftxui::text("[Empty folder]"));
   }

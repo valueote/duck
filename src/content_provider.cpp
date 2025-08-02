@@ -158,30 +158,4 @@ std::string ContentProvider::get_text_preview(const fs::path &path,
   return oss.str();
 }
 
-ftxui::Element
-ContentProvider::get_directory_preview(const fs::path &dir_path) {
-  if (!fs::is_directory(dir_path)) {
-    return ftxui::text("[ERROR]: Call get_directory_preview on the file");
-  }
-  std::unique_lock lock{mutex_};
-  file_manager_.update_preview_entries(ui_.selected());
-  auto preview_entries = file_manager_.preview_entries();
-  auto node_transform =
-      [this](fs::directory_entry entry) -> std::shared_ptr<ftxui::Node> {
-    if (entry.path().empty() || !fs::exists(entry)) {
-      return ftxui::text("[Invalid Entry]");
-    }
-    return ftxui::text(
-        file_manager_.format_directory_entries_without_lock(entry));
-  };
-  auto nodes = preview_entries | std::views::transform(node_transform) |
-               std::ranges::to<std::vector>();
-
-  if (nodes.empty()) {
-    nodes.push_back(ftxui::text("[Empty folder]"));
-  }
-
-  return ftxui::vbox(std::move(nodes));
-}
-
 } // namespace duck
