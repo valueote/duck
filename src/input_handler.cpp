@@ -39,63 +39,16 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
         event == ftxui::Event::ArrowUp) {
       ui_.move_selected_up(FileManager::curdir_entries().size() - 1);
       update_preview_async();
-
       return true;
     }
 
     if (event == ftxui::Event::Character('l')) {
-      auto entry =
-          FileManager::get_selected_entry(ui_.selected())
-              .and_then([](fs::directory_entry entry)
-                            -> std::expected<fs::directory_entry, std::string> {
-                if (fs::is_directory(entry)) {
-                  return std::expected<fs::directory_entry, std::string>{
-                      std::move(entry)};
-                } else {
-                  return std::unexpected<std::string>{{}};
-                }
-              });
-
-      if (entry) {
-        auto task = stdexec::on(
-            Scheduler::io_scheduler(),
-            FileManager::update_current_path_async(entry.value().path()) |
-                stdexec::then([this](std::vector<std::string> entries) {
-                  ui_.post_task([this, entries]() {
-                    ui_.enter_direcotry(std::move(entries));
-                  });
-                  ui_.post_event(DuckEvent::refresh);
-                }));
-        stdexec::start_detached(std::move(task));
-
-      } else {
-        std::println(stderr, "[ERROR]: {}", entry.error());
-      }
-
+      enter_direcotry();
       return true;
     }
 
     if (event == ftxui::Event::Character('h')) {
-      auto task =
-          stdexec::on(
-              Scheduler::io_scheduler(),
-              FileManager::update_current_path_async(
-                  FileManager::cur_parent_path()) |
-                  stdexec::then([this](std::vector<std::string> entries) {
-                    return std::make_pair(
-                        std::move(entries),
-                        FileManager::get_previous_path_index());
-                  })) |
-          stdexec::then(
-              [this](
-                  std::pair<std::vector<std::string>, int> entries_and_index) {
-                ui_.post_task([this, entries_and_index]() {
-                  ui_.leave_direcotry(entries_and_index.first,
-                                      entries_and_index.second);
-                });
-                ui_.post_event(DuckEvent::refresh);
-              });
-      stdexec::start_detached(std::move(task));
+      leave_direcotry();
       return true;
     }
 
@@ -168,6 +121,57 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
 
     return false;
   };
+}
+
+void InputHandler::enter_direcotry() {
+  auto entry =
+      FileManager::get_selected_entry(ui_.selected())
+          .and_then([](fs::directory_entry entry)
+                        -> std::expected<fs::directory_entry, std::string> {
+            if (fs::is_directory(entry)) {
+              return std::expected<fs::directory_entry, std::string>{
+                  std::move(entry)};
+            } else {
+              return std::unexpected<std::string>{{}};
+            }
+          });
+
+  if (entry) {
+    auto task = stdexec::on(
+        Scheduler::io_scheduler(),
+        FileManager::update_current_path_async(entry.value().path()) |
+            stdexec::then([this](std::vector<std::string> entries) {
+              ui_.post_task([this, entries]() {
+                ui_.enter_direcotry(std::move(entries));
+              });
+              ui_.post_event(DuckEvent::refresh);
+            }));
+    stdexec::start_detached(std::move(task));
+
+  } else {
+    std::println(stderr, "[ERROR]: {}", entry.error());
+  }
+}
+
+void InputHandler::leave_direcotry() {
+  auto task =
+      stdexec::on(Scheduler::io_scheduler(),
+                  FileManager::update_current_path_async(
+                      FileManager::cur_parent_path()) |
+                      stdexec::then([this](std::vector<std::string> entries) {
+                        return std::make_pair(
+                            std::move(entries),
+                            FileManager::get_previous_path_index());
+                      })) |
+      stdexec::then(
+          [this](std::pair<std::vector<std::string>, int> entries_and_index) {
+            ui_.post_task([this, entries_and_index]() {
+              ui_.leave_direcotry(entries_and_index.first,
+                                  entries_and_index.second);
+            });
+            ui_.post_event(DuckEvent::refresh);
+          });
+  stdexec::start_detached(std::move(task));
 }
 
 void InputHandler::update_preview_async() {

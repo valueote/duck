@@ -47,6 +47,8 @@ public:
   }
 
   void update_preview_async();
+  void enter_direcotry();
+  void leave_direcotry();
 };
 
 } // namespace duck
