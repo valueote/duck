@@ -23,17 +23,15 @@ public:
   void enter_direcotry();
   void leave_direcotry();
 
-  stdexec::sender auto
-  update_directory_preview_async(const fs::path &dir_path) {
+  stdexec::sender auto update_directory_preview_async(const int &selected) {
     return stdexec::schedule(Scheduler::io_scheduler()) |
            stdexec::then([this]() {
              ui_.post_task([this]() {
                ui_.update_entries_preview(ftxui::text("Loading..."));
              });
            }) |
-           stdexec::then([this, dir_path]() {
-             return FileManager::get_directory_preview(ui_.selected(),
-                                                       std::move(dir_path));
+           stdexec::then([this, selected]() {
+             return FileManager::get_directory_preview(selected);
            }) |
            stdexec::then([this](ftxui::Element preview) {
              ui_.post_task([this, preview]() {
@@ -42,13 +40,13 @@ public:
            });
   }
 
-  stdexec::sender auto update_text_preview_async(const fs::path &dir_path) {
+  stdexec::sender auto update_text_preview_async(const int &selected) {
     return stdexec::schedule(Scheduler::io_scheduler()) |
            stdexec::then([this]() {
              ui_.post_task([this]() { ui_.update_text_preview("Loading..."); });
            }) |
-           stdexec::then([this, dir_path]() {
-             return FileManager::get_text_preview(dir_path);
+           stdexec::then([this, selected]() {
+             return FileManager::get_text_preview(selected);
            }) |
            stdexec::then([this](std::string preview) {
              ui_.post_task([this, preview]() {

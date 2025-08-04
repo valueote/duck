@@ -132,7 +132,7 @@ void InputHandler::enter_direcotry() {
               return std::expected<fs::directory_entry, std::string>{
                   std::move(entry)};
             } else {
-              return std::unexpected<std::string>{{}};
+              return std::unexpected<std::string>{""};
             }
           });
 
@@ -177,13 +177,14 @@ void InputHandler::leave_direcotry() {
 }
 
 void InputHandler::update_preview_async() {
-  const auto selected_path = FileManager::get_selected_entry(ui_.selected());
+  const int selected = ui_.selected();
+  const auto selected_path = FileManager::get_selected_entry(selected);
   if (selected_path) {
     if (fs::is_directory(selected_path.value())) {
-      auto task = update_directory_preview_async(selected_path.value());
+      auto task = update_directory_preview_async(selected);
       scope_.spawn(std::move(task));
     } else {
-      auto task = update_text_preview_async(selected_path.value());
+      auto task = update_text_preview_async(selected);
       scope_.spawn(std::move(task));
     }
   }

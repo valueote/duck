@@ -64,10 +64,9 @@ public:
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
   static std::expected<fs::directory_entry, std::string>
   get_selected_entry(const int &selected);
-  static ftxui::Element get_directory_preview(const int &selected,
-                                              const fs::path &dir_path);
+  static ftxui::Element get_directory_preview(const int &selected);
 
-  static std::string get_text_preview(const fs::path &path,
+  static std::string get_text_preview(const int &selected,
                                       size_t max_lines = 100,
                                       size_t max_width = 100);
   // async interface

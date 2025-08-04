@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 4.0.0)
-set(CMAKE_CXX_COMPILER clang++)
 
 project(duck)
 
@@ -44,4 +43,4 @@ target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(duck PRIVATE ftxui::screen ftxui::dom ftxui::component
                                    Boost::process)
 
-target_link_libraries(duck PRIVATE STDEXEC::stdexec)
+target_link_libraries(duck PRIVATE STDEXEC::stdexec TBB::tbb)

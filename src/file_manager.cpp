@@ -284,12 +284,8 @@ bool FileManager::delete_entry_without_lock(fs::directory_entry &entry) {
   return true;
 }
 
-ftxui::Element FileManager::get_directory_preview(const int &selected,
-                                                  const fs::path &dir_path) {
+ftxui::Element FileManager::get_directory_preview(const int &selected) {
   auto &instance = FileManager::instance();
-  if (!fs::is_directory(dir_path)) {
-    return ftxui::text("[ERROR]: Call get_directory_preview on the file");
-  }
 
   std::unique_lock lock{file_mutex_};
   instance.update_preview_entries_without_lock(selected);
@@ -310,9 +306,10 @@ ftxui::Element FileManager::get_directory_preview(const int &selected,
   return ftxui::vbox(std::move(entries));
 }
 
-std::string FileManager::get_text_preview(const fs::path &path,
-                                          size_t max_lines, size_t max_width) {
-  std::ifstream file(path);
+std::string FileManager::get_text_preview(const int &selected, size_t max_lines,
+                                          size_t max_width) {
+  auto entry = get_selected_entry(selected);
+  std::ifstream file(entry.value().path());
 
   std::ostringstream oss;
   std::string line;

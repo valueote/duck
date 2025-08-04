@@ -1,4 +1,5 @@
 #include "duck.h"
+#include <boost/asio.hpp>
 int main() {
   duck::Duck d;
   d.run();
