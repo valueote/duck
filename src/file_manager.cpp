@@ -123,10 +123,12 @@ void FileManager::load_directory_entries_without_lock(
     dirs.reserve(128);
     files.reserve(128);
 
-    for (const auto &entry : fs::directory_iterator(path)) {
+    for (const auto &entry : fs::directory_iterator(
+             path, fs::directory_options::skip_permission_denied)) {
       if (entry.path().empty() || !fs::exists(entry)) {
         continue;
       }
+
       if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
         continue;
       }
