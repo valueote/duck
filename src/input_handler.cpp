@@ -2,6 +2,7 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
+#include "stdexec/__detail/__sync_wait.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -146,7 +147,7 @@ void InputHandler::enter_direcotry() {
               });
               ui_.post_event(DuckEvent::refresh);
             }));
-    stdexec::start_detached(std::move(task));
+    scope_.spawn(std::move(task));
 
   } else {
     std::println(stderr, "[ERROR]: {}", entry.error());
@@ -171,7 +172,8 @@ void InputHandler::leave_direcotry() {
             });
             ui_.post_event(DuckEvent::refresh);
           });
-  stdexec::start_detached(std::move(task));
+
+  scope_.spawn(std::move(task));
 }
 
 void InputHandler::update_preview_async() {
@@ -179,10 +181,10 @@ void InputHandler::update_preview_async() {
   if (selected_path) {
     if (fs::is_directory(selected_path.value())) {
       auto task = update_directory_preview_async(selected_path.value());
-      stdexec::start_detached(std::move(task));
+      scope_.spawn(std::move(task));
     } else {
       auto task = update_text_preview_async(selected_path.value());
-      stdexec::start_detached(std::move(task));
+      scope_.spawn(std::move(task));
     }
   }
 }
