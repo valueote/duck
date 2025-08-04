@@ -30,17 +30,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
       ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
-      const auto selected_path =
-          FileManager::get_selected_entry(ui_.selected());
-      if (selected_path) {
-        if (fs::is_directory(selected_path.value())) {
-          auto task = get_directory_preview_async(selected_path.value());
-          stdexec::start_detached(std::move(task));
-        } else {
-          auto task = get_text_preview_async(selected_path.value());
-          stdexec::start_detached(std::move(task));
-        }
-      }
+      update_preview_async();
 
       return true;
     }
@@ -48,17 +38,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('k') ||
         event == ftxui::Event::ArrowUp) {
       ui_.move_selected_up(FileManager::curdir_entries().size() - 1);
-      const auto selected_path =
-          FileManager::get_selected_entry(ui_.selected());
-      if (selected_path) {
-        if (fs::is_directory(selected_path.value())) {
-          auto task = get_directory_preview_async(selected_path.value());
-          stdexec::start_detached(std::move(task));
-        } else {
-          auto task = get_text_preview_async(selected_path.value());
-          stdexec::start_detached(std::move(task));
-        }
-      }
+      update_preview_async();
 
       return true;
     }
@@ -188,6 +168,19 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
 
     return false;
   };
+}
+
+void InputHandler::update_preview_async() {
+  const auto selected_path = FileManager::get_selected_entry(ui_.selected());
+  if (selected_path) {
+    if (fs::is_directory(selected_path.value())) {
+      auto task = update_directory_preview_async(selected_path.value());
+      stdexec::start_detached(std::move(task));
+    } else {
+      auto task = update_text_preview_async(selected_path.value());
+      stdexec::start_detached(std::move(task));
+    }
+  }
 }
 
 void InputHandler::open_file() {
