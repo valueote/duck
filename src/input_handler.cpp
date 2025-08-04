@@ -146,7 +146,6 @@ void InputHandler::enter_direcotry() {
                 ui_.post_event(DuckEvent::refresh);
               });
             }));
-
     scope_.spawn(std::move(task));
     update_preview_async();
 
@@ -171,9 +170,17 @@ void InputHandler::leave_direcotry() {
                                       entries_and_index.second);
                   ui_.post_event(DuckEvent::refresh);
                 });
-              }));
+                return entries_and_index.second;
+              }) |
+          stdexec::then([](int selected) {
+            return FileManager::get_directory_preview(selected);
+          }) |
+          stdexec::then([this](ftxui::Element preview) {
+            ui_.post_task([this, preview]() {
+              ui_.update_entries_preview(std::move(preview));
+            });
+          }));
   scope_.spawn(std::move(task));
-  update_preview_async();
 }
 
 void InputHandler::update_preview_async() {
