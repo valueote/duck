@@ -2,7 +2,6 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
-#include "stdexec/__detail/__sync_wait.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -144,10 +143,12 @@ void InputHandler::enter_direcotry() {
             stdexec::then([this](std::vector<std::string> entries) {
               ui_.post_task([this, entries]() {
                 ui_.enter_direcotry(std::move(entries));
+                ui_.post_event(DuckEvent::refresh);
               });
-              ui_.post_event(DuckEvent::refresh);
             }));
+
     scope_.spawn(std::move(task));
+    update_preview_async();
 
   } else {
     std::println(stderr, "[ERROR]: {}", entry.error());
@@ -155,25 +156,24 @@ void InputHandler::enter_direcotry() {
 }
 
 void InputHandler::leave_direcotry() {
-  auto task =
-      stdexec::on(Scheduler::io_scheduler(),
-                  FileManager::update_current_path_async(
-                      FileManager::cur_parent_path()) |
-                      stdexec::then([this](std::vector<std::string> entries) {
-                        return std::make_pair(
-                            std::move(entries),
-                            FileManager::get_previous_path_index());
-                      })) |
-      stdexec::then(
-          [this](std::pair<std::vector<std::string>, int> entries_and_index) {
-            ui_.post_task([this, entries_and_index]() {
-              ui_.leave_direcotry(entries_and_index.first,
-                                  entries_and_index.second);
-            });
-            ui_.post_event(DuckEvent::refresh);
-          });
-
+  auto task = stdexec::on(
+      Scheduler::io_scheduler(),
+      FileManager::update_current_path_async(FileManager::cur_parent_path()) |
+          stdexec::then([this](std::vector<std::string> entries) {
+            return std::make_pair(std::move(entries),
+                                  FileManager::get_previous_path_index());
+          }) |
+          stdexec::then(
+              [this](
+                  std::pair<std::vector<std::string>, int> entries_and_index) {
+                ui_.post_task([this, entries_and_index]() {
+                  ui_.leave_direcotry(entries_and_index.first,
+                                      entries_and_index.second);
+                  ui_.post_event(DuckEvent::refresh);
+                });
+              }));
   scope_.spawn(std::move(task));
+  update_preview_async();
 }
 
 void InputHandler::update_preview_async() {

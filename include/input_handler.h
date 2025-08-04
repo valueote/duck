@@ -19,6 +19,9 @@ public:
   std::function<bool(ftxui::Event)> navigation_handler();
   std::function<bool(ftxui::Event)> test_handler();
   std::function<bool(ftxui::Event)> deletetion_dialog_handler();
+  void update_preview_async();
+  void enter_direcotry();
+  void leave_direcotry();
 
   stdexec::sender auto
   update_directory_preview_async(const fs::path &dir_path) {
@@ -37,8 +40,6 @@ public:
                ui_.update_entries_preview(std::move(preview));
              });
            });
-
-    ;
   }
 
   stdexec::sender auto update_text_preview_async(const fs::path &dir_path) {
@@ -55,10 +56,6 @@ public:
              });
            });
   }
-
-  void update_preview_async();
-  void enter_direcotry();
-  void leave_direcotry();
 };
 
 } // namespace duck
