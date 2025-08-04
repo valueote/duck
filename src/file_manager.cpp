@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <iterator>
 #include <mutex>
 #include <print>
@@ -17,6 +18,7 @@ FileManager::FileManager()
       is_cutting_{false}, show_hidden_{false} {
 
   load_directory_entries_without_lock(current_path_, curdir_entries_);
+
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries_without_lock(0);
   }
@@ -31,32 +33,32 @@ FileManager &FileManager::instance() {
 }
 
 const fs::path &FileManager::current_path() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().current_path_;
 }
 
 const fs::path &FileManager::cur_parent_path() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().parent_path_;
 }
 
 const fs::path &FileManager::previous_path() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().previous_path_;
 }
 
 const std::vector<fs::directory_entry> &FileManager::curdir_entries() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().curdir_entries_;
 }
 
 const std::vector<fs::directory_entry> &FileManager::preview_entries() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().preview_entries_;
 }
 
 const std::vector<fs::directory_entry> &FileManager::marked_entries() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().marked_entires_;
 }
 
@@ -67,7 +69,7 @@ std::vector<std::string> FileManager::curdir_entries_string() {
   }
   return instance.curdir_entries_ |
          std::views::transform([&instance](const fs::directory_entry &entry) {
-           std::shared_lock lock{FileManager::FileMutex};
+           std::shared_lock lock{FileManager::file_mutex_};
            return instance.format_directory_entries_without_lock(entry);
          }) |
          std::ranges::to<std::vector>();
@@ -84,18 +86,18 @@ int FileManager::get_previous_path_index() {
 }
 
 bool FileManager::yanking() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().is_yanking_;
 }
 
 bool FileManager::cutting() {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   return instance().is_cutting_;
 }
 
 std::expected<fs::directory_entry, std::string>
 FileManager::get_selected_entry(const int &selected) {
-  std::shared_lock lock{FileMutex};
+  std::shared_lock lock{file_mutex_};
   auto &instance = FileManager::instance();
 
   if (instance.curdir_entries_.empty()) {
@@ -143,13 +145,13 @@ void FileManager::load_directory_entries_without_lock(
 }
 
 void FileManager::update_curdir_entries() {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   instance().load_directory_entries_without_lock(instance().current_path_,
                                                  instance().curdir_entries_);
 }
 
 void FileManager::update_preview_entries(const int &selected) {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   instance().update_preview_entries_without_lock(selected);
 }
 
@@ -168,7 +170,7 @@ void FileManager::update_preview_entries_without_lock(const int &selected) {
 }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   auto &instance = FileManager::instance();
   if (instance.curdir_entries_.empty() || selected < 0 ||
       selected >= instance.curdir_entries_.size()) {
@@ -184,18 +186,18 @@ void FileManager::toggle_mark_on_selected(const int &selected) {
 }
 
 void FileManager::toggle_hidden_entries() {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   instance().show_hidden_ = !instance().show_hidden_;
 }
 
 void FileManager::start_yanking() {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   instance().is_yanking_ = true;
   instance().is_cutting_ = false;
 }
 
 void FileManager::start_cutting() {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   instance().is_cutting_ = true;
   instance().is_yanking_ = false;
 }
@@ -207,7 +209,7 @@ void FileManager::paste(const int &selected) {
     return;
   }
 
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   if (instance.marked_entires_.empty()) {
     instance.clipboard_entries_.push_back(instance.curdir_entries_[selected]);
   } else {
@@ -234,20 +236,20 @@ void FileManager::paste(const int &selected) {
 }
 
 bool FileManager::is_marked(const fs::directory_entry &entry) {
-  std::shared_lock lock(FileMutex);
+  std::shared_lock lock(file_mutex_);
   return std::ranges::find(instance().marked_entires_, entry) !=
          instance().marked_entires_.end();
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   return instance().delete_entry_without_lock(
       instance().curdir_entries_[selected]);
 }
 
 bool FileManager::delete_marked_entries() {
 
-  std::unique_lock lock(FileMutex);
+  std::unique_lock lock(file_mutex_);
   auto &instance = FileManager::instance();
   if (instance.marked_entires_.empty()) {
     std::println(stderr, "[ERROR] try to delete empty file");
@@ -263,7 +265,7 @@ bool FileManager::delete_marked_entries() {
 }
 
 void FileManager::clear_marked_entries() {
-  std::unique_lock lock(FileMutex);
+  std::unique_lock lock(file_mutex_);
   instance().marked_entires_.clear();
 }
 
@@ -287,7 +289,7 @@ ftxui::Element FileManager::get_directory_preview(const int &selected,
     return ftxui::text("[ERROR]: Call get_directory_preview on the file");
   }
 
-  std::unique_lock lock{FileMutex};
+  std::unique_lock lock{file_mutex_};
   instance.update_preview_entries_without_lock(selected);
   auto entries =
       instance.preview_entries_ |
@@ -304,6 +306,32 @@ ftxui::Element FileManager::get_directory_preview(const int &selected,
   }
 
   return ftxui::vbox(std::move(entries));
+}
+
+std::string FileManager::get_text_preview(const fs::path &path,
+                                          size_t max_lines, size_t max_width) {
+  std::ifstream file(path);
+
+  std::ostringstream oss;
+  std::string line;
+  size_t lines = 0;
+
+  while (std::getline(file, line) && lines < max_lines) {
+
+    if (line.length() > max_width) {
+      line = line.substr(0, max_width - 3) + "...";
+    }
+
+    for (auto &c : line) {
+      if (iscntrl(static_cast<unsigned char>(c))) {
+        c = '?';
+      }
+    }
+
+    oss << line << '\n';
+    ++lines;
+  }
+  return oss.str();
 }
 
 std::string

@@ -4,7 +4,6 @@
 #include "ui.h"
 #include <boost/asio.hpp>
 #include <boost/process.hpp>
-#include <fstream>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -47,14 +46,10 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
                  }
 
                  if (fs::is_directory(selected_path.value())) {
-                   auto task =
-                       get_directory_preview_async(selected_path.value());
-                   stdexec::start_detached(std::move(task));
                    return ui_.entries_preview() |
                           ftxui::color(color_scheme_.text());
                  }
-                 auto task = get_text_preview_async(selected_path.value());
-                 stdexec::start_detached(std::move(task));
+
                  return ftxui::paragraph(ui_.text_preview()) |
                         ftxui::color(color_scheme_.text()) |
                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
@@ -132,32 +127,4 @@ ftxui::Component ContentProvider::deletion_dialog() {
   });
   return dialog_renderer;
 }
-
-std::string ContentProvider::get_text_preview(const fs::path &path,
-                                              size_t max_lines,
-                                              size_t max_width) {
-  std::ifstream file(path);
-
-  std::ostringstream oss;
-  std::string line;
-  size_t lines = 0;
-
-  while (std::getline(file, line) && lines < max_lines) {
-
-    if (line.length() > max_width) {
-      line = line.substr(0, max_width - 3) + "...";
-    }
-
-    for (auto &c : line) {
-      if (iscntrl(static_cast<unsigned char>(c))) {
-        c = '?';
-      }
-    }
-
-    oss << line << '\n';
-    ++lines;
-  }
-  return oss.str();
-}
-
 } // namespace duck

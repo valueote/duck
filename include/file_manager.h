@@ -34,7 +34,7 @@ private:
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
 
 public:
-  static inline std::shared_mutex FileMutex;
+  static inline std::shared_mutex file_mutex_;
   static const fs::path &current_path();
   static const fs::path &cur_parent_path();
   static const fs::path &previous_path();
@@ -67,6 +67,10 @@ public:
   static ftxui::Element get_directory_preview(const int &selected,
                                               const fs::path &dir_path);
 
+  static std::string get_text_preview(const fs::path &path,
+                                      size_t max_lines = 100,
+                                      size_t max_width = 100);
+  // async interface
   static stdexec::sender auto
   load_directory_entries_async(const fs::path &path,
                                std::vector<fs::directory_entry> &entries) {
@@ -75,7 +79,7 @@ public:
            stdexec::then(
                [&instance](const fs::path &path,
                            std::vector<fs::directory_entry> &entries) {
-                 std::unique_lock lock{FileManager::FileMutex};
+                 std::unique_lock lock{FileManager::file_mutex_};
                  instance.load_directory_entries_without_lock(path, entries);
                  return entries;
                }) |
@@ -87,7 +91,7 @@ public:
              return entries |
                     std::views::transform(
                         [&instance](const fs::directory_entry &entry) {
-                          std::shared_lock lock{FileManager::FileMutex};
+                          std::shared_lock lock{FileManager::file_mutex_};
                           return instance.format_directory_entries_without_lock(
                               entry);
                         }) |
@@ -97,7 +101,7 @@ public:
 
   static stdexec::sender auto
   update_current_path_async(const fs::path &new_path) {
-    std::unique_lock lock{FileManager::FileMutex};
+    std::unique_lock lock{FileManager::file_mutex_};
     auto &instance = FileManager::instance();
     instance.previous_path_ = instance.current_path_;
     instance.current_path_ = new_path;
