@@ -3,8 +3,8 @@
 namespace duck {
 
 constexpr size_t io_threads = 8;
-constexpr size_t cpu_threads = 4;
-constexpr size_t priority_threads = 4;
+constexpr size_t cpu_threads = 2;
+constexpr size_t priority_threads = 2;
 
 Scheduler::Scheduler()
     : ui_pool_{1}, io_pool_{io_threads}, cpu_pool_{cpu_threads},

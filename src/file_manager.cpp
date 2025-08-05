@@ -10,6 +10,7 @@
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 namespace duck {
 FileManager::FileManager()
@@ -116,34 +117,31 @@ void FileManager::load_directory_entries_without_lock(
     return;
   }
   entries.clear();
-  try {
-    std::vector<fs::directory_entry> dirs;
-    std::vector<fs::directory_entry> files;
 
-    dirs.reserve(128);
-    files.reserve(128);
+  std::vector<fs::directory_entry> dirs;
+  std::vector<fs::directory_entry> files;
+  auto [total_count] =
+      *stdexec::sync_wait(std::move(get_total_count_without_lock(path)));
+  dirs.reserve(total_count);
+  files.reserve(total_count);
 
-    for (const auto &entry : fs::directory_iterator(
-             path, fs::directory_options::skip_permission_denied)) {
-      if (entry.path().empty() || !fs::exists(entry)) {
-        continue;
-      }
-
-      if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
-        continue;
-      }
-      (entry.is_directory() ? dirs : files).push_back(entry);
+  for (const auto &entry : fs::directory_iterator(
+           path, fs::directory_options::skip_permission_denied)) {
+    if (entry.path().empty() || !fs::exists(entry)) {
+      continue;
     }
 
-    entries.reserve(dirs.size() + files.size());
-    std::ranges::sort(dirs);
-    std::ranges::sort(files);
-    std::ranges::copy(dirs, std::back_inserter(entries));
-    std::ranges::copy(files, std::back_inserter(entries));
-
-  } catch (const std::exception &e) {
-    std::println(stderr, "[ERROR]: {} in load_directory_entries", e.what());
+    if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
+      continue;
+    }
+    (entry.is_directory() ? dirs : files).push_back(entry);
   }
+
+  entries.reserve(dirs.size() + files.size());
+  std::ranges::sort(dirs);
+  std::ranges::sort(files);
+  std::ranges::copy(dirs, std::back_inserter(entries));
+  std::ranges::copy(files, std::back_inserter(entries));
 }
 
 exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
@@ -153,10 +151,10 @@ exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
   if (!fs::is_directory(path)) {
     co_return;
   }
+
   entries.clear();
   std::vector<fs::directory_entry> dirs;
   std::vector<fs::directory_entry> files;
-
   dirs.reserve(128);
   files.reserve(128);
   size_t load_size{0};

@@ -1,4 +1,5 @@
 #pragma once
+#include "scheduler.h"
 #include <exec/task.hpp>
 #include <expected>
 #include <filesystem>
@@ -37,6 +38,22 @@ private:
   void update_preview_entries_without_lock(const int &selected);
   std::string
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
+  stdexec::sender auto get_total_count_without_lock(const fs::path &path) {
+    return stdexec::schedule(Scheduler::cpu_scheduler()) |
+           stdexec::then([this, path]() -> size_t {
+             size_t total_count{0};
+             for (auto &entry : fs::directory_iterator(
+                      path, fs::directory_options::skip_permission_denied)) {
+               if (entry.path().empty() || !fs::exists(entry))
+                 continue;
+               if (entry.path().filename().string().starts_with('.') &&
+                   !show_hidden_)
+                 continue;
+               ++total_count;
+             }
+             return total_count;
+           });
+  }
 
 public:
   static inline std::shared_mutex file_mutex_;
