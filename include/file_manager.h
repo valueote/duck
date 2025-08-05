@@ -1,14 +1,14 @@
 #pragma once
-#include "scheduler.h"
 #include <exec/task.hpp>
 #include <expected>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
+#include <generator>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
-#include <utility>
 #include <vector>
 namespace duck {
+
 namespace fs = std::filesystem;
 
 class FileManager {
@@ -27,35 +27,16 @@ private:
 
   FileManager();
   static FileManager &instance();
-
   std::vector<fs::directory_entry>
   load_directory_entries_without_lock(const fs::path &path, bool preview);
-
-  exec::task<void> lazy_load_directory_entries_without_lock(
-      const fs::path &path, std::vector<fs::directory_entry> &entries,
-      const size_t &chunk = 50);
-
+  std::generator<std::vector<fs::directory_entry>>
+  lazy_load_directory_entries_without_lock(const fs::path &path, bool preview,
+                                           const size_t &chunk = 50);
   bool delete_entry_without_lock(fs::directory_entry &entry);
   void update_preview_entries_without_lock(const int &selected);
+
   std::string
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
-  stdexec::sender auto get_total_count_without_lock(const fs::path &path) {
-    return stdexec::schedule(Scheduler::cpu_scheduler()) |
-           stdexec::then([this, path]() {
-             size_t dir_count{0};
-             size_t file_count{0};
-             for (auto &entry : fs::directory_iterator(
-                      path, fs::directory_options::skip_permission_denied)) {
-               if (entry.path().empty() || !fs::exists(entry))
-                 continue;
-               if (entry.path().filename().string().starts_with('.') &&
-                   !show_hidden_)
-                 continue;
-               (entry.is_directory() ? dir_count++ : file_count++);
-             }
-             return std::make_pair(dir_count, file_count);
-           });
-  }
 
 public:
   static inline std::shared_mutex file_mutex_;
@@ -88,7 +69,6 @@ public:
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
   static ftxui::Element directory_preview(const int &selected);
-
   static std::string text_preview(const int &selected, size_t max_lines = 100,
                                   size_t max_width = 100);
 

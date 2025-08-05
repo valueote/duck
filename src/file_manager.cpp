@@ -1,5 +1,6 @@
 #include "file_manager.h"
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -122,13 +123,10 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
 
   std::vector<fs::directory_entry> dirs;
   std::vector<fs::directory_entry> files;
-  auto [pair] =
-      *stdexec::sync_wait(std::move(get_total_count_without_lock(path)));
-  auto [dir_count, file_count] = pair;
-  dirs.reserve(dir_count);
-  files.reserve(file_count);
+  dirs.reserve(512);
+  files.reserve(512);
 
-  entries.reserve(dir_count + file_count);
+  entries.reserve(1024);
   for (auto entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
     if (entry.path().empty() || !fs::exists(entry)) {
@@ -149,20 +147,23 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   return entries;
 }
 
-exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
-    const fs::path &path, std::vector<fs::directory_entry> &entries,
-    const size_t &chunk) {
+std::generator<std::vector<fs::directory_entry>>
+FileManager::lazy_load_directory_entries_without_lock(const fs::path &path,
+                                                      bool preview,
+                                                      const size_t &chunk) {
 
   if (!fs::is_directory(path)) {
     co_return;
   }
 
+  auto &entries = (preview ? preview_entries_ : curdir_entries_);
   entries.clear();
+
   std::vector<fs::directory_entry> dirs;
   std::vector<fs::directory_entry> files;
   dirs.reserve(128);
   files.reserve(128);
-  size_t load_size{0};
+  size_t loaded_size{0};
   for (const auto &entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
     if (entry.path().empty() || !fs::exists(entry)) {
@@ -173,9 +174,10 @@ exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
       continue;
     }
 
-    (entry.is_directory() ? dirs : files).push_back(entry);
-    if (++load_size >= chunk) {
-      co_return;
+    (entry.is_directory() ? dirs : files).push_back(std::move(entry));
+    if (++loaded_size >= chunk) {
+      co_yield entries;
+      loaded_size = 0;
     }
   }
 
@@ -184,6 +186,7 @@ exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
   std::ranges::sort(files);
   std::ranges::move(dirs, std::back_inserter(entries));
   std::ranges::move(files, std::back_inserter(entries));
+
   co_return;
 }
 
