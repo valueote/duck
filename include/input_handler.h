@@ -31,7 +31,7 @@ public:
              });
            }) |
            stdexec::then([this, selected]() {
-             return FileManager::get_directory_preview(selected);
+             return FileManager::directory_preview(selected);
            }) |
            stdexec::then([this](ftxui::Element preview) {
              ui_.post_task([this, preview]() {
@@ -46,7 +46,7 @@ public:
              ui_.post_task([this]() { ui_.update_text_preview("Loading..."); });
            }) |
            stdexec::then([this, selected]() {
-             return FileManager::get_text_preview(selected);
+             return FileManager::text_preview(selected);
            }) |
            stdexec::then([this](std::string preview) {
              ui_.post_task([this, preview]() {

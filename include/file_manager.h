@@ -28,8 +28,8 @@ private:
   FileManager();
   static FileManager &instance();
 
-  void load_directory_entries_without_lock(
-      const fs::path &path, std::vector<fs::directory_entry> &entries);
+  std::vector<fs::directory_entry>
+  load_directory_entries_without_lock(const fs::path &path, bool preview);
 
   exec::task<void> lazy_load_directory_entries_without_lock(
       const fs::path &path, std::vector<fs::directory_entry> &entries,
@@ -68,7 +68,7 @@ public:
   static std::vector<std::string> curdir_entries_string();
   static std::vector<std::string> preview_entries_string();
   static std::vector<std::string> marked_entries_string();
-  static int get_previous_path_index();
+  static int previous_path_index();
   static bool yanking();
   static bool cutting();
 
@@ -76,7 +76,6 @@ public:
   static void start_cutting();
   static void paste(const int &selected);
   static bool is_marked(const fs::directory_entry &entry);
-
   static void toggle_mark_on_selected(const int &selected);
   static void toggle_hidden_entries();
   static void clear_marked_entries();
@@ -87,25 +86,20 @@ public:
   static void update_curdir_entries();
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
   static std::expected<fs::directory_entry, std::string>
-  get_selected_entry(const int &selected);
-  static ftxui::Element get_directory_preview(const int &selected);
+  selected_entry(const int &selected);
+  static ftxui::Element directory_preview(const int &selected);
 
-  static std::string get_text_preview(const int &selected,
-                                      size_t max_lines = 100,
-                                      size_t max_width = 100);
+  static std::string text_preview(const int &selected, size_t max_lines = 100,
+                                  size_t max_width = 100);
   // async interface
-  static stdexec::sender auto
-  load_directory_entries_async(const fs::path &path,
-                               std::vector<fs::directory_entry> &entries) {
+  static stdexec::sender auto load_directory_entries_async(const fs::path &path,
+                                                           bool preview) {
     auto &instance = FileManager::instance();
-    return stdexec::just(path, std::ref(entries)) |
-           stdexec::then(
-               [&instance](const fs::path &path,
-                           std::vector<fs::directory_entry> &entries) {
-                 std::unique_lock lock{FileManager::file_mutex_};
-                 instance.load_directory_entries_without_lock(path, entries);
-                 return entries;
-               }) |
+    return stdexec::just(path, preview) |
+           stdexec::then([&instance](const fs::path &path, bool preview) {
+             std::unique_lock lock{FileManager::file_mutex_};
+             return instance.load_directory_entries_without_lock(path, preview);
+           }) |
            stdexec::then(
                [&instance](const std::vector<fs::directory_entry> &entries) {
                  if (entries.empty()) {
@@ -129,8 +123,7 @@ public:
     instance.previous_path_ = instance.current_path_;
     instance.current_path_ = new_path;
     instance.parent_path_ = instance.current_path_.parent_path();
-    return load_directory_entries_async(instance.current_path_,
-                                        instance.curdir_entries_);
+    return load_directory_entries_async(instance.current_path_, false);
   }
 };
 } // namespace duck

@@ -42,7 +42,7 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
         window(ftxui::text(" Content Preview ") | ftxui::bold,
                [this] {
                  const auto selected_path =
-                     FileManager::get_selected_entry(ui_.selected());
+                     FileManager::selected_entry(ui_.selected());
                  if (not selected_path) {
                    return ftxui::text("No item selected");
                  }
@@ -74,7 +74,7 @@ ftxui::Element ContentProvider::deleted_entries() {
         std::ranges::to<std::vector>();
     return ftxui::vbox({lines});
   } else {
-    auto selected_path = FileManager::get_selected_entry(ui_.selected());
+    auto selected_path = FileManager::selected_entry(ui_.selected());
     if (!selected_path.has_value()) {
       return ftxui::text("[ERROR] No file selected for deletion.");
     }

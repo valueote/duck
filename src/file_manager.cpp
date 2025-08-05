@@ -18,7 +18,7 @@ FileManager::FileManager()
       parent_path_{current_path_.parent_path()}, is_yanking_{false},
       is_cutting_{false}, show_hidden_{false} {
 
-  load_directory_entries_without_lock(current_path_, curdir_entries_);
+  load_directory_entries_without_lock(current_path_, false);
 
   if (fs::is_directory(curdir_entries_[0])) {
     update_preview_entries_without_lock(0);
@@ -76,7 +76,7 @@ std::vector<std::string> FileManager::curdir_entries_string() {
          std::ranges::to<std::vector>();
 }
 
-int FileManager::get_previous_path_index() {
+int FileManager::previous_path_index() {
   if (auto it = std::ranges::find(instance().curdir_entries_,
                                   instance().previous_path_);
       it != instance().curdir_entries_.end()) {
@@ -97,7 +97,7 @@ bool FileManager::cutting() {
 }
 
 std::expected<fs::directory_entry, std::string>
-FileManager::get_selected_entry(const int &selected) {
+FileManager::selected_entry(const int &selected) {
   std::shared_lock lock{file_mutex_};
   auto &instance = FileManager::instance();
 
@@ -111,11 +111,13 @@ FileManager::get_selected_entry(const int &selected) {
   return instance.curdir_entries_[selected];
 }
 
-void FileManager::load_directory_entries_without_lock(
-    const fs::path &path, std::vector<fs::directory_entry> &entries) {
+std::vector<fs::directory_entry>
+FileManager::load_directory_entries_without_lock(const fs::path &path,
+                                                 bool preview) {
   if (!fs::is_directory(path)) {
-    return;
+    return {};
   }
+  auto &entries = (preview ? preview_entries_ : curdir_entries_);
   entries.clear();
 
   std::vector<fs::directory_entry> dirs;
@@ -143,6 +145,8 @@ void FileManager::load_directory_entries_without_lock(
   std::ranges::sort(files);
   std::ranges::move(dirs, std::back_inserter(entries));
   std::ranges::move(files, std::back_inserter(entries));
+
+  return entries;
 }
 
 exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
@@ -186,7 +190,7 @@ exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
 void FileManager::update_curdir_entries() {
   std::unique_lock lock{file_mutex_};
   instance().load_directory_entries_without_lock(instance().current_path_,
-                                                 instance().curdir_entries_);
+                                                 false);
 }
 
 void FileManager::update_preview_entries(const int &selected) {
@@ -204,8 +208,7 @@ void FileManager::update_preview_entries_without_lock(const int &selected) {
   if (not fs::is_directory(curdir_entries_[selected])) {
     return;
   }
-  load_directory_entries_without_lock(curdir_entries_[selected].path(),
-                                      preview_entries_);
+  load_directory_entries_without_lock(curdir_entries_[selected].path(), true);
 }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
@@ -321,7 +324,7 @@ bool FileManager::delete_entry_without_lock(fs::directory_entry &entry) {
   return true;
 }
 
-ftxui::Element FileManager::get_directory_preview(const int &selected) {
+ftxui::Element FileManager::directory_preview(const int &selected) {
   auto &instance = FileManager::instance();
 
   std::unique_lock lock{file_mutex_};
@@ -343,9 +346,9 @@ ftxui::Element FileManager::get_directory_preview(const int &selected) {
   return ftxui::vbox(std::move(entries));
 }
 
-std::string FileManager::get_text_preview(const int &selected, size_t max_lines,
-                                          size_t max_width) {
-  auto entry = get_selected_entry(selected);
+std::string FileManager::text_preview(const int &selected, size_t max_lines,
+                                      size_t max_width) {
+  auto entry = selected_entry(selected);
   std::ifstream file(entry.value().path());
 
   std::ostringstream oss;

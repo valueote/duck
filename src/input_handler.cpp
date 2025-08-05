@@ -126,7 +126,7 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
 
 void InputHandler::enter_direcotry() {
   auto entry =
-      FileManager::get_selected_entry(ui_.selected())
+      FileManager::selected_entry(ui_.selected())
           .and_then([](fs::directory_entry entry)
                         -> std::expected<fs::directory_entry, std::string> {
             if (fs::is_directory(entry)) {
@@ -162,7 +162,7 @@ void InputHandler::leave_direcotry() {
       FileManager::update_current_path_async(FileManager::cur_parent_path()) |
           stdexec::then([this](std::vector<std::string> entries) {
             return std::make_pair(std::move(entries),
-                                  FileManager::get_previous_path_index());
+                                  FileManager::previous_path_index());
           }) |
           stdexec::then(
               [this](
@@ -175,7 +175,7 @@ void InputHandler::leave_direcotry() {
                 return entries_and_index.second;
               }) |
           stdexec::then([](int selected) {
-            return FileManager::get_directory_preview(selected);
+            return FileManager::directory_preview(selected);
           }) |
           stdexec::then([this](ftxui::Element preview) {
             ui_.post_task([this, preview]() {
@@ -187,7 +187,7 @@ void InputHandler::leave_direcotry() {
 
 void InputHandler::update_preview_async() {
   const int selected = ui_.selected();
-  const auto selected_path = FileManager::get_selected_entry(selected);
+  const auto selected_path = FileManager::selected_entry(selected);
   if (selected_path) {
     if (fs::is_directory(selected_path.value())) {
       auto task = update_directory_preview_async(selected);
@@ -203,7 +203,7 @@ void InputHandler::open_file() {
   const static std::unordered_map<std::string, std::string> handlers = {
       {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
       {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
-  auto selected_file_opt = FileManager::get_selected_entry(ui_.selected());
+  auto selected_file_opt = FileManager::selected_entry(ui_.selected());
   if (!selected_file_opt.has_value()) {
     return;
   }
