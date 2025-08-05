@@ -146,6 +146,44 @@ void FileManager::load_directory_entries_without_lock(
   }
 }
 
+exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
+    const fs::path &path, std::vector<fs::directory_entry> &entries,
+    const size_t &chunk) {
+
+  if (!fs::is_directory(path)) {
+    co_return;
+  }
+  entries.clear();
+  std::vector<fs::directory_entry> dirs;
+  std::vector<fs::directory_entry> files;
+
+  dirs.reserve(128);
+  files.reserve(128);
+  size_t load_size{0};
+  for (const auto &entry : fs::directory_iterator(
+           path, fs::directory_options::skip_permission_denied)) {
+    if (entry.path().empty() || !fs::exists(entry)) {
+      continue;
+    }
+
+    if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
+      continue;
+    }
+
+    (entry.is_directory() ? dirs : files).push_back(entry);
+    if (++load_size >= chunk) {
+      co_return;
+    }
+  }
+
+  entries.reserve(dirs.size() + files.size());
+  std::ranges::sort(dirs);
+  std::ranges::sort(files);
+  std::ranges::copy(dirs, std::back_inserter(entries));
+  std::ranges::copy(files, std::back_inserter(entries));
+  co_return;
+}
+
 void FileManager::update_curdir_entries() {
   std::unique_lock lock{file_mutex_};
   instance().load_directory_entries_without_lock(instance().current_path_,

@@ -1,8 +1,8 @@
 #pragma once
+#include <exec/task.hpp>
 #include <expected>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
-#include <ranges>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <vector>
@@ -28,6 +28,11 @@ private:
 
   void load_directory_entries_without_lock(
       const fs::path &path, std::vector<fs::directory_entry> &entries);
+
+  exec::task<void> lazy_load_directory_entries_without_lock(
+      const fs::path &path, std::vector<fs::directory_entry> &entries,
+      const size_t &chunk = 50);
+
   bool delete_entry_without_lock(fs::directory_entry &entry);
   void update_preview_entries_without_lock(const int &selected);
   std::string
@@ -82,20 +87,20 @@ public:
                  instance.load_directory_entries_without_lock(path, entries);
                  return entries;
                }) |
-           stdexec::then([&instance](
-                             const std::vector<fs::directory_entry> &entries) {
-             if (entries.empty()) {
-               return std::vector<std::string>{"[No items]"};
-             }
-             return entries |
-                    std::views::transform(
-                        [&instance](const fs::directory_entry &entry) {
-                          std::shared_lock lock{FileManager::file_mutex_};
-                          return instance.format_directory_entries_without_lock(
-                              entry);
-                        }) |
-                    std::ranges::to<std::vector>();
-           });
+           stdexec::then(
+               [&instance](const std::vector<fs::directory_entry> &entries) {
+                 if (entries.empty()) {
+                   return std::vector<std::string>{"[No items]"};
+                 }
+                 std::vector<std::string> entries_string{};
+                 entries_string.reserve(entries.size());
+                 std::shared_lock lock{instance.file_mutex_};
+                 for (auto &entry : entries) {
+                   entries_string.push_back(
+                       instance.format_directory_entries_without_lock(entry));
+                 }
+                 return entries_string;
+               });
   }
 
   static stdexec::sender auto
