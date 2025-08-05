@@ -91,7 +91,9 @@ public:
 
   static std::string text_preview(const int &selected, size_t max_lines = 100,
                                   size_t max_width = 100);
-  // async interface
+
+  // Update preview  or current directory entries and turn entries name to
+  // string
   static stdexec::sender auto load_directory_entries_async(const fs::path &path,
                                                            bool preview) {
     auto &instance = FileManager::instance();
@@ -116,6 +118,8 @@ public:
                });
   }
 
+  // When leave or enter a new directory, update current path and current
+  // direcotry entries
   static stdexec::sender auto
   update_current_path_async(const fs::path &new_path) {
     std::unique_lock lock{FileManager::file_mutex_};

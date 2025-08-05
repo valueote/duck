@@ -185,6 +185,38 @@ void InputHandler::leave_direcotry() {
   scope_.spawn(std::move(task));
 }
 
+stdexec::sender auto
+InputHandler::update_directory_preview_async(const int &selected) {
+  return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
+           ui_.post_task([this]() {
+             ui_.update_entries_preview(ftxui::text("Loading..."));
+           });
+         }) |
+         stdexec::then([this, selected]() {
+           return FileManager::directory_preview(selected);
+         }) |
+         stdexec::then([this](ftxui::Element preview) {
+           ui_.post_task([this, preview]() {
+             ui_.update_entries_preview(std::move(preview));
+           });
+         });
+}
+
+stdexec::sender auto
+InputHandler::update_text_preview_async(const int &selected) {
+  return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
+           ui_.post_task([this]() { ui_.update_text_preview("Loading..."); });
+         }) |
+         stdexec::then([this, selected]() {
+           return FileManager::text_preview(selected);
+         }) |
+         stdexec::then([this](std::string preview) {
+           ui_.post_task([this, preview]() {
+             ui_.update_text_preview(std::move(preview));
+           });
+         });
+}
+
 void InputHandler::update_preview_async() {
   const int selected = ui_.selected();
   const auto selected_path = FileManager::selected_entry(selected);

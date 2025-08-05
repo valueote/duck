@@ -1,6 +1,4 @@
 #pragma once
-#include "file_manager.h"
-#include "scheduler.h"
 #include "ui.h"
 #include <exec/async_scope.hpp>
 #include <ftxui/component/event.hpp>
@@ -23,37 +21,8 @@ public:
   void enter_direcotry();
   void leave_direcotry();
 
-  stdexec::sender auto update_directory_preview_async(const int &selected) {
-    return stdexec::schedule(Scheduler::io_scheduler()) |
-           stdexec::then([this]() {
-             ui_.post_task([this]() {
-               ui_.update_entries_preview(ftxui::text("Loading..."));
-             });
-           }) |
-           stdexec::then([this, selected]() {
-             return FileManager::directory_preview(selected);
-           }) |
-           stdexec::then([this](ftxui::Element preview) {
-             ui_.post_task([this, preview]() {
-               ui_.update_entries_preview(std::move(preview));
-             });
-           });
-  }
-
-  stdexec::sender auto update_text_preview_async(const int &selected) {
-    return stdexec::schedule(Scheduler::io_scheduler()) |
-           stdexec::then([this]() {
-             ui_.post_task([this]() { ui_.update_text_preview("Loading..."); });
-           }) |
-           stdexec::then([this, selected]() {
-             return FileManager::text_preview(selected);
-           }) |
-           stdexec::then([this](std::string preview) {
-             ui_.post_task([this, preview]() {
-               ui_.update_text_preview(std::move(preview));
-             });
-           });
-  }
+  stdexec::sender auto update_directory_preview_async(const int &selected);
+  stdexec::sender auto update_text_preview_async(const int &selected);
 };
 
 } // namespace duck
