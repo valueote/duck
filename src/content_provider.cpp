@@ -31,13 +31,15 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
   return [this]() {
     auto screen_size = ui_.screen_size();
     auto left_pane =
-        window(ftxui::text(" " + FileManager::current_path().string() + " ") |
-                   ftxui::bold,
-               ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame) |
+        window(
+            ftxui::text(" " + FileManager::current_path().string() + " ") |
+                ftxui::bold |
+                ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2),
+            ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame) |
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     auto right_pane =
-        window(ftxui::text(" Coneten Preview ") | ftxui::bold,
+        window(ftxui::text(" Content Preview ") | ftxui::bold,
                [this] {
                  const auto selected_path =
                      FileManager::get_selected_entry(ui_.selected());

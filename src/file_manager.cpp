@@ -136,7 +136,7 @@ void FileManager::load_directory_entries_without_lock(
     if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
       continue;
     }
-    entries.push_back(std::move(entry));
+    (fs::is_directory(entry) ? dirs : files).push_back(std::move(entry));
   }
 
   std::ranges::sort(dirs);
@@ -178,8 +178,8 @@ exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
   entries.reserve(dirs.size() + files.size());
   std::ranges::sort(dirs);
   std::ranges::sort(files);
-  std::ranges::copy(dirs, std::back_inserter(entries));
-  std::ranges::copy(files, std::back_inserter(entries));
+  std::ranges::move(dirs, std::back_inserter(entries));
+  std::ranges::move(files, std::back_inserter(entries));
   co_return;
 }
 
