@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 namespace duck {
+
 FileManager::FileManager()
     : current_path_{fs::current_path()},
       parent_path_{current_path_.parent_path()}, is_yanking_{false},
@@ -119,15 +120,20 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
     return {};
   }
   auto &entries = (preview ? preview_entries_ : curdir_entries_);
-  entries.clear();
 
+  if (entries_cache_.contains(path)) {
+    entries = entries_cache_[path];
+    return entries_cache_[path];
+  }
+
+  entries.clear();
   std::vector<fs::directory_entry> dirs;
   std::vector<fs::directory_entry> files;
   dirs.reserve(512);
   files.reserve(512);
 
   entries.reserve(1024);
-  for (auto entry : fs::directory_iterator(
+  for (auto &entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
     if (entry.path().empty() || !fs::exists(entry)) {
       continue;
@@ -143,6 +149,10 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   std::ranges::sort(files);
   std::ranges::move(dirs, std::back_inserter(entries));
   std::ranges::move(files, std::back_inserter(entries));
+
+  if (entries_cache_.size() < 50) {
+    entries_cache_[path] = entries;
+  }
 
   return entries;
 }

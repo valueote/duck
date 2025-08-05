@@ -6,6 +6,7 @@
 #include <generator>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
+#include <unordered_map>
 #include <vector>
 namespace duck {
 
@@ -24,6 +25,8 @@ private:
   bool is_yanking_;
   bool is_cutting_;
   bool show_hidden_;
+
+  std::unordered_map<fs::path, std::vector<fs::directory_entry>> entries_cache_;
 
   FileManager();
   static FileManager &instance();
