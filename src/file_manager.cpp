@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iterator>
 #include <mutex>
+#include <optional>
 #include <print>
 #include <ranges>
 #include <shared_mutex>
@@ -15,10 +16,12 @@
 #include <vector>
 namespace duck {
 
+constexpr size_t lru_cache_size = 50;
+
 FileManager::FileManager()
     : current_path_{fs::current_path()},
-      parent_path_{current_path_.parent_path()}, is_yanking_{false},
-      is_cutting_{false}, show_hidden_{false} {
+      parent_path_{current_path_.parent_path()}, lru_cache_{lru_cache_size},
+      is_yanking_{false}, is_cutting_{false}, show_hidden_{false} {
 
   load_directory_entries_without_lock(current_path_, false);
 
@@ -121,9 +124,10 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   }
   auto &entries = (preview ? preview_entries_ : curdir_entries_);
 
-  if (entries_cache_.contains(path)) {
-    entries = entries_cache_[path];
-    return entries_cache_[path];
+  auto cache = lru_cache_.get(path);
+  if (cache.has_value()) {
+    entries = std::move(cache.value());
+    return entries;
   }
 
   entries.clear();
@@ -150,9 +154,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   std::ranges::move(dirs, std::back_inserter(entries));
   std::ranges::move(files, std::back_inserter(entries));
 
-  if (entries_cache_.size() < 50) {
-    entries_cache_[path] = entries;
-  }
+  lru_cache_.insert(path, entries);
 
   return entries;
 }
@@ -429,6 +431,47 @@ std::string FileManager::format_directory_entries_without_lock(
     selected_marker = "█ ";
   }
   return selected_marker + instance().entry_name_with_icon(entry);
+}
+
+FileManager::Lru::Lru(size_t capacity) : capacity_(capacity) {}
+
+void FileManager::Lru::touch(const fs::path &path) {
+  lru_list_.splice(lru_list_.begin(), lru_list_, map_[path]);
+}
+
+std::optional<std::vector<fs::directory_entry>>
+FileManager::Lru::get(const fs::path &path) {
+  auto it = map_.find(path);
+  if (it == map_.end()) {
+    return std::nullopt;
+  }
+
+  touch(path);
+
+  return cache_[path];
+}
+
+void FileManager::Lru::insert(const fs::path &path,
+                              const std::vector<fs::directory_entry> &data) {
+  auto it = map_.find(path);
+
+  if (it != map_.end()) {
+    cache_[path] = data;
+    touch(path);
+  } else {
+    if (lru_list_.size() == capacity_) {
+      const fs::path &lru_path = lru_list_.back();
+
+      map_.erase(lru_path);
+      cache_.erase(lru_path);
+
+      lru_list_.pop_back();
+    }
+
+    lru_list_.push_front(path);
+    map_[path] = lru_list_.begin();
+    cache_[path] = data;
+  }
 }
 
 } // namespace duck

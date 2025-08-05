@@ -4,16 +4,38 @@
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <generator>
+#include <list>
+#include <mutex>
+#include <optional>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <unordered_map>
 #include <vector>
+
 namespace duck {
 
 namespace fs = std::filesystem;
 
 class FileManager {
+
 private:
+  class Lru {
+  public:
+    Lru(size_t capacity);
+    std::optional<std::vector<fs::directory_entry>> get(const fs::path &path);
+    void insert(const fs::path &path,
+                const std::vector<fs::directory_entry> &data);
+
+  private:
+    size_t capacity_;
+    std::list<fs::path> lru_list_;
+    std::unordered_map<fs::path, std::list<fs::path>::iterator> map_;
+    std::unordered_map<fs::path, std::vector<fs::directory_entry>> cache_;
+
+    void touch(const fs::path &path);
+  };
+
+  Lru lru_cache_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
@@ -25,8 +47,6 @@ private:
   bool is_yanking_;
   bool is_cutting_;
   bool show_hidden_;
-
-  std::unordered_map<fs::path, std::vector<fs::directory_entry>> entries_cache_;
 
   FileManager();
   static FileManager &instance();
@@ -113,4 +133,5 @@ public:
     return load_directory_entries_async(instance.current_path_, false);
   }
 };
+
 } // namespace duck
