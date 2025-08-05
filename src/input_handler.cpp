@@ -2,6 +2,7 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
+#include "stdexec/__detail/__sync_wait.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -141,12 +142,13 @@ void InputHandler::enter_direcotry() {
         Scheduler::io_scheduler(),
         FileManager::update_current_path_async(entry.value().path()) |
             stdexec::then([this](std::vector<std::string> entries) {
-              ui_.post_task([this, entries]() {
-                ui_.enter_direcotry(std::move(entries));
-                ui_.post_event(DuckEvent::refresh);
-              });
+              // NOTE:  The following code is unsafe, because we are modifying
+              // ui in the multithread env but without lock
+              ui_.enter_direcotry(std::move(entries));
+              ui_.post_task(
+                  [this, entries]() { ui_.post_event(DuckEvent::refresh); });
             }));
-    scope_.spawn(std::move(task));
+    stdexec::sync_wait(std::move(task));
     update_preview_async();
 
   } else {
