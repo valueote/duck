@@ -120,12 +120,14 @@ void FileManager::load_directory_entries_without_lock(
 
   std::vector<fs::directory_entry> dirs;
   std::vector<fs::directory_entry> files;
-  auto [total_count] =
+  auto [pair] =
       *stdexec::sync_wait(std::move(get_total_count_without_lock(path)));
-  dirs.reserve(total_count);
-  files.reserve(total_count);
+  auto [dir_count, file_count] = pair;
+  dirs.reserve(dir_count);
+  files.reserve(file_count);
 
-  for (const auto &entry : fs::directory_iterator(
+  entries.reserve(dir_count + file_count);
+  for (auto entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
     if (entry.path().empty() || !fs::exists(entry)) {
       continue;
@@ -134,14 +136,13 @@ void FileManager::load_directory_entries_without_lock(
     if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
       continue;
     }
-    (entry.is_directory() ? dirs : files).push_back(entry);
+    entries.push_back(std::move(entry));
   }
 
-  entries.reserve(dirs.size() + files.size());
   std::ranges::sort(dirs);
   std::ranges::sort(files);
-  std::ranges::copy(dirs, std::back_inserter(entries));
-  std::ranges::copy(files, std::back_inserter(entries));
+  std::ranges::move(dirs, std::back_inserter(entries));
+  std::ranges::move(files, std::back_inserter(entries));
 }
 
 exec::task<void> FileManager::lazy_load_directory_entries_without_lock(
