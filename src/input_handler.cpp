@@ -143,9 +143,7 @@ void InputHandler::enter_direcotry() {
     auto task = stdexec::on(
         Scheduler::io_scheduler(),
         FileManager::update_current_path_async(entry.value().path()) |
-            stdexec::then([](const std::vector<fs::directory_entry> &entries) {
-              return FileManager::format_entries(entries);
-            }) |
+            stdexec::then(FileManager::format_entries) |
             stdexec::then([this](std::vector<std::string> entries) {
               ui_.post_task([this, entries]() {
                 ui_.enter_direcotry(std::move(entries));
@@ -178,9 +176,7 @@ void InputHandler::leave_direcotry() {
                 });
                 return entries_and_index.second;
               }) |
-          stdexec::then([](int selected) {
-            return FileManager::directory_preview(selected);
-          }) |
+          stdexec::then(FileManager::directory_preview) |
           stdexec::then([this](ftxui::Element preview) {
             ui_.post_task([this, preview]() {
               ui_.update_entries_preview(std::move(preview));

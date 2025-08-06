@@ -27,7 +27,7 @@ ContentProvider::entries_transform() {
   };
 }
 
-std::function<ftxui::Element()> ContentProvider::preview_async() {
+std::function<ftxui::Element()> ContentProvider::preview() {
   return [this]() {
     auto screen_size = ui_.screen_size();
     auto left_pane =

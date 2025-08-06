@@ -23,6 +23,6 @@ public:
   std::function<ftxui::Element(const ftxui::EntryState &state)>
   entries_transform();
   ftxui::Component deletion_dialog();
-  std::function<ftxui::Element()> preview_async();
+  std::function<ftxui::Element()> preview();
 };
 } // namespace duck
