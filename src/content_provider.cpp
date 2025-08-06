@@ -35,7 +35,7 @@ std::function<ftxui::Element()> ContentProvider::preview_async() {
             ftxui::text(" " + FileManager::current_path().string() + " ") |
                 ftxui::bold |
                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2),
-            ui_.menu()->Render() | ftxui::vscroll_indicator | ftxui::frame) |
+            ui_.menu()->Render() | ftxui::frame) |
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     auto right_pane =
