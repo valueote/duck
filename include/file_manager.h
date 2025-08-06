@@ -81,7 +81,6 @@ public:
   static bool delete_selected_entry(const int selected);
   static bool delete_marked_entries();
   static void update_current_path(const fs::path &new_path);
-  static void update_preview_entries(const int &selected);
 
   static std::vector<std::string>
   format_entries(const std::vector<fs::directory_entry> &entries);
@@ -90,7 +89,6 @@ public:
   selected_entry(const int &selected);
 
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static ftxui::Element directory_preview(const int &selected);
   static std::string text_preview(const int &selected, size_t max_lines = 100,
                                   size_t max_width = 100);
 

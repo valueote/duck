@@ -160,34 +160,6 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   return entries;
 }
 
-void FileManager::update_preview_entries(const int &selected) {
-  fs::path target_path;
-  bool show_hidden{};
-
-  {
-    auto &instance = FileManager::instance();
-    std::shared_lock lock{file_manager_mutex_};
-    if (instance.curdir_entries_.empty()) {
-      return;
-    }
-    if (selected < 0 || selected >= instance.curdir_entries_.size()) {
-      return;
-    }
-    if (not fs::is_directory(instance.curdir_entries_[selected])) {
-      return;
-    }
-    target_path = instance.curdir_entries_[selected].path();
-    show_hidden = instance.show_hidden_;
-  }
-
-  auto entries = std::move(
-      instance().load_directory_entries_without_lock(target_path, show_hidden));
-  {
-    std::unique_lock lock{file_manager_mutex_};
-    instance().preview_entries_ = std::move(entries);
-  }
-}
-
 void FileManager::toggle_mark_on_selected(const int &selected) {
   std::unique_lock lock{file_manager_mutex_};
   auto &instance = FileManager::instance();
@@ -299,27 +271,6 @@ bool FileManager::delete_entry_without_lock(fs::directory_entry &entry) {
     return fs::remove(entry);
   }
   return true;
-}
-
-ftxui::Element FileManager::directory_preview(const int &selected) {
-  auto &instance = FileManager::instance();
-  update_preview_entries(selected);
-
-  std::shared_lock lock{file_manager_mutex_};
-  auto entries =
-      instance.preview_entries_ |
-      std::views::transform([&instance](fs::directory_entry entry) {
-        if (entry.path().empty() || !fs::exists(entry)) {
-          return ftxui::text("[Invalid Entry]");
-        }
-        return ftxui::text(
-            instance.format_directory_entries_without_lock(std::move(entry)));
-      }) |
-      std::ranges::to<std::vector>();
-  if (entries.empty()) {
-    entries.push_back(ftxui::text("[Empty folder]"));
-  }
-  return ftxui::vbox(std::move(entries));
 }
 
 std::string FileManager::text_preview(const int &selected, size_t max_lines,

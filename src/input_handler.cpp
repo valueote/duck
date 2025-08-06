@@ -176,7 +176,21 @@ void InputHandler::leave_direcotry() {
                 });
                 return entries_and_index.second;
               }) |
-          stdexec::then(FileManager::directory_preview) |
+          stdexec::let_value([](const int &selected) {
+            return FileManager::directory_preview_async(selected);
+          }) |
+          stdexec::then(FileManager::format_entries) |
+          stdexec::then([](std::vector<std::string> entries) {
+            auto result = entries |
+                          std::views::transform([](std::string &entry) {
+                            return ftxui::text(std::move(entry));
+                          }) |
+                          std::ranges::to<std::vector>();
+            if (result.empty()) {
+              result.push_back(ftxui::text("[Empty folder]"));
+            }
+            return ftxui::vbox(std::move(result));
+          }) |
           stdexec::then([this](ftxui::Element preview) {
             ui_.post_task([this, preview]() {
               ui_.update_entries_preview(std::move(preview));
@@ -188,12 +202,24 @@ void InputHandler::leave_direcotry() {
 stdexec::sender auto
 InputHandler::update_directory_preview_async(const int &selected) {
   return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
-           ui_.post_task([this]() {
+           ui_.post_task([this] {
              ui_.update_entries_preview(ftxui::text("Loading..."));
            });
          }) |
-         stdexec::then([this, selected]() {
-           return FileManager::directory_preview(selected);
+         stdexec::let_value([selected]() {
+           return FileManager::directory_preview_async(selected);
+         }) |
+         stdexec::then(FileManager::format_entries) |
+         stdexec::then([](std::vector<std::string> entries) {
+           auto result = entries |
+                         std::views::transform([](std::string &entry) {
+                           return ftxui::text(std::move(entry));
+                         }) |
+                         std::ranges::to<std::vector>();
+           if (result.empty()) {
+             result.push_back(ftxui::text("[Empty folder]"));
+           }
+           return ftxui::vbox(std::move(result));
          }) |
          stdexec::then([this](ftxui::Element preview) {
            ui_.post_task([this, preview]() {
