@@ -139,11 +139,10 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   entries.reserve(1024);
   for (auto &entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
-    if (entry.path().empty() || !fs::exists(entry)) {
+    if (entry.path().empty()) {
       continue;
     }
-
-    if (entry.path().filename().string().starts_with('.') && !show_hidden_) {
+    if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
       continue;
     }
     (fs::is_directory(entry) ? dirs : files).push_back(std::move(entry));
