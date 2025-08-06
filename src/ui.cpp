@@ -43,6 +43,7 @@ void Ui::set_deletion_dialog(const ftxui::Component deleted_dialog,
       ftxui::Modal(main_layout_, dialog_with_handler, &show_deletion_dialog_);
 }
 
+// move selected up and down can only be used in ui thread
 void Ui::move_selected_up(const int max) {
   if (selected_ > 0) {
     selected_--;
@@ -50,6 +51,7 @@ void Ui::move_selected_up(const int max) {
     selected_ = max;
   }
 }
+
 void Ui::move_selected_down(const int max) {
   if (selected_ < max) {
     selected_++;
@@ -101,6 +103,8 @@ void Ui::exit() { screen_.Exit(); }
 
 int Ui::selected() { return selected_; }
 
+// Screen has a internal task queue which is protected by a mutex, so this
+// opration is safe without holding ui_lock;
 void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
 
 std::pair<int, int> Ui::screen_size() {

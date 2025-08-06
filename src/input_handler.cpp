@@ -14,6 +14,9 @@
 namespace duck {
 InputHandler::InputHandler(Ui &ui) : ui_{ui} {}
 
+// All the input handler is binded to the ui thread, so it's safe to modify ui
+// in the navigation_handler
+
 std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
   return [this](ftxui::Event event) {
     if (event == ftxui::Event::Return) {
@@ -142,15 +145,12 @@ void InputHandler::enter_direcotry() {
         Scheduler::io_scheduler(),
         FileManager::update_current_path_async(entry.value().path()) |
             stdexec::then([this](std::vector<std::string> entries) {
-              // NOTE:  The following code is unsafe, because we are modifying
-              // ui in the multithread env but without lock
               ui_.enter_direcotry(std::move(entries));
               ui_.post_task(
                   [this, entries]() { ui_.post_event(DuckEvent::refresh); });
+              update_preview_async();
             }));
-    stdexec::sync_wait(std::move(task));
-    update_preview_async();
-
+    scope_.spawn(std::move(task));
   } else {
     std::println(stderr, "[ERROR]: {}", entry.error());
   }

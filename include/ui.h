@@ -7,6 +7,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
+#include <shared_mutex>
 #include <stack>
 #include <string>
 #include <utility>
@@ -17,7 +18,7 @@ namespace duck {
 class Ui {
 private:
   std::vector<std::string> curdir_string_entries_;
-
+  std::shared_mutex ui_lock_;
   std::string text_preview_;
   ftxui::Element entries_preview_;
 
