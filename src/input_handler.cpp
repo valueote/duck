@@ -147,10 +147,11 @@ void InputHandler::enter_direcotry() {
               return FileManager::format_entries(entries);
             }) |
             stdexec::then([this](std::vector<std::string> entries) {
-              ui_.enter_direcotry(std::move(entries));
-              ui_.post_task(
-                  [this, entries]() { ui_.post_event(DuckEvent::refresh); });
-              update_preview_async();
+              ui_.post_task([this, entries]() {
+                ui_.enter_direcotry(std::move(entries));
+                ui_.post_event(DuckEvent::refresh);
+                update_preview_async();
+              });
             }));
     scope_.spawn(std::move(task));
   } else {
