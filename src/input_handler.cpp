@@ -154,8 +154,6 @@ void InputHandler::enter_direcotry() {
               });
             }));
     scope_.spawn(std::move(task));
-  } else {
-    std::println(stderr, "[ERROR]: {}", entry.error());
   }
 }
 

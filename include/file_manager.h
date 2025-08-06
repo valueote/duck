@@ -19,19 +19,19 @@ class FileManager {
 
 private:
   class Lru {
-  public:
-    Lru(size_t capacity);
-    std::optional<std::vector<fs::directory_entry>> get(const fs::path &path);
-    void insert(const fs::path &path,
-                const std::vector<fs::directory_entry> &data);
-
   private:
     size_t capacity_;
     std::list<fs::path> lru_list_;
     std::unordered_map<fs::path, std::list<fs::path>::iterator> map_;
     std::unordered_map<fs::path, std::vector<fs::directory_entry>> cache_;
+    std::shared_mutex lru_mutex_;
+    void touch_without_lock(const fs::path &path);
 
-    void touch(const fs::path &path);
+  public:
+    Lru(size_t capacity);
+    std::optional<std::vector<fs::directory_entry>> get(const fs::path &path);
+    void insert(const fs::path &path,
+                const std::vector<fs::directory_entry> &data);
   };
 
   Lru lru_cache_;

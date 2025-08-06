@@ -396,18 +396,20 @@ std::string FileManager::format_directory_entries_without_lock(
 
 FileManager::Lru::Lru(size_t capacity) : capacity_(capacity) {}
 
-void FileManager::Lru::touch(const fs::path &path) {
+void FileManager::Lru::touch_without_lock(const fs::path &path) {
   lru_list_.splice(lru_list_.begin(), lru_list_, map_[path]);
 }
 
 std::optional<std::vector<fs::directory_entry>>
 FileManager::Lru::get(const fs::path &path) {
+
+  std::unique_lock lock{lru_mutex_};
   auto it = map_.find(path);
   if (it == map_.end()) {
     return std::nullopt;
   }
 
-  touch(path);
+  touch_without_lock(path);
 
   return cache_[path];
 }
@@ -415,10 +417,10 @@ FileManager::Lru::get(const fs::path &path) {
 void FileManager::Lru::insert(const fs::path &path,
                               const std::vector<fs::directory_entry> &data) {
   auto it = map_.find(path);
-
+  std::unique_lock lock{lru_mutex_};
   if (it != map_.end()) {
     cache_[path] = data;
-    touch(path);
+    touch_without_lock(path);
   } else {
     if (lru_list_.size() == capacity_) {
       const fs::path &lru_path = lru_list_.back();
