@@ -77,14 +77,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character('p')) {
       FileManager::paste(ui_.selected());
-      scope_.spawn_future(FileManager::update_curdir_entries_async());
+      scope_.spawn_future(FileManager::update_curdir_entries());
       ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
 
     if (event == ftxui::Event::Character('.')) {
       FileManager::toggle_hidden_entries();
-      scope_.spawn_future(FileManager::update_curdir_entries_async());
+      scope_.spawn_future(FileManager::update_curdir_entries());
       ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
@@ -111,7 +111,7 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
       } else {
         FileManager::delete_selected_entry(ui_.selected());
       }
-      scope_.spawn_future(FileManager::update_curdir_entries_async());
+      scope_.spawn_future(FileManager::update_curdir_entries());
       ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       ui_.toggle_deletion_dialog();
       return true;
@@ -140,17 +140,17 @@ void InputHandler::enter_direcotry() {
           });
 
   if (entry) {
-    auto task = stdexec::on(
-        Scheduler::io_scheduler(),
-        FileManager::update_current_path_async(entry.value().path()) |
-            stdexec::then(FileManager::format_entries) |
-            stdexec::then([this](std::vector<std::string> entries) {
-              ui_.post_task([this, es = std::move(entries)]() {
-                ui_.enter_direcotry(std::move(es));
-                ui_.post_event(DuckEvent::refresh);
-                update_preview_async();
-              });
-            }));
+    auto task =
+        stdexec::on(Scheduler::io_scheduler(),
+                    FileManager::update_current_path(entry.value().path()) |
+                        stdexec::then(FileManager::format_entries) |
+                        stdexec::then([this](std::vector<std::string> entries) {
+                          ui_.post_task([this, es = std::move(entries)]() {
+                            ui_.enter_direcotry(std::move(es));
+                            ui_.post_event(DuckEvent::refresh);
+                            update_preview_async();
+                          });
+                        }));
     scope_.spawn(std::move(task));
   }
 }
@@ -158,7 +158,7 @@ void InputHandler::enter_direcotry() {
 void InputHandler::leave_direcotry() {
   auto task = stdexec::on(
       Scheduler::io_scheduler(),
-      FileManager::update_current_path_async(FileManager::cur_parent_path()) |
+      FileManager::update_current_path(FileManager::cur_parent_path()) |
           stdexec::then([](const std::vector<fs::directory_entry> &entries) {
             return FileManager::format_entries(entries);
           }) |
@@ -177,7 +177,7 @@ void InputHandler::leave_direcotry() {
                 return entries_and_index.second;
               }) |
           stdexec::let_value([](const int &selected) {
-            return FileManager::directory_preview_async(selected);
+            return FileManager::directory_preview(selected);
           }) |
           stdexec::then(FileManager::format_entries) |
           stdexec::then(FileManager::entries_string_to_element) |
@@ -197,7 +197,7 @@ InputHandler::update_directory_preview_async(const int &selected) {
            });
          }) |
          stdexec::let_value([selected]() {
-           return FileManager::directory_preview_async(selected);
+           return FileManager::directory_preview(selected);
          }) |
          stdexec::then(FileManager::format_entries) |
          stdexec::then(FileManager::entries_string_to_element) |

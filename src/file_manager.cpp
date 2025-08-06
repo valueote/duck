@@ -128,7 +128,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
 
   std::vector<fs::directory_entry> entries;
 
-  auto cache = lru_cache_.get(path);
+  auto cache = std::move(lru_cache_.get(path));
   if (cache.has_value()) {
     entries = std::move(cache.value());
     return entries;
