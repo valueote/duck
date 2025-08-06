@@ -3,7 +3,6 @@
 #include <expected>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
-#include <generator>
 #include <list>
 #include <mutex>
 #include <optional>
@@ -51,18 +50,14 @@ private:
   FileManager();
   static FileManager &instance();
   std::vector<fs::directory_entry>
-  load_directory_entries_without_lock(const fs::path &path, bool preview);
-  std::generator<std::vector<fs::directory_entry>>
-  lazy_load_directory_entries_without_lock(const fs::path &path, bool preview,
-                                           const size_t &chunk = 50);
+  load_directory_entries_without_lock(const fs::path &path, bool show_hidden);
   bool delete_entry_without_lock(fs::directory_entry &entry);
-  void update_preview_entries_without_lock(const int &selected);
 
   std::string
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
 
 public:
-  static inline std::shared_mutex file_mutex_;
+  static inline std::shared_mutex file_manager_mutex_;
   static const fs::path &current_path();
   static const fs::path &cur_parent_path();
   static const fs::path &previous_path();
@@ -87,51 +82,114 @@ public:
   static bool delete_marked_entries();
   static void update_current_path(const fs::path &new_path);
   static void update_preview_entries(const int &selected);
-  static void update_curdir_entries();
-  static std::string entry_name_with_icon(const fs::directory_entry &entry);
+
+  static std::vector<std::string>
+  format_entries(const std::vector<fs::directory_entry> &entries);
+
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
+
+  static std::string entry_name_with_icon(const fs::directory_entry &entry);
   static ftxui::Element directory_preview(const int &selected);
   static std::string text_preview(const int &selected, size_t max_lines = 100,
                                   size_t max_width = 100);
 
-  // Update preview  or current directory entries and turn entries name to
-  // string
-  static stdexec::sender auto load_directory_entries_async(const fs::path &path,
-                                                           bool preview) {
-    auto &instance = FileManager::instance();
-    return stdexec::just(path, preview) |
-           stdexec::then([&instance](const fs::path &path, bool preview) {
-             std::unique_lock lock{FileManager::file_mutex_};
-             return instance.load_directory_entries_without_lock(path, preview);
-           }) |
-           stdexec::then(
-               [&instance](const std::vector<fs::directory_entry> &entries) {
-                 if (entries.empty()) {
-                   return std::vector<std::string>{"[No items]"};
-                 }
-                 std::vector<std::string> entries_string{};
-                 entries_string.reserve(entries.size());
-                 std::shared_lock lock{instance.file_mutex_};
-                 for (auto &entry : entries) {
-                   entries_string.push_back(
-                       instance.format_directory_entries_without_lock(entry));
-                 }
-                 return entries_string;
-               });
-  }
-
-  // When leave or enter a new directory, update current path and current
-  // direcotry entries
+  static stdexec::sender auto update_curdir_entries_async();
   static stdexec::sender auto
-  update_current_path_async(const fs::path &new_path) {
-    std::unique_lock lock{FileManager::file_mutex_};
+  update_current_path_async(const fs::path &new_path);
+  static stdexec::sender auto directory_preview_async(const int &selected);
+  static stdexec::sender auto text_preview_async(const int &selected);
+};
+
+inline stdexec::sender auto FileManager::update_curdir_entries_async() {
+  auto &instance = FileManager::instance();
+  return stdexec::just() | stdexec::then([]() {
+           fs::path target_path{};
+           bool show_hidden{};
+           auto &instance = FileManager::instance();
+
+           {
+             std::shared_lock lock{file_manager_mutex_};
+             target_path = instance.current_path_;
+             show_hidden = instance.show_hidden_;
+           }
+
+           auto entries =
+               std::move(instance.load_directory_entries_without_lock(
+                   target_path, show_hidden));
+
+           {
+             std::unique_lock lock{file_manager_mutex_};
+             instance.curdir_entries_ = std::move(entries);
+             return instance.curdir_entries_;
+           }
+         });
+}
+
+inline stdexec::sender auto
+FileManager::update_current_path_async(const fs::path &new_path) {
+  {
+    std::unique_lock lock{FileManager::file_manager_mutex_};
     auto &instance = FileManager::instance();
     instance.previous_path_ = instance.current_path_;
     instance.current_path_ = new_path;
     instance.parent_path_ = instance.current_path_.parent_path();
-    return load_directory_entries_async(instance.current_path_, false);
   }
-};
+
+  return update_curdir_entries_async();
+}
+
+inline stdexec::sender auto
+FileManager::directory_preview_async(const int &selected) {
+  return stdexec::just(selected) | stdexec::then([](const int &selected) {
+           fs::path target_path;
+           bool show_hidden{};
+
+           {
+             auto &instance = FileManager::instance();
+             std::shared_lock lock{file_manager_mutex_};
+             if (instance.curdir_entries_.empty()) {
+               return;
+             }
+             if (selected < 0 || selected >= instance.curdir_entries_.size()) {
+               return;
+             }
+             if (not fs::is_directory(instance.curdir_entries_[selected])) {
+               return;
+             }
+             target_path = instance.curdir_entries_[selected].path();
+             show_hidden = instance.show_hidden_;
+           }
+
+           auto entries =
+               std::move(instance().load_directory_entries_without_lock(
+                   target_path, show_hidden));
+           {
+             std::unique_lock lock{file_manager_mutex_};
+             instance().preview_entries_ = std::move(entries);
+           }
+         }) |
+         stdexec::then([]() {
+           std::shared_lock lock{file_manager_mutex_};
+           return instance().preview_entries_;
+         });
+}
+
+inline std::vector<std::string>
+FileManager::format_entries(const std::vector<fs::directory_entry> &entries) {
+  auto &instance = FileManager::instance();
+  if (entries.empty()) {
+    return std::vector<std::string>{"[No items]"};
+  }
+  std::vector<std::string> entries_string{};
+  entries_string.reserve(entries.size());
+
+  std::shared_lock lock{file_manager_mutex_};
+  for (auto &entry : entries) {
+    entries_string.push_back(
+        instance.format_directory_entries_without_lock(entry));
+  }
+  return entries_string;
+}
 
 } // namespace duck

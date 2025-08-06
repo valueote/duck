@@ -2,7 +2,6 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
-#include "stdexec/__detail/__sync_wait.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -78,14 +77,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character('p')) {
       FileManager::paste(ui_.selected());
-      FileManager::update_curdir_entries();
+      scope_.spawn_future(FileManager::update_curdir_entries_async());
       ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
 
     if (event == ftxui::Event::Character('.')) {
       FileManager::toggle_hidden_entries();
-      FileManager::update_curdir_entries();
+      scope_.spawn_future(FileManager::update_curdir_entries_async());
       ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
@@ -112,7 +111,7 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
       } else {
         FileManager::delete_selected_entry(ui_.selected());
       }
-      FileManager::update_curdir_entries();
+      scope_.spawn_future(FileManager::update_curdir_entries_async());
       ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       ui_.toggle_deletion_dialog();
       return true;
@@ -144,6 +143,9 @@ void InputHandler::enter_direcotry() {
     auto task = stdexec::on(
         Scheduler::io_scheduler(),
         FileManager::update_current_path_async(entry.value().path()) |
+            stdexec::then([](const std::vector<fs::directory_entry> &entries) {
+              return FileManager::format_entries(entries);
+            }) |
             stdexec::then([this](std::vector<std::string> entries) {
               ui_.enter_direcotry(std::move(entries));
               ui_.post_task(
@@ -160,6 +162,9 @@ void InputHandler::leave_direcotry() {
   auto task = stdexec::on(
       Scheduler::io_scheduler(),
       FileManager::update_current_path_async(FileManager::cur_parent_path()) |
+          stdexec::then([](const std::vector<fs::directory_entry> &entries) {
+            return FileManager::format_entries(entries);
+          }) |
           stdexec::then([this](std::vector<std::string> entries) {
             return std::make_pair(std::move(entries),
                                   FileManager::previous_path_index());
