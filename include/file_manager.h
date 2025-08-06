@@ -3,6 +3,7 @@
 #include <expected>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
+#include <ftxui/dom/node.hpp>
 #include <list>
 #include <mutex>
 #include <optional>
@@ -80,10 +81,11 @@ public:
   static void clear_marked_entries();
   static bool delete_selected_entry(const int selected);
   static bool delete_marked_entries();
-  static void update_current_path(const fs::path &new_path);
 
   static std::vector<std::string>
   format_entries(const std::vector<fs::directory_entry> &entries);
+  static ftxui::Element
+  entries_string_to_element(std::vector<std::string> entries);
 
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
@@ -92,14 +94,13 @@ public:
   static std::string text_preview(const int &selected, size_t max_lines = 100,
                                   size_t max_width = 100);
 
-  static stdexec::sender auto update_curdir_entries_async();
-  static stdexec::sender auto
-  update_current_path_async(const fs::path &new_path);
-  static stdexec::sender auto directory_preview_async(const int &selected);
+  static stdexec::sender auto update_curdir_entries();
+  static stdexec::sender auto update_current_path(const fs::path &new_path);
+  static stdexec::sender auto directory_preview(const int &selected);
   static stdexec::sender auto text_preview_async(const int &selected);
 };
 
-inline stdexec::sender auto FileManager::update_curdir_entries_async() {
+inline stdexec::sender auto FileManager::update_curdir_entries() {
   auto &instance = FileManager::instance();
   return stdexec::just() | stdexec::then([]() {
            fs::path target_path{};
@@ -125,7 +126,7 @@ inline stdexec::sender auto FileManager::update_curdir_entries_async() {
 }
 
 inline stdexec::sender auto
-FileManager::update_current_path_async(const fs::path &new_path) {
+FileManager::update_current_path(const fs::path &new_path) {
   {
     std::unique_lock lock{FileManager::file_manager_mutex_};
     auto &instance = FileManager::instance();
@@ -134,11 +135,11 @@ FileManager::update_current_path_async(const fs::path &new_path) {
     instance.parent_path_ = instance.current_path_.parent_path();
   }
 
-  return update_curdir_entries_async();
+  return update_curdir_entries();
 }
 
 inline stdexec::sender auto
-FileManager::directory_preview_async(const int &selected) {
+FileManager::directory_preview(const int &selected) {
   return stdexec::just(selected) | stdexec::then([](const int &selected) {
            fs::path target_path;
            bool show_hidden{};

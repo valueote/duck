@@ -145,8 +145,8 @@ void InputHandler::enter_direcotry() {
         FileManager::update_current_path_async(entry.value().path()) |
             stdexec::then(FileManager::format_entries) |
             stdexec::then([this](std::vector<std::string> entries) {
-              ui_.post_task([this, entries]() {
-                ui_.enter_direcotry(std::move(entries));
+              ui_.post_task([this, es = std::move(entries)]() {
+                ui_.enter_direcotry(std::move(es));
                 ui_.post_event(DuckEvent::refresh);
                 update_preview_async();
               });
@@ -180,20 +180,10 @@ void InputHandler::leave_direcotry() {
             return FileManager::directory_preview_async(selected);
           }) |
           stdexec::then(FileManager::format_entries) |
-          stdexec::then([](std::vector<std::string> entries) {
-            auto result = entries |
-                          std::views::transform([](std::string &entry) {
-                            return ftxui::text(std::move(entry));
-                          }) |
-                          std::ranges::to<std::vector>();
-            if (result.empty()) {
-              result.push_back(ftxui::text("[Empty folder]"));
-            }
-            return ftxui::vbox(std::move(result));
-          }) |
+          stdexec::then(FileManager::entries_string_to_element) |
           stdexec::then([this](ftxui::Element preview) {
-            ui_.post_task([this, preview]() {
-              ui_.update_entries_preview(std::move(preview));
+            ui_.post_task([this, pv = std::move(preview)]() {
+              ui_.update_entries_preview(std::move(pv));
             });
           }));
   scope_.spawn(std::move(task));
@@ -210,20 +200,10 @@ InputHandler::update_directory_preview_async(const int &selected) {
            return FileManager::directory_preview_async(selected);
          }) |
          stdexec::then(FileManager::format_entries) |
-         stdexec::then([](std::vector<std::string> entries) {
-           auto result = entries |
-                         std::views::transform([](std::string &entry) {
-                           return ftxui::text(std::move(entry));
-                         }) |
-                         std::ranges::to<std::vector>();
-           if (result.empty()) {
-             result.push_back(ftxui::text("[Empty folder]"));
-           }
-           return ftxui::vbox(std::move(result));
-         }) |
+         stdexec::then(FileManager::entries_string_to_element) |
          stdexec::then([this](ftxui::Element preview) {
-           ui_.post_task([this, preview]() {
-             ui_.update_entries_preview(std::move(preview));
+           ui_.post_task([this, pv = std::move(preview)]() {
+             ui_.update_entries_preview(std::move(pv));
            });
          });
 }

@@ -111,6 +111,7 @@ FileManager::selected_entry(const int &selected) {
   if (instance.curdir_entries_.empty()) {
     return std::unexpected("No entries in current directory");
   }
+
   if (selected < 0 || selected >= instance.curdir_entries_.size()) {
     return std::unexpected("Selected index out of range: " +
                            std::to_string(selected));
@@ -343,6 +344,18 @@ std::string FileManager::format_directory_entries_without_lock(
     selected_marker = "█ ";
   }
   return selected_marker + FileManager::entry_name_with_icon(entry);
+}
+
+ftxui::Element
+FileManager::entries_string_to_element(std::vector<std::string> entries) {
+  auto result = entries | std::views::transform([](std::string &entry) {
+                  return ftxui::text(std::move(entry));
+                }) |
+                std::ranges::to<std::vector>();
+  if (result.empty()) {
+    result.push_back(ftxui::text("[Empty folder]"));
+  }
+  return ftxui::vbox(std::move(result));
 }
 
 FileManager::Lru::Lru(size_t capacity) : capacity_(capacity) {}
