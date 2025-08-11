@@ -174,21 +174,4 @@ FileManager::directory_preview(const int &selected) {
          });
 }
 
-inline std::vector<std::string>
-FileManager::format_entries(const std::vector<fs::directory_entry> &entries) {
-  auto &instance = FileManager::instance();
-  if (entries.empty()) {
-    return std::vector<std::string>{"[No items]"};
-  }
-  std::vector<std::string> entries_string{};
-  entries_string.reserve(entries.size());
-
-  std::shared_lock lock{file_manager_mutex_};
-  for (auto &entry : entries) {
-    entries_string.push_back(
-        instance.format_directory_entries_without_lock(entry));
-  }
-  return entries_string;
-}
-
 } // namespace duck
