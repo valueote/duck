@@ -49,7 +49,8 @@ private:
   FileManager();
   static FileManager &instance();
   std::vector<fs::directory_entry>
-  load_directory_entries_without_lock(const fs::path &path, bool show_hidden);
+  load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
+                                      bool use_cache);
   bool delete_entry_without_lock(fs::directory_entry &entry);
 
   std::string
@@ -88,8 +89,9 @@ public:
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
   static std::string text_preview(const int &selected);
 
-  static std::vector<fs::directory_entry> update_curdir_entries();
+  static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
   static void update_current_path(const fs::path &new_path);
+
   static std::vector<fs::directory_entry>
   directory_preview(const int &selected);
   static stdexec::sender auto text_preview_async(const int &selected);

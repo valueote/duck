@@ -14,7 +14,7 @@ void Duck::run() { ui_.render(); }
 void Duck::setup_ui() {
   ui_.set_menu(content_provider_.entries_transform());
   ui_.update_curdir_entries_string(
-      FileManager::format_entries(FileManager::update_curdir_entries()));
+      FileManager::format_entries(FileManager::update_curdir_entries(true)));
   ui_.set_input_handler(input_handler_.navigation_handler(),
                         input_handler_.test_handler());
   ui_.set_layout(content_provider_.preview());
