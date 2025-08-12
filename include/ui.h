@@ -1,4 +1,5 @@
 #pragma once
+#include "stdexec/__detail/__run_loop.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -6,6 +7,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
+#include <shared_mutex>
 #include <stack>
 #include <string>
 #include <utility>
@@ -16,9 +18,9 @@ namespace duck {
 class Ui {
 private:
   std::vector<std::string> curdir_string_entries_;
-  std::vector<std::string> previewdir_string_entries_;
-  std::string file_preview_content_;
-  std::vector<std::string> dir_preview_content_;
+  std::shared_mutex ui_lock_;
+  std::string text_preview_;
+  ftxui::Element entries_preview_;
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
@@ -30,11 +32,14 @@ private:
   int selected_;
   bool show_deletion_dialog_;
 
+  stdexec::run_loop loop_;
+
 public:
   Ui();
   void set_menu(std::function<ftxui::Element(const ftxui::EntryState &state)>);
   void set_layout(const std::function<ftxui::Element()> preview);
-  void set_input_handler(const std::function<bool(ftxui::Event)> handler);
+  void set_input_handler(const std::function<bool(ftxui::Event)> handler,
+                         const std::function<bool(ftxui::Event)> test);
   void set_deletion_dialog(const ftxui::Component deletion_dialog,
                            const std::function<bool(ftxui::Event)> handler);
   void move_selected_up(const int max);
@@ -46,13 +51,19 @@ public:
                        const int &previous_path_index);
   void
   update_curdir_entries_string(std::vector<std::string> curdir_entries_string);
+  void update_entries_preview(ftxui::Element new_entries);
+  ftxui::Element entries_preview();
+
+  void update_text_preview(std::string new_text_preview);
+  std::string text_preview();
 
   void render();
   void exit();
   int selected();
   bool show_hidden();
-  void post_event(const ftxui::Event &event);
-  void restored_io(const std::function<void()> closure);
+  void post_event(ftxui::Event event);
+  void post_task(std::function<void()> task);
+  void restored_io(std::function<void()> closure);
   std::pair<int, int> screen_size();
   ftxui::Component &menu();
 };

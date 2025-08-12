@@ -13,6 +13,7 @@ namespace duck {
 
 Ui::Ui()
     : selected_{0}, show_deletion_dialog_{false},
+      entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
 void Ui::set_menu(
@@ -23,8 +24,9 @@ void Ui::set_menu(
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
-void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler) {
-  menu_ = menu_ | ftxui::CatchEvent(handler);
+void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler,
+                           const std::function<bool(ftxui::Event)> test) {
+  menu_ = menu_ | ftxui::CatchEvent(handler) | ftxui::CatchEvent(test);
 }
 
 void Ui::set_layout(const std::function<ftxui::Element()> preview) {
@@ -41,6 +43,7 @@ void Ui::set_deletion_dialog(const ftxui::Component deleted_dialog,
       ftxui::Modal(main_layout_, dialog_with_handler, &show_deletion_dialog_);
 }
 
+// move selected up and down can only be used in ui thread
 void Ui::move_selected_up(const int max) {
   if (selected_ > 0) {
     selected_--;
@@ -48,6 +51,7 @@ void Ui::move_selected_up(const int max) {
     selected_ = max;
   }
 }
+
 void Ui::move_selected_down(const int max) {
   if (selected_ < max) {
     selected_++;
@@ -81,16 +85,32 @@ void Ui::update_curdir_entries_string(
     std::vector<std::string> curdir_entries_string) {
   curdir_string_entries_ = std::move(curdir_entries_string);
 }
+
+void Ui::update_entries_preview(ftxui::Element new_entries) {
+  entries_preview_ = std::move(new_entries);
+}
+
+ftxui::Element Ui::entries_preview() { return entries_preview_; }
+
+void Ui::update_text_preview(std::string new_text_preview) {
+  text_preview_ = std::move(new_text_preview);
+}
+std::string Ui::text_preview() { return text_preview_; }
+
 void Ui::render() { screen_.Loop(modal_); }
 
 void Ui::exit() { screen_.Exit(); }
 
 int Ui::selected() { return selected_; }
 
+// Screen has a internal task queue which is protected by a mutex, so this
+// opration is safe without holding ui_lock;
+void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
+
 std::pair<int, int> Ui::screen_size() {
   return {screen_.dimx(), screen_.dimy()};
 }
-void Ui::post_event(const ftxui::Event &event) { screen_.PostEvent(event); }
+void Ui::post_event(ftxui::Event event) { screen_.PostEvent(std::move(event)); }
 
 void Ui::restored_io(const std::function<void()> closure) {
   screen_.WithRestoredIO(closure);

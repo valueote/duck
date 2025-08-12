@@ -1,14 +1,12 @@
 #pragma once
 #include "colorscheme.h"
-#include "contentprovider.h"
-#include "filemanager.h"
-#include "inputhandler.h"
+#include "content_provider.h"
+#include "input_handler.h"
 #include "ui.h"
 
 namespace duck {
 class Duck {
 private:
-  FileManager file_manager_;
   ColorScheme color_scheme_;
   Ui ui_;
   InputHandler input_handler_;

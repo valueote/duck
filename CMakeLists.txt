@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 4.0.0)
-set(CMAKE_CXX_COMPILER clang++)
 
 project(duck)
 
@@ -32,15 +31,16 @@ add_executable(
   duck
   src/main.cpp
   src/ui.cpp
-  src/filemanager.cpp
-  src/inputhandler.cpp
-  src/contentprovider.cpp
+  src/file_manager.cpp
+  src/input_handler.cpp
+  src/content_provider.cpp
   src/duck.cpp
-  src/colorscheme.cpp)
+  src/colorscheme.cpp
+  src/scheduler.cpp)
 
 target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(duck PRIVATE ftxui::screen ftxui::dom ftxui::component
                                    Boost::process)
 
-target_link_libraries(duck PRIVATE STDEXEC::stdexec)
+target_link_libraries(duck PRIVATE STDEXEC::stdexec TBB::tbb)

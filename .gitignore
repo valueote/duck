@@ -1,9 +1,14 @@
 build
 .cache
 debug.log
-compile_commands.json
 core.latest
 test
 core
 RAPIDS.cmake
 cpm-package-lock.cmake
+.vscode
+log
+debug
+gdb.txt
+test_speed
+speed
