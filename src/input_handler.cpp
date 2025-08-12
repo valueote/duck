@@ -2,6 +2,7 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
+#include "stdexec/__detail/__execution_fwd.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -24,9 +25,18 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character(' ')) {
-      FileManager::toggle_mark_on_selected(ui_.selected());
-      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
-      ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
+      auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+                  stdexec::then([this]() { return ui_.selected(); }) |
+                  stdexec::then(FileManager::toggle_mark_on_selected);
+      stdexec::then(FileManager::update_curdir_entries()) |
+          stdexec::then(FileManager::format_entries) |
+          stdexec::then([this](std::vector<std::string> strings) {
+            // FIX:
+            ui_.update_curdir_entries_string(std::move(strings));
+            ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
+          });
+
+      scope_.spawn(task);
       return true;
     }
 
@@ -94,15 +104,27 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       FileManager::toggle_hidden_entries();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then(FileManager::toggle_hidden_entries) |
-                  stdexec::then(FileManager::update_curdir_entries);
+                  stdexec::then(FileManager::update_curdir_entries) |
+                  stdexec::then(FileManager::format_entries) |
+                  stdexec::then([this](std::vector<std::string> strings) {
+                    ui_.update_curdir_entries_string(std::move(strings));
+                  });
+
       scope_.spawn_future(task);
-      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
       return true;
     }
 
     if (event == ftxui::Event::Escape) {
-      FileManager::clear_marked_entries();
-      ui_.update_curdir_entries_string(FileManager::curdir_entries_string());
+      auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+                  stdexec::then(FileManager::clear_marked_entries) |
+                  stdexec::then(FileManager::update_curdir_entries) |
+                  stdexec::then(FileManager::format_entries) |
+                  stdexec::then([this](std::vector<std::string> strings) {
+                    // FIX: unsafe
+                    ui_.update_curdir_entries_string(std::move(strings));
+                  });
+
+      scope_.spawn(task);
       return true;
     }
 
@@ -121,7 +143,8 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
         auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                     stdexec::then(FileManager::delete_marked_entries) |
                     stdexec::then([](bool success) {}) |
-                    stdexec::then(FileManager::curdir_entries_string) |
+                    stdexec::then(FileManager::update_curdir_entries) |
+                    stdexec::then(FileManager::format_entries) |
                     stdexec::then([this](std::vector<std::string> strings) {
                       ui_.post_task([this, strs = std::move(strings)]() {
                         ui_.update_curdir_entries_string(std::move(strs));
@@ -134,7 +157,8 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
                     stdexec::then([this]() { return ui_.selected(); }) |
                     stdexec::then(FileManager::delete_selected_entry) |
                     stdexec::then([](bool success) {}) |
-                    stdexec::then(FileManager::curdir_entries_string) |
+                    stdexec::then(FileManager::update_curdir_entries) |
+                    stdexec::then(FileManager::format_entries) |
                     stdexec::then([this](std::vector<std::string> strings) {
                       ui_.post_task([this, strs = std::move(strings)]() {
                         ui_.update_curdir_entries_string(std::move(strs));

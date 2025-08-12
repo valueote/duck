@@ -70,19 +70,6 @@ const std::vector<fs::directory_entry> &FileManager::marked_entries() {
   return instance().marked_entires_;
 }
 
-std::vector<std::string> FileManager::curdir_entries_string() {
-  auto &instance = FileManager::instance();
-  if (instance.curdir_entries_.empty()) {
-    return {"[Empty folder]"};
-  }
-  return instance.curdir_entries_ |
-         std::views::transform([&instance](const fs::directory_entry &entry) {
-           std::shared_lock lock{FileManager::file_manager_mutex_};
-           return instance.format_directory_entries_without_lock(entry);
-         }) |
-         std::ranges::to<std::vector>();
-}
-
 int FileManager::previous_path_index() {
   if (auto it = std::ranges::find(instance().curdir_entries_,
                                   instance().previous_path_);
@@ -159,6 +146,37 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   lru_cache_.insert(path, entries);
 
   return entries;
+}
+
+std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
+  auto &instance = FileManager::instance();
+  fs::path target_path{};
+  bool show_hidden{};
+
+  {
+    std::shared_lock lock{file_manager_mutex_};
+    target_path = instance.current_path_;
+    show_hidden = instance.show_hidden_;
+  }
+
+  auto entries = std::move(
+      instance.load_directory_entries_without_lock(target_path, show_hidden));
+
+  {
+    std::unique_lock lock{file_manager_mutex_};
+    instance.curdir_entries_ = std::move(entries);
+    return instance.curdir_entries_;
+  }
+}
+
+inline void FileManager::update_current_path(const fs::path &new_path) {
+  {
+    std::unique_lock lock{FileManager::file_manager_mutex_};
+    auto &instance = FileManager::instance();
+    instance.previous_path_ = instance.current_path_;
+    instance.current_path_ = new_path;
+    instance.parent_path_ = instance.current_path_.parent_path();
+  }
 }
 
 void FileManager::toggle_mark_on_selected(const int &selected) {
