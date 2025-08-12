@@ -5,7 +5,6 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/node.hpp>
 #include <list>
-#include <mutex>
 #include <optional>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
@@ -87,49 +86,13 @@ public:
   selected_entry(const int &selected);
 
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static std::string text_preview(const int &selected, size_t max_lines = 100,
-                                  size_t max_width = 100);
+  static std::string text_preview(const int &selected);
 
   static std::vector<fs::directory_entry> update_curdir_entries();
   static void update_current_path(const fs::path &new_path);
-  static stdexec::sender auto directory_preview(const int &selected);
+  static std::vector<fs::directory_entry>
+  directory_preview(const int &selected);
   static stdexec::sender auto text_preview_async(const int &selected);
 };
-
-inline stdexec::sender auto
-FileManager::directory_preview(const int &selected) {
-  return stdexec::just(selected) | stdexec::then([](const int &selected) {
-           fs::path target_path;
-           bool show_hidden{};
-
-           {
-             auto &instance = FileManager::instance();
-             std::shared_lock lock{file_manager_mutex_};
-             if (instance.curdir_entries_.empty()) {
-               return;
-             }
-             if (selected < 0 || selected >= instance.curdir_entries_.size()) {
-               return;
-             }
-             if (not fs::is_directory(instance.curdir_entries_[selected])) {
-               return;
-             }
-             target_path = instance.curdir_entries_[selected].path();
-             show_hidden = instance.show_hidden_;
-           }
-
-           auto entries =
-               std::move(instance().load_directory_entries_without_lock(
-                   target_path, show_hidden));
-           {
-             std::unique_lock lock{file_manager_mutex_};
-             instance().preview_entries_ = std::move(entries);
-           }
-         }) |
-         stdexec::then([]() {
-           std::shared_lock lock{file_manager_mutex_};
-           return instance().preview_entries_;
-         });
-}
 
 } // namespace duck

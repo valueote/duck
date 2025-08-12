@@ -299,15 +299,45 @@ bool FileManager::delete_entry_without_lock(fs::directory_entry &entry) {
   return true;
 }
 
-std::string FileManager::text_preview(const int &selected, size_t max_lines,
-                                      size_t max_width) {
+std::vector<fs::directory_entry>
+FileManager::directory_preview(const int &selected) {
+  fs::path target_path;
+  bool show_hidden{};
+
+  {
+    auto &instance = FileManager::instance();
+    std::shared_lock lock{file_manager_mutex_};
+    if (instance.curdir_entries_.empty()) {
+      return {};
+    }
+    if (selected < 0 || selected >= instance.curdir_entries_.size()) {
+      return {};
+    }
+    if (not fs::is_directory(instance.curdir_entries_[selected])) {
+      return {};
+    }
+    target_path = instance.curdir_entries_[selected].path();
+    show_hidden = instance.show_hidden_;
+  }
+
+  auto entries = std::move(
+      instance().load_directory_entries_without_lock(target_path, show_hidden));
+  {
+    std::unique_lock lock{file_manager_mutex_};
+    instance().preview_entries_ = std::move(entries);
+    return instance().preview_entries_;
+  }
+}
+
+std::string FileManager::text_preview(const int &selected) {
+  size_t max_lines{100};
+  size_t max_width{100};
   auto entry = selected_entry(selected);
   std::ifstream file(entry.value().path());
 
   std::ostringstream oss;
   std::string line;
   size_t lines = 0;
-
   while (std::getline(file, line) && lines < max_lines) {
 
     if (line.length() > max_width) {
