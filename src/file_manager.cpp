@@ -194,36 +194,44 @@ void FileManager::start_cutting() {
   instance().is_yanking_ = false;
 }
 
+void yank_or_cut(std::vector<fs::directory_entry> entries,
+                 fs::path current_path, bool is_cutting) {
+  for (const auto &entry : entries) {
+    fs::path dest_path = current_path / entry.path().filename();
+    if (fs::exists(dest_path)) {
+      dest_path = current_path / (entry.path().filename().string() + "_1");
+    }
+    if (is_cutting) {
+      fs::rename(entry.path(), dest_path);
+    } else {
+      fs::copy(entry.path(), dest_path, fs::copy_options::recursive);
+    }
+  }
+}
+
 void FileManager::paste(const int &selected) {
   auto &instance = FileManager::instance();
   if (!instance.is_cutting_ && !instance.is_yanking_) {
     return;
   }
+  std::vector<fs::directory_entry> entries;
+  fs::path current_path;
+  bool is_cutting;
 
-  std::unique_lock lock{file_manager_mutex_};
-  if (instance.marked_entires_.empty()) {
-    instance.clipboard_entries_.push_back(instance.curdir_entries_[selected]);
-  } else {
-    instance.clipboard_entries_ = std::move(instance.marked_entires_);
-  }
-  instance.marked_entires_.clear();
-
-  try {
-    for (const auto &entry : instance.clipboard_entries_) {
-      fs::path dest_path = instance.current_path_ / entry.path().filename();
-      if (fs::exists(dest_path)) {
-        dest_path =
-            instance.current_path_ / (entry.path().filename().string() + "_1");
-      }
-      if (instance.is_yanking_) {
-        fs::copy(entry.path(), dest_path, fs::copy_options::recursive);
-      } else if (instance.is_cutting_) {
-        fs::rename(entry.path(), dest_path);
-      }
+  {
+    std::unique_lock lock{file_manager_mutex_};
+    if (instance.marked_entires_.empty()) {
+      entries.push_back(instance.curdir_entries_[selected]);
+    } else {
+      entries = std::move(instance.marked_entires_);
     }
-  } catch (const fs::filesystem_error &e) {
-    std::println(stderr, "[ERORR] {}", e.what());
+    instance.marked_entires_.clear();
+    current_path = instance.current_path_;
+    is_cutting = instance.is_cutting_;
   }
+
+  yank_or_cut(std::move(entries), std::move(current_path),
+              std::move(is_cutting));
 }
 
 bool FileManager::is_marked(const fs::directory_entry &entry) {

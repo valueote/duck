@@ -94,39 +94,34 @@ public:
   static std::string text_preview(const int &selected, size_t max_lines = 100,
                                   size_t max_width = 100);
 
-  static stdexec::sender auto update_curdir_entries();
-  static stdexec::sender auto update_current_path(const fs::path &new_path);
+  static std::vector<fs::directory_entry> update_curdir_entries();
+  static void update_current_path(const fs::path &new_path);
   static stdexec::sender auto directory_preview(const int &selected);
   static stdexec::sender auto text_preview_async(const int &selected);
 };
 
-inline stdexec::sender auto FileManager::update_curdir_entries() {
+inline std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
   auto &instance = FileManager::instance();
-  return stdexec::just() | stdexec::then([]() {
-           fs::path target_path{};
-           bool show_hidden{};
-           auto &instance = FileManager::instance();
+  fs::path target_path{};
+  bool show_hidden{};
 
-           {
-             std::shared_lock lock{file_manager_mutex_};
-             target_path = instance.current_path_;
-             show_hidden = instance.show_hidden_;
-           }
+  {
+    std::shared_lock lock{file_manager_mutex_};
+    target_path = instance.current_path_;
+    show_hidden = instance.show_hidden_;
+  }
 
-           auto entries =
-               std::move(instance.load_directory_entries_without_lock(
-                   target_path, show_hidden));
+  auto entries = std::move(
+      instance.load_directory_entries_without_lock(target_path, show_hidden));
 
-           {
-             std::unique_lock lock{file_manager_mutex_};
-             instance.curdir_entries_ = std::move(entries);
-             return instance.curdir_entries_;
-           }
-         });
+  {
+    std::unique_lock lock{file_manager_mutex_};
+    instance.curdir_entries_ = std::move(entries);
+    return instance.curdir_entries_;
+  }
 }
 
-inline stdexec::sender auto
-FileManager::update_current_path(const fs::path &new_path) {
+inline void FileManager::update_current_path(const fs::path &new_path) {
   {
     std::unique_lock lock{FileManager::file_manager_mutex_};
     auto &instance = FileManager::instance();
@@ -134,8 +129,6 @@ FileManager::update_current_path(const fs::path &new_path) {
     instance.current_path_ = new_path;
     instance.parent_path_ = instance.current_path_.parent_path();
   }
-
-  return update_curdir_entries();
 }
 
 inline stdexec::sender auto
