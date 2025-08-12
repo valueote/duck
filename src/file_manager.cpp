@@ -169,7 +169,7 @@ std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
   }
 }
 
-inline void FileManager::update_current_path(const fs::path &new_path) {
+void FileManager::update_current_path(const fs::path &new_path) {
   {
     std::unique_lock lock{FileManager::file_manager_mutex_};
     auto &instance = FileManager::instance();
@@ -400,14 +400,16 @@ FileManager::format_entries(const std::vector<fs::directory_entry> &entries) {
   return entries_string;
 }
 
-FileManager::Lru::Lru(size_t capacity) : capacity_(capacity) {}
+template <typename K, typename V>
+FileManager::Lru<K, V>::Lru(size_t capacity) : capacity_(capacity) {}
 
-void FileManager::Lru::touch_without_lock(const fs::path &path) {
+template <typename K, typename V>
+void FileManager::Lru<K, V>::touch_without_lock(const K &path) {
   lru_list_.splice(lru_list_.begin(), lru_list_, map_[path]);
 }
 
-std::optional<std::vector<fs::directory_entry>>
-FileManager::Lru::get(const fs::path &path) {
+template <typename K, typename V>
+std::optional<V> FileManager::Lru<K, V>::get(const K &path) {
 
   std::unique_lock lock{lru_mutex_};
   auto it = map_.find(path);
@@ -420,8 +422,8 @@ FileManager::Lru::get(const fs::path &path) {
   return cache_[path];
 }
 
-void FileManager::Lru::insert(const fs::path &path,
-                              const std::vector<fs::directory_entry> &data) {
+template <typename K, typename V>
+void FileManager::Lru<K, V>::insert(const K &path, const V &data) {
   auto it = map_.find(path);
   std::unique_lock lock{lru_mutex_};
   if (it != map_.end()) {

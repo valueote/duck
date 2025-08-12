@@ -19,23 +19,22 @@ namespace fs = std::filesystem;
 class FileManager {
 
 private:
-  class Lru {
+  template <typename K, typename V> class Lru {
   private:
     size_t capacity_;
-    std::list<fs::path> lru_list_;
-    std::unordered_map<fs::path, std::list<fs::path>::iterator> map_;
-    std::unordered_map<fs::path, std::vector<fs::directory_entry>> cache_;
+    std::list<K> lru_list_;
+    std::unordered_map<K, typename std::list<K>::iterator> map_;
+    std::unordered_map<K, V> cache_;
     std::shared_mutex lru_mutex_;
-    void touch_without_lock(const fs::path &path);
+    void touch_without_lock(const K &path);
 
   public:
     Lru(size_t capacity);
-    std::optional<std::vector<fs::directory_entry>> get(const fs::path &path);
-    void insert(const fs::path &path,
-                const std::vector<fs::directory_entry> &data);
+    std::optional<V> get(const K &path);
+    void insert(const K &path, const V &data);
   };
 
-  Lru lru_cache_;
+  Lru<fs::path, std::vector<fs::directory_entry>> lru_cache_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
