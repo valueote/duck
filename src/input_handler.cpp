@@ -2,9 +2,6 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
-#include "stdexec/__detail/__execution_fwd.hpp"
-#include "stdexec/__detail/__let.hpp"
-#include "stdexec/__detail/__then.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -193,6 +190,8 @@ void InputHandler::enter_direcotry() {
 void InputHandler::leave_direcotry() {
   auto task =
       stdexec::schedule(Scheduler::io_scheduler()) |
+      stdexec::then([]() { return FileManager::cur_parent_path(); }) |
+      stdexec::then(FileManager::update_current_path) |
       stdexec::then(FileManager::update_curdir_entries) |
       stdexec::then(FileManager::format_entries) |
       stdexec::then([this](std::vector<std::string> entries) {
