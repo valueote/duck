@@ -49,19 +49,18 @@ private:
   FileManager();
   static FileManager &instance();
 
-  static fs::path get_dest_path_without_lock(const fs::directory_entry &entry,
-                                             const fs::path &current_path);
-
-  static void yank_without_lock(const std::vector<fs::directory_entry> &entries,
+  static fs::path get_dest_path(const fs::directory_entry &entry,
                                 const fs::path &current_path);
-  static void
-  rename_without_lock(const std::vector<fs::directory_entry> &entries,
-                      const fs::path &current_path);
+
+  static void yank_entries(const std::vector<fs::directory_entry> &entries,
+                           const fs::path &current_path);
+  static void rename_entries(const std::vector<fs::directory_entry> &entries,
+                             const fs::path &current_path);
 
   std::vector<fs::directory_entry>
   load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
                                       bool use_cache);
-  bool delete_entry_without_lock(fs::directory_entry &entry);
+  static bool delete_entry_without_lock(fs::directory_entry &entry);
 
   std::string
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
@@ -85,7 +84,8 @@ public:
   static void toggle_mark_on_selected(const int &selected);
   static void toggle_hidden_entries();
   static void clear_marked_entries();
-  static bool delete_selected_entry(const int selected);
+  static bool delete_selected_entry(const int &selected);
+  static void rename_selected_entry(const int &selected);
   static bool delete_marked_entries();
 
   static std::vector<std::string>

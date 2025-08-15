@@ -214,9 +214,8 @@ void FileManager::start_cutting() {
   instance().is_yanking_ = false;
 }
 
-fs::path
-FileManager::get_dest_path_without_lock(const fs::directory_entry &entry,
-                                        const fs::path &current_path) {
+fs::path FileManager::get_dest_path(const fs::directory_entry &entry,
+                                    const fs::path &current_path) {
   fs::path dest_path = current_path / entry.path().filename();
   int cnt{1};
   auto file_name = entry.path().filename().string();
@@ -227,20 +226,19 @@ FileManager::get_dest_path_without_lock(const fs::directory_entry &entry,
   return dest_path;
 }
 
-void FileManager::yank_without_lock(
-    const std::vector<fs::directory_entry> &entries,
-    const fs::path &current_path) {
+void FileManager::yank_entries(const std::vector<fs::directory_entry> &entries,
+                               const fs::path &current_path) {
   for (const auto &entry : entries) {
-    fs::copy(entry.path(), get_dest_path_without_lock(entry, current_path),
+    fs::copy(entry.path(), get_dest_path(entry, current_path),
              fs::copy_options::recursive);
   }
 }
 
-void FileManager::rename_without_lock(
+void FileManager::rename_entries(
     const std::vector<fs::directory_entry> &entries,
     const fs::path &current_path) {
   for (const auto &entry : entries) {
-    fs::rename(entry.path(), get_dest_path_without_lock(entry, current_path));
+    fs::rename(entry.path(), get_dest_path(entry, current_path));
   }
 }
 
@@ -265,9 +263,9 @@ void FileManager::yank_or_rename(const int &selected) {
     is_renaming = instance.is_renaming_;
   }
   if (is_renaming) {
-    rename_without_lock(entries, current_path);
+    rename_entries(entries, current_path);
   } else {
-    yank_without_lock(entries, current_path);
+    yank_entries(entries, current_path);
   }
 }
 
@@ -277,10 +275,19 @@ bool FileManager::is_marked(const fs::directory_entry &entry) {
          instance().marked_entires_.end();
 }
 
-bool FileManager::delete_selected_entry(const int selected) {
+bool FileManager::delete_selected_entry(const int &selected) {
   std::unique_lock lock{file_manager_mutex_};
   return instance().delete_entry_without_lock(
       instance().curdir_entries_[selected]);
+}
+
+void FileManager::rename_selected_entry(const int &selected) {
+  auto entry = selected_entry(selected);
+  auto cur_path = current_path();
+  if (entry) {
+    auto dest_path = get_dest_path(entry.value(), cur_path);
+    fs::rename(entry.value(), dest_path);
+  }
 }
 
 bool FileManager::delete_marked_entries() {

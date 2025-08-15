@@ -2,6 +2,7 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
+#include "stdexec/__detail/__execution_fwd.hpp"
 #include "stdexec/__detail/__let.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
@@ -88,6 +89,17 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
       return true;
     }
 
+    if (event == ftxui::Event::Character('r')) {
+      auto renaming_task =
+          stdexec::schedule(Scheduler::io_scheduler()) |
+          stdexec::then([this]() { return ui_.selected(); }) |
+          stdexec::then(FileManager::rename_selected_entry) |
+          stdexec::then([this]() {
+            ui_.post_task([this]() { ui_.post_event(DuckEvent::refresh); });
+          });
+      scope_.spawn(renaming_task);
+    }
+
     if (event == ftxui::Event::Character('p')) {
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then([this]() { return ui_.selected(); }) |
@@ -108,7 +120,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('.')) {
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then(FileManager::toggle_hidden_entries) |
-                  stdexec::then([]() { return true; }) |
+                  stdexec::then([]() { return false; }) |
                   stdexec::then(FileManager::update_curdir_entries) |
                   stdexec::then(FileManager::format_entries) |
                   stdexec::then([this](std::vector<std::string> strings) {
