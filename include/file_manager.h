@@ -49,13 +49,14 @@ private:
   FileManager();
   static FileManager &instance();
 
-  static fs::path dest_path(const fs::directory_entry &entry,
-                            const fs::path &current_path);
+  static fs::path get_dest_path_without_lock(const fs::directory_entry &entry,
+                                             const fs::path &current_path);
 
-  static void yank(const std::vector<fs::directory_entry> &entries,
-                   const fs::path &current_path);
-  static void rename(const std::vector<fs::directory_entry> &entries,
-                     const fs::path &current_path);
+  static void yank_without_lock(const std::vector<fs::directory_entry> &entries,
+                                const fs::path &current_path);
+  static void
+  rename_without_lock(const std::vector<fs::directory_entry> &entries,
+                      const fs::path &current_path);
 
   std::vector<fs::directory_entry>
   load_directory_entries_without_lock(const fs::path &path, bool show_hidden,

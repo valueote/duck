@@ -214,8 +214,9 @@ void FileManager::start_cutting() {
   instance().is_yanking_ = false;
 }
 
-fs::path FileManager::dest_path(const fs::directory_entry &entry,
-                                const fs::path &current_path) {
+fs::path
+FileManager::get_dest_path_without_lock(const fs::directory_entry &entry,
+                                        const fs::path &current_path) {
   fs::path dest_path = current_path / entry.path().filename();
   int cnt{1};
   auto file_name = entry.path().filename().string();
@@ -226,18 +227,20 @@ fs::path FileManager::dest_path(const fs::directory_entry &entry,
   return dest_path;
 }
 
-void FileManager::yank(const std::vector<fs::directory_entry> &entries,
-                       const fs::path &current_path) {
+void FileManager::yank_without_lock(
+    const std::vector<fs::directory_entry> &entries,
+    const fs::path &current_path) {
   for (const auto &entry : entries) {
-    fs::copy(entry.path(), dest_path(entry, current_path),
+    fs::copy(entry.path(), get_dest_path_without_lock(entry, current_path),
              fs::copy_options::recursive);
   }
 }
 
-void FileManager::rename(const std::vector<fs::directory_entry> &entries,
-                         const fs::path &current_path) {
+void FileManager::rename_without_lock(
+    const std::vector<fs::directory_entry> &entries,
+    const fs::path &current_path) {
   for (const auto &entry : entries) {
-    fs::rename(entry.path(), dest_path(entry, current_path));
+    fs::rename(entry.path(), get_dest_path_without_lock(entry, current_path));
   }
 }
 
@@ -262,9 +265,9 @@ void FileManager::yank_or_rename(const int &selected) {
     is_renaming = instance.is_renaming_;
   }
   if (is_renaming) {
-    rename(entries, current_path);
+    rename_without_lock(entries, current_path);
   } else {
-    yank(entries, current_path);
+    yank_without_lock(entries, current_path);
   }
 }
 
