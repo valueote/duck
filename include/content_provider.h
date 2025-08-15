@@ -21,8 +21,9 @@ public:
   ContentProvider(Ui &ui, const ColorScheme &color_scheme);
 
   std::function<ftxui::Element(const ftxui::EntryState &state)>
-  entries_transform();
+  menu_entries_transform();
   ftxui::Component deletion_dialog();
+  ftxui::Component rename_dialog();
   std::function<ftxui::Element()> preview();
 };
 } // namespace duck

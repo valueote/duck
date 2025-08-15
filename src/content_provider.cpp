@@ -17,7 +17,7 @@ ContentProvider::ContentProvider(Ui &ui, const ColorScheme &color_scheme)
     : ui_{ui}, color_scheme_{color_scheme} {}
 
 std::function<ftxui::Element(const ftxui::EntryState &state)>
-ContentProvider::entries_transform() {
+ContentProvider::menu_entries_transform() {
   return [this](const ftxui::EntryState &state) {
     auto style = state.active
                      ? ftxui::bgcolor(color_scheme_.selected()) | ftxui::bold |
@@ -129,4 +129,19 @@ ftxui::Component ContentProvider::deletion_dialog() {
   });
   return dialog_renderer;
 }
+
+ftxui::Component ContentProvider::rename_dialog() {
+  std::string content = "";
+
+  ftxui::InputOption option;
+  option.cursor_position = (int)content.size();
+  auto input = ftxui::Input(&content, option);
+
+  auto renderer = ftxui::Renderer(input, [&] {
+    return ftxui::window(ftxui::text("Rename"), input->Render());
+  });
+  return renderer;
+}
+
 } // namespace duck
+//

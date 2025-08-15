@@ -14,9 +14,10 @@ private:
 
 public:
   InputHandler(Ui &ui);
-  std::function<bool(ftxui::Event)> navigation_handler();
+  std::function<bool(const ftxui::Event &)> navigation_handler();
   std::function<bool(ftxui::Event)> test_handler();
-  std::function<bool(ftxui::Event)> deletetion_dialog_handler();
+  std::function<bool(const ftxui::Event &)> deletion_dialog_handler();
+  std::function<bool(const ftxui::Event &)> renmae_dialog_handler();
   void update_preview_async();
   void enter_direcotry();
   void leave_direcotry();

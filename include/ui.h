@@ -28,9 +28,13 @@ private:
   ftxui::Component modal_;
   ftxui::Component menu_;
 
+  ftxui::Component deletion_dialog_;
+  ftxui::Component rename_dialog_;
+
   std::stack<int> previous_selected_;
   int selected_;
   bool show_deletion_dialog_;
+  bool show_rename_dialog_;
 
   stdexec::run_loop loop_;
 
@@ -42,6 +46,10 @@ public:
                          const std::function<bool(ftxui::Event)> test);
   void set_deletion_dialog(const ftxui::Component deletion_dialog,
                            const std::function<bool(ftxui::Event)> handler);
+
+  void set_rename_dialog(const ftxui::Component deletion_dialog,
+                         const std::function<bool(ftxui::Event)> handler);
+
   void move_selected_up(const int max);
   void move_selected_down(const int max);
   void toggle_deletion_dialog();

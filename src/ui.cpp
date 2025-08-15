@@ -12,7 +12,7 @@
 namespace duck {
 
 Ui::Ui()
-    : selected_{0}, show_deletion_dialog_{false},
+    : selected_{0}, show_deletion_dialog_{false}, show_rename_dialog_{false},
       entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
@@ -33,14 +33,13 @@ void Ui::set_layout(const std::function<ftxui::Element()> preview) {
   main_layout_ = ftxui::Renderer(menu_, preview);
 }
 
-void Ui::set_deletion_dialog(const ftxui::Component deleted_dialog,
+void Ui::set_deletion_dialog(const ftxui::Component deletion_dialog,
                              const std::function<bool(ftxui::Event)> handler) {
 
-  auto dialog_with_handler =
-      deleted_dialog | ftxui::CatchEvent(handler) | ftxui::center;
+  deletion_dialog_ =
+      deletion_dialog | ftxui::CatchEvent(handler) | ftxui::center;
 
-  modal_ =
-      ftxui::Modal(main_layout_, dialog_with_handler, &show_deletion_dialog_);
+  modal_ = ftxui::Modal(main_layout_, deletion_dialog_, &show_deletion_dialog_);
 }
 
 // move selected up and down can only be used in ui thread

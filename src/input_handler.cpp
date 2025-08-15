@@ -2,11 +2,10 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
-#include "stdexec/__detail/__execution_fwd.hpp"
-#include "stdexec/__detail/__let.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
+#include <functional>
 #include <print>
 #include <string>
 #include <sys/wait.h>
@@ -18,8 +17,8 @@ InputHandler::InputHandler(Ui &ui) : ui_{ui} {}
 // All the input handler is binded to the ui thread, so it's safe to modify and
 // access data of ui in the handler without lock
 
-std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
-  return [this](ftxui::Event event) {
+std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
+  return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Return) {
       open_file();
       return true;
@@ -90,14 +89,14 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('r')) {
-      auto renaming_task =
+      auto rename_task =
           stdexec::schedule(Scheduler::io_scheduler()) |
           stdexec::then([this]() { return ui_.selected(); }) |
           stdexec::then(FileManager::rename_selected_entry) |
           stdexec::then([this]() {
             ui_.post_task([this]() { ui_.post_event(DuckEvent::refresh); });
           });
-      scope_.spawn(renaming_task);
+      scope_.spawn(rename_task);
     }
 
     if (event == ftxui::Event::Character('p')) {
@@ -159,8 +158,9 @@ std::function<bool(ftxui::Event)> InputHandler::test_handler() {
   return [this](ftxui::Event event) { return false; };
 }
 
-std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
-  return [this](ftxui::Event event) {
+std::function<bool(const ftxui::Event &)>
+InputHandler::deletion_dialog_handler() {
+  return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Character('y')) {
       if (not FileManager::marked_entries().empty()) {
         auto task = stdexec::schedule(Scheduler::io_scheduler()) |
@@ -201,6 +201,21 @@ std::function<bool(ftxui::Event)> InputHandler::deletetion_dialog_handler() {
       return true;
     }
 
+    return false;
+  };
+}
+
+std::function<bool(const ftxui::Event &)>
+InputHandler::renmae_dialog_handler() {
+  return [this](const ftxui::Event &event) {
+    if (event == ftxui::Event::Escape) {
+      // cancel rename
+      return true;
+    }
+    if (event == ftxui::Event::Return) {
+      // renmae file
+      return true;
+    }
     return false;
   };
 }
