@@ -281,13 +281,24 @@ bool FileManager::delete_selected_entry(const int &selected) {
       instance().curdir_entries_[selected]);
 }
 
-void FileManager::rename_selected_entry(const int &selected) {
-  auto entry = selected_entry(selected);
-  auto cur_path = current_path();
-  if (entry) {
-    auto dest_path = get_dest_path(entry.value(), cur_path);
-    fs::rename(entry.value(), dest_path);
+void FileManager::rename_selected_entry(const int &selected,
+                                        std::string new_name) {
+
+  fs::directory_entry entry;
+  fs::path cur_path;
+  {
+    std::shared_lock lock{file_manager_mutex_};
+    entry = instance().curdir_entries_[selected];
+    cur_path = instance().current_path_;
   }
+
+  fs::path dest_path = cur_path / new_name;
+  int cnt{1};
+  while (fs::exists(dest_path)) {
+    dest_path = cur_path / (new_name + std::format("_{}", cnt));
+    cnt++;
+  }
+  fs::rename(entry, dest_path);
 }
 
 bool FileManager::delete_marked_entries() {

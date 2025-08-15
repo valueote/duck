@@ -20,6 +20,9 @@ void Duck::setup_ui() {
   ui_.set_layout(content_provider_.preview());
   ui_.set_deletion_dialog(content_provider_.deletion_dialog(),
                           input_handler_.deletion_dialog_handler());
+  ui_.set_rename_dialog(content_provider_.rename_dialog(),
+                        input_handler_.rename_dialog_handler());
+  ui_.finalize_layout();
   input_handler_.update_preview_async();
 }
 } // namespace duck

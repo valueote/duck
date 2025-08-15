@@ -2,6 +2,8 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
+#include "stdexec/__detail/__execution_fwd.hpp"
+#include "stdexec/__detail/__inline_scheduler.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -89,14 +91,9 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('r')) {
-      auto rename_task =
-          stdexec::schedule(Scheduler::io_scheduler()) |
-          stdexec::then([this]() { return ui_.selected(); }) |
-          stdexec::then(FileManager::rename_selected_entry) |
-          stdexec::then([this]() {
-            ui_.post_task([this]() { ui_.post_event(DuckEvent::refresh); });
-          });
-      scope_.spawn(rename_task);
+
+      ui_.toggle_rename_dialog();
+      return true;
     }
 
     if (event == ftxui::Event::Character('p')) {
@@ -206,14 +203,38 @@ InputHandler::deletion_dialog_handler() {
 }
 
 std::function<bool(const ftxui::Event &)>
-InputHandler::renmae_dialog_handler() {
+InputHandler::rename_dialog_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Escape) {
-      // cancel rename
+      ui_.toggle_rename_dialog();
       return true;
     }
     if (event == ftxui::Event::Return) {
-      // renmae file
+      auto rename_task =
+          stdexec::schedule(stdexec::inline_scheduler()) |
+          stdexec::then([this]() { return ui_.selected(); }) |
+          stdexec::then([](const int selected) {
+            return FileManager::selected_entry(selected)
+                .value()
+                .path()
+                .filename()
+                .string();
+          }) |
+          stdexec::then([this](std::string str) {
+            ui_.update_rename_input(std::move(str));
+            std::string new_name = ui_.rename_input();
+            return std::make_pair(ui_.selected(), new_name);
+          }) |
+          stdexec::continues_on(Scheduler::io_scheduler()) |
+          stdexec::then([](std::pair<int, std::string> pair) {
+            FileManager::rename_selected_entry(std::move(pair.first),
+                                               std::move(pair.second));
+          }) |
+          stdexec::continues_on(stdexec::inline_scheduler()) |
+          stdexec::then([this]() { ui_.post_event(DuckEvent::refresh); });
+      scope_.spawn(rename_task);
+
+      ui_.toggle_rename_dialog();
       return true;
     }
     return false;

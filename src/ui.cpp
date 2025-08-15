@@ -24,8 +24,9 @@ void Ui::set_menu(
   menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
 }
 
-void Ui::set_input_handler(const std::function<bool(ftxui::Event)> handler,
-                           const std::function<bool(ftxui::Event)> test) {
+void Ui::set_input_handler(
+    const std::function<bool(const ftxui::Event &)> handler,
+    const std::function<bool(const ftxui::Event &)> test) {
   menu_ = menu_ | ftxui::CatchEvent(handler) | ftxui::CatchEvent(test);
 }
 
@@ -33,13 +34,22 @@ void Ui::set_layout(const std::function<ftxui::Element()> preview) {
   main_layout_ = ftxui::Renderer(menu_, preview);
 }
 
-void Ui::set_deletion_dialog(const ftxui::Component deletion_dialog,
-                             const std::function<bool(ftxui::Event)> handler) {
-
+void Ui::set_deletion_dialog(
+    const ftxui::Component deletion_dialog,
+    const std::function<bool(const ftxui::Event &)> handler) {
   deletion_dialog_ =
       deletion_dialog | ftxui::CatchEvent(handler) | ftxui::center;
+}
 
-  modal_ = ftxui::Modal(main_layout_, deletion_dialog_, &show_deletion_dialog_);
+void Ui::set_rename_dialog(
+    const ftxui::Component rename_dialog,
+    const std::function<bool(const ftxui::Event &)> handler) {
+  rename_dialog_ = rename_dialog | ftxui::CatchEvent(handler);
+}
+
+void Ui::finalize_layout() {
+  modal_ = main_layout_ | ftxui::Modal(rename_dialog_, &show_rename_dialog_) |
+           ftxui::Modal(deletion_dialog_, &show_deletion_dialog_);
 }
 
 // move selected up and down can only be used in ui thread
@@ -62,6 +72,8 @@ void Ui::move_selected_down(const int max) {
 void Ui::toggle_deletion_dialog() {
   show_deletion_dialog_ = !show_deletion_dialog_;
 }
+
+void Ui::toggle_rename_dialog() { show_rename_dialog_ = !show_rename_dialog_; }
 
 void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
   update_curdir_entries_string(std::move(curdir_entries_string));
@@ -89,12 +101,18 @@ void Ui::update_entries_preview(ftxui::Element new_entries) {
   entries_preview_ = std::move(new_entries);
 }
 
+void Ui::update_rename_input(std::string str) {
+  rename_input_ = std::move(str);
+}
+
 ftxui::Element Ui::entries_preview() { return entries_preview_; }
 
 void Ui::update_text_preview(std::string new_text_preview) {
   text_preview_ = std::move(new_text_preview);
 }
 std::string Ui::text_preview() { return text_preview_; }
+
+std::string &Ui::rename_input() { return rename_input_; }
 
 void Ui::render() { screen_.Loop(modal_); }
 

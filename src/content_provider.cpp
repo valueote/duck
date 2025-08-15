@@ -131,15 +131,19 @@ ftxui::Component ContentProvider::deletion_dialog() {
 }
 
 ftxui::Component ContentProvider::rename_dialog() {
-  std::string content = "";
-
   ftxui::InputOption option;
-  option.cursor_position = (int)content.size();
-  auto input = ftxui::Input(&content, option);
+  option.cursor_position = ui_.rename_input().size();
+  auto input = ftxui::Input(ui_.rename_input(), option);
 
-  auto renderer = ftxui::Renderer(input, [&] {
-    return ftxui::window(ftxui::text("Rename"), input->Render());
+  auto renderer = ftxui::Renderer(input, [this, input] {
+    auto screen_size = ui_.screen_size();
+    return ftxui::hbox(
+        ftxui::window(ftxui::text("Rename"), input->Render()) |
+            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2) |
+            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3),
+        ftxui::filler());
   });
+
   return renderer;
 }
 

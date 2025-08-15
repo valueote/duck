@@ -85,7 +85,7 @@ public:
   static void toggle_hidden_entries();
   static void clear_marked_entries();
   static bool delete_selected_entry(const int &selected);
-  static void rename_selected_entry(const int &selected);
+  static void rename_selected_entry(const int &selected, std::string new_name);
   static bool delete_marked_entries();
 
   static std::vector<std::string>

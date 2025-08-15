@@ -30,6 +30,7 @@ private:
 
   ftxui::Component deletion_dialog_;
   ftxui::Component rename_dialog_;
+  std::string rename_input_;
 
   std::stack<int> previous_selected_;
   int selected_;
@@ -42,17 +43,22 @@ public:
   Ui();
   void set_menu(std::function<ftxui::Element(const ftxui::EntryState &state)>);
   void set_layout(const std::function<ftxui::Element()> preview);
-  void set_input_handler(const std::function<bool(ftxui::Event)> handler,
-                         const std::function<bool(ftxui::Event)> test);
-  void set_deletion_dialog(const ftxui::Component deletion_dialog,
-                           const std::function<bool(ftxui::Event)> handler);
+  void
+  set_input_handler(const std::function<bool(const ftxui::Event &)> handler,
+                    const std::function<bool(const ftxui::Event &)> test);
+  void
+  set_deletion_dialog(const ftxui::Component deletion_dialog,
+                      const std::function<bool(const ftxui::Event &)> handler);
 
-  void set_rename_dialog(const ftxui::Component deletion_dialog,
-                         const std::function<bool(ftxui::Event)> handler);
+  void
+  set_rename_dialog(const ftxui::Component rename_dialog,
+                    const std::function<bool(const ftxui::Event &)> handler);
+  void finalize_layout();
 
   void move_selected_up(const int max);
   void move_selected_down(const int max);
   void toggle_deletion_dialog();
+  void toggle_rename_dialog();
   void toggle_hidden_entries();
   void enter_direcotry(std::vector<std::string> curdir_entries_string);
   void leave_direcotry(std::vector<std::string> curdir_entries_string,
@@ -60,10 +66,12 @@ public:
   void
   update_curdir_entries_string(std::vector<std::string> curdir_entries_string);
   void update_entries_preview(ftxui::Element new_entries);
+  void update_rename_input(std::string str);
   ftxui::Element entries_preview();
 
   void update_text_preview(std::string new_text_preview);
   std::string text_preview();
+  std::string &rename_input();
 
   void render();
   void exit();
