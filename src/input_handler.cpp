@@ -91,7 +91,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('p')) {
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then([this]() { return ui_.selected(); }) |
-                  stdexec::then(FileManager::paste) |
+                  stdexec::then(FileManager::yank_or_rename) |
                   stdexec::then([]() { return false; }) |
                   stdexec::then(FileManager::update_curdir_entries) |
                   stdexec::then(FileManager::format_entries) |

@@ -43,11 +43,20 @@ private:
   std::vector<fs::directory_entry> marked_entires_;
   std::vector<fs::directory_entry> clipboard_entries_;
   bool is_yanking_;
-  bool is_cutting_;
+  bool is_renaming_;
   bool show_hidden_;
 
   FileManager();
   static FileManager &instance();
+
+  static fs::path dest_path(const fs::directory_entry &entry,
+                            const fs::path &current_path);
+
+  static void yank(const std::vector<fs::directory_entry> &entries,
+                   const fs::path &current_path);
+  static void rename(const std::vector<fs::directory_entry> &entries,
+                     const fs::path &current_path);
+
   std::vector<fs::directory_entry>
   load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
                                       bool use_cache);
@@ -70,7 +79,7 @@ public:
 
   static void start_yanking();
   static void start_cutting();
-  static void paste(const int &selected);
+  static void yank_or_rename(const int &selected);
   static bool is_marked(const fs::directory_entry &entry);
   static void toggle_mark_on_selected(const int &selected);
   static void toggle_hidden_entries();

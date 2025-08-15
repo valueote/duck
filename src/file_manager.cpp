@@ -21,7 +21,7 @@ constexpr size_t lru_cache_size = 50;
 FileManager::FileManager()
     : current_path_{fs::current_path()},
       parent_path_{current_path_.parent_path()}, lru_cache_{lru_cache_size},
-      is_yanking_{false}, is_cutting_{false}, show_hidden_{false} {
+      is_yanking_{false}, is_renaming_{false}, show_hidden_{false} {
 
   curdir_entries_ = std::move(
       load_directory_entries_without_lock(current_path_, false, true));
@@ -87,7 +87,7 @@ bool FileManager::yanking() {
 
 bool FileManager::cutting() {
   std::shared_lock lock{file_manager_mutex_};
-  return instance().is_cutting_;
+  return instance().is_renaming_;
 }
 
 std::expected<fs::directory_entry, std::string>
@@ -205,38 +205,50 @@ void FileManager::toggle_hidden_entries() {
 void FileManager::start_yanking() {
   std::unique_lock lock{file_manager_mutex_};
   instance().is_yanking_ = true;
-  instance().is_cutting_ = false;
+  instance().is_renaming_ = false;
 }
 
 void FileManager::start_cutting() {
   std::unique_lock lock{file_manager_mutex_};
-  instance().is_cutting_ = true;
+  instance().is_renaming_ = true;
   instance().is_yanking_ = false;
 }
 
-void yank_or_cut(std::vector<fs::directory_entry> entries,
-                 fs::path current_path, bool is_cutting) {
+fs::path FileManager::dest_path(const fs::directory_entry &entry,
+                                const fs::path &current_path) {
+  fs::path dest_path = current_path / entry.path().filename();
+  int cnt{1};
+  auto file_name = entry.path().filename().string();
+  while (fs::exists(dest_path)) {
+    dest_path = current_path / (file_name + std::format("_{}", cnt));
+    cnt++;
+  }
+  return dest_path;
+}
+
+void FileManager::yank(const std::vector<fs::directory_entry> &entries,
+                       const fs::path &current_path) {
   for (const auto &entry : entries) {
-    fs::path dest_path = current_path / entry.path().filename();
-    if (fs::exists(dest_path)) {
-      dest_path = current_path / (entry.path().filename().string() + "_1");
-    }
-    if (is_cutting) {
-      fs::rename(entry.path(), dest_path);
-    } else {
-      fs::copy(entry.path(), dest_path, fs::copy_options::recursive);
-    }
+    fs::copy(entry.path(), dest_path(entry, current_path),
+             fs::copy_options::recursive);
   }
 }
 
-void FileManager::paste(const int &selected) {
+void FileManager::rename(const std::vector<fs::directory_entry> &entries,
+                         const fs::path &current_path) {
+  for (const auto &entry : entries) {
+    fs::rename(entry.path(), dest_path(entry, current_path));
+  }
+}
+
+void FileManager::yank_or_rename(const int &selected) {
   auto &instance = FileManager::instance();
-  if (!instance.is_cutting_ && !instance.is_yanking_) {
+  if (!instance.is_renaming_ && !instance.is_yanking_) {
     return;
   }
   std::vector<fs::directory_entry> entries;
   fs::path current_path;
-  bool is_cutting;
+  bool is_renaming;
 
   {
     std::unique_lock lock{file_manager_mutex_};
@@ -247,11 +259,13 @@ void FileManager::paste(const int &selected) {
     }
     instance.marked_entires_.clear();
     current_path = instance.current_path_;
-    is_cutting = instance.is_cutting_;
+    is_renaming = instance.is_renaming_;
   }
-
-  yank_or_cut(std::move(entries), std::move(current_path),
-              std::move(is_cutting));
+  if (is_renaming) {
+    rename(entries, current_path);
+  } else {
+    yank(entries, current_path);
+  }
 }
 
 bool FileManager::is_marked(const fs::directory_entry &entry) {
