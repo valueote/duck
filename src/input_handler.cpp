@@ -29,8 +29,7 @@ std::function<bool(ftxui::Event)> InputHandler::navigation_handler() {
           stdexec::schedule(Scheduler::io_scheduler()) |
           stdexec::then([this]() { return ui_.selected(); }) |
           stdexec::then(FileManager::toggle_mark_on_selected) |
-          stdexec::then([]() { return false; }) |
-          stdexec::then(FileManager::update_curdir_entries) |
+          stdexec::then(FileManager::curdir_entries) |
           stdexec::then(FileManager::format_entries) |
           stdexec::then([this](std::vector<std::string> strings) {
             ui_.post_task([this, strs = std::move(strings)]() {
