@@ -10,6 +10,7 @@
 #include <print>
 #include <string>
 #include <sys/wait.h>
+#include <utility>
 #include <vector>
 
 namespace duck {
@@ -222,7 +223,15 @@ InputHandler::rename_dialog_handler() {
           stdexec::then([selected, str]() {
             FileManager::rename_selected_entry(selected, str);
           }) |
-          stdexec::then([this]() { ui_.post_event(DuckEvent::refresh); });
+          stdexec::then(
+              []() { return FileManager::update_curdir_entries(false); }) |
+          stdexec::then(FileManager::format_entries) |
+          stdexec::then([this](std::vector<std::string> strings) {
+            ui_.post_task([this, strs = std::move(strings)]() {
+              ui_.update_curdir_entries_string(std::move(strs));
+              ui_.post_event(DuckEvent::refresh);
+            });
+          });
 
       scope_.spawn(rename_task);
 
