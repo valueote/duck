@@ -131,17 +131,24 @@ ftxui::Component ContentProvider::deletion_dialog() {
 }
 
 ftxui::Component ContentProvider::rename_dialog() {
-  ftxui::InputOption option;
-  option.cursor_position = ui_.rename_input().size();
-  auto input = ftxui::Input(ui_.rename_input(), option);
 
+  ftxui::InputOption option = ftxui::InputOption::Default();
+  option.cursor_position = &ui_.rename_cursor_positon();
+  option.transform = [this](ftxui::InputState s) -> ftxui::Element {
+    s.element |= color(color_scheme_.text());
+    return s.element;
+  };
+  option.cursor_position = &ui_.rename_cursor_positon();
+
+  auto input = ftxui::Input(&ui_.rename_input(), option);
   auto renderer = ftxui::Renderer(input, [this, input] {
     auto screen_size = ui_.screen_size();
-    return ftxui::hbox(
-        ftxui::window(ftxui::text("Rename"), input->Render()) |
-            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2) |
-            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3),
-        ftxui::filler());
+    return ftxui::window(ftxui::text("Rename"),
+                         input->Render() |
+                             ftxui::bgcolor(ftxui::Color::Default)) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2) |
+           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3);
+    ;
   });
 
   return renderer;

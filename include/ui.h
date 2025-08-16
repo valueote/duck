@@ -35,6 +35,7 @@ private:
   std::stack<int> previous_selected_;
   int selected_;
   bool show_deletion_dialog_;
+  int rename_cursor_positon_;
   bool show_rename_dialog_;
 
   stdexec::run_loop loop_;
@@ -72,6 +73,7 @@ public:
   void update_text_preview(std::string new_text_preview);
   std::string text_preview();
   std::string &rename_input();
+  int &rename_cursor_positon();
 
   void render();
   void exit();

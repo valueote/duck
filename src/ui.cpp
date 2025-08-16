@@ -103,6 +103,7 @@ void Ui::update_entries_preview(ftxui::Element new_entries) {
 
 void Ui::update_rename_input(std::string str) {
   rename_input_ = std::move(str);
+  rename_cursor_positon_ = rename_input_.size();
 }
 
 ftxui::Element Ui::entries_preview() { return entries_preview_; }
@@ -113,6 +114,8 @@ void Ui::update_text_preview(std::string new_text_preview) {
 std::string Ui::text_preview() { return text_preview_; }
 
 std::string &Ui::rename_input() { return rename_input_; }
+
+int &Ui ::rename_cursor_positon() { return rename_cursor_positon_; }
 
 void Ui::render() { screen_.Loop(modal_); }
 
