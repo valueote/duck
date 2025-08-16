@@ -31,7 +31,6 @@ FileManager::FileManager()
         curdir_entries_[0], show_hidden_, true));
   }
 
-  marked_entires_.reserve(64);
   clipboard_entries_.reserve(64);
 }
 
@@ -65,7 +64,7 @@ const std::vector<fs::directory_entry> &FileManager::preview_entries() {
   return instance().preview_entries_;
 }
 
-const std::vector<fs::directory_entry> &FileManager::marked_entries() {
+const std::set<fs::directory_entry> &FileManager::marked_entries() {
   std::shared_lock lock{file_manager_mutex_};
   return instance().marked_entires_;
 }
@@ -109,7 +108,7 @@ FileManager::selected_entry(const int &selected) {
 std::vector<fs::directory_entry>
 FileManager::load_directory_entries_without_lock(const fs::path &path,
                                                  bool show_hidden,
-                                                 bool use_cache) {
+                                                 bool reload) {
   if (!fs::is_directory(path)) {
     return {};
   }
@@ -117,7 +116,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   std::vector<fs::directory_entry> entries;
 
   auto cache = std::move(lru_cache_.get(path));
-  if (cache.has_value() && use_cache) {
+  if (cache.has_value() && reload) {
     entries = std::move(cache.value());
     return entries;
   }
@@ -136,7 +135,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
     if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
       continue;
     }
-    (fs::is_directory(entry) ? dirs : files).push_back(std::move(entry));
+    (entry.is_directory() ? dirs : files).push_back(std::move(entry));
   }
 
   std::ranges::sort(dirs);
@@ -193,7 +192,7 @@ void FileManager::toggle_mark_on_selected(const int &selected) {
       it != instance.marked_entires_.end()) {
     instance.marked_entires_.erase(it);
   } else {
-    instance.marked_entires_.push_back(instance.curdir_entries_[selected]);
+    instance.marked_entires_.insert(instance.curdir_entries_[selected]);
   }
 }
 
@@ -256,7 +255,8 @@ void FileManager::yank_or_rename(const int &selected) {
     if (instance.marked_entires_.empty()) {
       entries.push_back(instance.curdir_entries_[selected]);
     } else {
-      entries = std::move(instance.marked_entires_);
+      entries = std::move(std::vector<fs::directory_entry>{
+          instance.marked_entires_.begin(), instance.marked_entires_.end()});
     }
     instance.marked_entires_.clear();
     current_path = instance.current_path_;
@@ -271,8 +271,7 @@ void FileManager::yank_or_rename(const int &selected) {
 
 bool FileManager::is_marked(const fs::directory_entry &entry) {
   std::shared_lock lock(file_manager_mutex_);
-  return std::ranges::find(instance().marked_entires_, entry) !=
-         instance().marked_entires_.end();
+  return instance().marked_entires_.contains(entry);
 }
 
 bool FileManager::delete_selected_entry(const int &selected) {
@@ -323,7 +322,7 @@ void FileManager::clear_marked_entries() {
   instance().marked_entires_.clear();
 }
 
-bool FileManager::delete_entry_without_lock(fs::directory_entry &entry) {
+bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
   if (!fs::exists(entry)) {
     std::println(stderr, "[ERROR] try to delete an unexisted file");
     return false;

@@ -6,6 +6,7 @@
 #include <ftxui/dom/node.hpp>
 #include <list>
 #include <optional>
+#include <set>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <unordered_map>
@@ -40,7 +41,7 @@ private:
   std::vector<fs::directory_entry> curdir_entries_;
   std::vector<fs::directory_entry> hidden_entries_;
   std::vector<fs::directory_entry> preview_entries_;
-  std::vector<fs::directory_entry> marked_entires_;
+  std::set<fs::directory_entry> marked_entires_;
   std::vector<fs::directory_entry> clipboard_entries_;
   bool is_yanking_;
   bool is_renaming_;
@@ -60,7 +61,7 @@ private:
   std::vector<fs::directory_entry>
   load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
                                       bool use_cache);
-  static bool delete_entry_without_lock(fs::directory_entry &entry);
+  static bool delete_entry_without_lock(const fs::directory_entry &entry);
 
   std::string
   format_directory_entries_without_lock(const fs::directory_entry &entry) const;
@@ -72,7 +73,7 @@ public:
   static const fs::path &previous_path();
   static const std::vector<fs::directory_entry> &curdir_entries();
   static const std::vector<fs::directory_entry> &preview_entries();
-  static const std::vector<fs::directory_entry> &marked_entries();
+  static const std::set<fs::directory_entry> &marked_entries();
   static int previous_path_index();
   static bool yanking();
   static bool cutting();
