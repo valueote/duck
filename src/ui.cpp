@@ -48,8 +48,44 @@ void Ui::set_rename_dialog(
 }
 
 void Ui::finalize_layout() {
-  modal_ = main_layout_ | ftxui::Modal(rename_dialog_, &show_rename_dialog_) |
-           ftxui::Modal(deletion_dialog_, &show_deletion_dialog_);
+  auto components_tab = ftxui::Container::Tab(
+      {
+          main_layout_,
+          rename_dialog_,
+          deletion_dialog_,
+      },
+      &active_pane_);
+
+  tui_ = ftxui::Renderer(components_tab, [&] {
+    auto main_ui_layer = main_layout_->Render();
+
+    if (show_rename_dialog_) {
+      auto dialog_element = rename_dialog_->Render();
+
+      auto top_layer = ftxui::vbox({
+          ftxui::vbox({}) |
+              ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
+                          (selected_ > 2 ? selected_ - 2 : selected_ + 2)),
+          ftxui::hbox({
+              dialog_element,
+          }),
+      });
+      return ftxui::dbox({
+          main_ui_layer,
+          top_layer,
+      });
+    }
+
+    if (show_deletion_dialog_) {
+      return ftxui::dbox({
+          main_ui_layer,
+          ftxui::filler(),
+          deletion_dialog_->Render() | ftxui::center,
+      });
+    }
+
+    return main_ui_layer;
+  });
 }
 
 // move selected up and down can only be used in ui thread
@@ -71,9 +107,23 @@ void Ui::move_selected_down(const int max) {
 
 void Ui::toggle_deletion_dialog() {
   show_deletion_dialog_ = !show_deletion_dialog_;
+  if (show_deletion_dialog_) {
+    active_pane_ = static_cast<int>(pane::DELETION);
+    deletion_dialog_->TakeFocus();
+  } else {
+    active_pane_ = static_cast<int>(pane::MAIN);
+  }
 }
 
-void Ui::toggle_rename_dialog() { show_rename_dialog_ = !show_rename_dialog_; }
+void Ui::toggle_rename_dialog() {
+  show_rename_dialog_ = !show_rename_dialog_;
+  if (show_rename_dialog_) {
+    active_pane_ = static_cast<int>(pane::RENAME);
+    rename_dialog_->TakeFocus();
+  } else {
+    active_pane_ = static_cast<int>(pane::MAIN);
+  }
+}
 
 void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
   update_curdir_entries_string(std::move(curdir_entries_string));
@@ -117,7 +167,7 @@ std::string &Ui::rename_input() { return rename_input_; }
 
 int &Ui ::rename_cursor_positon() { return rename_cursor_positon_; }
 
-void Ui::render() { screen_.Loop(modal_); }
+void Ui::render() { screen_.Loop(tui_); }
 
 void Ui::exit() { screen_.Exit(); }
 

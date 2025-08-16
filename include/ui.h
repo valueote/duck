@@ -25,7 +25,7 @@ private:
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
   ftxui::MenuOption menu_option_;
-  ftxui::Component modal_;
+  ftxui::Component tui_;
   ftxui::Component menu_;
 
   ftxui::Component deletion_dialog_;
@@ -37,6 +37,8 @@ private:
   bool show_deletion_dialog_;
   int rename_cursor_positon_;
   bool show_rename_dialog_;
+  enum class pane : int { MAIN = 0, DELETION, RENAME };
+  int active_pane_;
 
   stdexec::run_loop loop_;
 

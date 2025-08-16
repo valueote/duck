@@ -125,7 +125,8 @@ ftxui::Component ContentProvider::deletion_dialog() {
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 3 * 2) |
            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
                        screen_size.second / 3 * 2) |
-           ftxui::color(color_scheme_.border());
+           ftxui::color(color_scheme_.border()) | ftxui::clear_under;
+    ;
   });
   return dialog_renderer;
 }
@@ -134,21 +135,21 @@ ftxui::Component ContentProvider::rename_dialog() {
 
   ftxui::InputOption option = ftxui::InputOption::Default();
   option.cursor_position = &ui_.rename_cursor_positon();
-  option.transform = [this](ftxui::InputState s) -> ftxui::Element {
-    s.element |= color(color_scheme_.text());
-    return s.element;
+  option.transform = [this](ftxui::InputState state) -> ftxui::Element {
+    state.element |= color(color_scheme_.text());
+    return state.element;
   };
   option.cursor_position = &ui_.rename_cursor_positon();
 
   auto input = ftxui::Input(&ui_.rename_input(), option);
   auto renderer = ftxui::Renderer(input, [this, input] {
-    auto screen_size = ui_.screen_size();
-    return ftxui::window(ftxui::text("Rename"),
-                         input->Render() |
-                             ftxui::bgcolor(ftxui::Color::Default)) |
-           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2) |
-           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3);
+    const auto [width, height] = ui_.screen_size();
+    auto dialog = ftxui::window(ftxui::text("Rename"), input->Render()) |
+                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2) |
+                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3) |
+                  ftxui::clear_under;
     ;
+    return dialog;
   });
 
   return renderer;
