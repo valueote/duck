@@ -14,8 +14,8 @@ private:
   Ui &ui_;
   const ColorScheme &color_scheme_;
   std::mutex mutex_;
-  ftxui::Element left_pane();
-  ftxui::Element right_pane();
+  ftxui::Element left_pane(int width);
+  ftxui::Element right_pane(int width);
   ftxui::Element deleted_entries();
 
 public:
@@ -25,6 +25,6 @@ public:
   menu_entries_transform();
   ftxui::Component deletion_dialog();
   ftxui::Component rename_dialog();
-  std::function<ftxui::Element()> layout();
+  ftxui::Component layout();
 };
 } // namespace duck

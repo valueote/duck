@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
+#include <ftxui/dom/node.hpp>
 #include <functional>
 #include <print>
 #include <string>
@@ -33,9 +34,10 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
           stdexec::then(FileManager::toggle_mark_on_selected) |
           stdexec::then(FileManager::curdir_entries) |
           stdexec::then(FileManager::format_entries) |
-          stdexec::then([this](std::vector<std::string> strings) {
-            ui_.post_task([this, strs = std::move(strings)]() {
-              ui_.update_curdir_entries_string(std::move(strs));
+          stdexec::then(FileManager::entries_string_to_element) |
+          stdexec::then([this](ftxui::Element element) {
+            ui_.post_task([this, elmt = std::move(element)]() {
+              ui_.update_curdir_entries(std::move(elmt));
               ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
               ui_.post_event(DuckEvent::refresh);
             });
@@ -108,9 +110,10 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
                   stdexec::then([]() { return false; }) |
                   stdexec::then(FileManager::update_curdir_entries) |
                   stdexec::then(FileManager::format_entries) |
-                  stdexec::then([this](std::vector<std::string> entries) {
-                    ui_.post_task([this, et = std::move(entries)]() {
-                      ui_.update_curdir_entries_string(std::move(et));
+                  stdexec::then(FileManager::entries_string_to_element) |
+                  stdexec::then([this](ftxui::Element element) {
+                    ui_.post_task([this, elmt = std::move(element)]() {
+                      ui_.update_curdir_entries(std::move(elmt));
                       ui_.post_event(DuckEvent::refresh);
                     });
                   });
@@ -124,13 +127,13 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
                   stdexec::then([]() { return false; }) |
                   stdexec::then(FileManager::update_curdir_entries) |
                   stdexec::then(FileManager::format_entries) |
-                  stdexec::then([this](std::vector<std::string> strings) {
-                    ui_.post_task([this, strs = std::move(strings)]() {
-                      ui_.update_curdir_entries_string(std::move(strs));
+                  stdexec::then(FileManager::entries_string_to_element) |
+                  stdexec::then([this](ftxui::Element element) {
+                    ui_.post_task([this, elmt = std::move(element)]() {
+                      ui_.update_curdir_entries(std::move(elmt));
                       ui_.post_event(DuckEvent::refresh);
                     });
                   });
-
       scope_.spawn_future(task);
       return true;
     }
@@ -141,9 +144,10 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
                   stdexec::then([]() { return true; }) |
                   stdexec::then(FileManager::update_curdir_entries) |
                   stdexec::then(FileManager::format_entries) |
-                  stdexec::then([this](std::vector<std::string> strings) {
-                    ui_.post_task([this, strs = std::move(strings)]() {
-                      ui_.update_curdir_entries_string(std::move(strs));
+                  stdexec::then(FileManager::entries_string_to_element) |
+                  stdexec::then([this](ftxui::Element element) {
+                    ui_.post_task([this, elmt = std::move(element)]() {
+                      ui_.update_curdir_entries(std::move(elmt));
                       ui_.post_event(DuckEvent::refresh);
                     });
                   });
@@ -170,13 +174,15 @@ InputHandler::deletion_dialog_handler() {
                     stdexec::then([](bool success) { return false; }) |
                     stdexec::then(FileManager::update_curdir_entries) |
                     stdexec::then(FileManager::format_entries) |
-                    stdexec::then([this](std::vector<std::string> strings) {
-                      ui_.post_task([this, strs = std::move(strings)]() {
-                        ui_.update_curdir_entries_string(std::move(strs));
+                    stdexec::then(FileManager::entries_string_to_element) |
+                    stdexec::then([this](ftxui::Element element) {
+                      ui_.post_task([this, elem = std::move(element)]() {
+                        ui_.update_curdir_entries(std::move(elem));
                         ui_.post_event(DuckEvent::refresh);
                         ui_.toggle_deletion_dialog();
                       });
                     });
+
         scope_.spawn(task);
       } else {
         auto task = stdexec::schedule(Scheduler::io_scheduler()) |
@@ -185,13 +191,15 @@ InputHandler::deletion_dialog_handler() {
                     stdexec::then([](bool success) { return false; }) |
                     stdexec::then(FileManager::update_curdir_entries) |
                     stdexec::then(FileManager::format_entries) |
-                    stdexec::then([this](std::vector<std::string> strings) {
-                      ui_.post_task([this, strs = std::move(strings)]() {
-                        ui_.update_curdir_entries_string(std::move(strs));
+                    stdexec::then(FileManager::entries_string_to_element) |
+                    stdexec::then([this](ftxui::Element element) {
+                      ui_.post_task([this, elem = std::move(element)]() {
+                        ui_.update_curdir_entries(std::move(elem));
                         ui_.post_event(DuckEvent::refresh);
                         ui_.toggle_deletion_dialog();
                       });
                     });
+
         scope_.spawn(task);
       }
       return true;
@@ -218,23 +226,23 @@ InputHandler::rename_dialog_handler() {
     if (event == ftxui::Event::Return) {
       int selected = ui_.selected();
       auto str = ui_.rename_input();
-      auto rename_task =
-          stdexec::schedule(Scheduler::io_scheduler()) |
-          stdexec::then([selected, str]() {
-            FileManager::rename_selected_entry(selected, str);
-          }) |
-          stdexec::then(
-              []() { return FileManager::update_curdir_entries(false); }) |
-          stdexec::then(FileManager::format_entries) |
-          stdexec::then([this](std::vector<std::string> strings) {
-            ui_.post_task([this, strs = std::move(strings)]() {
-              ui_.update_curdir_entries_string(std::move(strs));
-              ui_.post_event(DuckEvent::refresh);
-            });
-          });
+      auto rename_task = stdexec::schedule(Scheduler::io_scheduler()) |
+                         stdexec::then([selected, str]() {
+                           FileManager::rename_selected_entry(selected, str);
+                         }) |
+                         stdexec::then([]() {
+                           return FileManager::update_curdir_entries(false);
+                         }) |
+                         stdexec::then(FileManager::format_entries) |
+                         stdexec::then(FileManager::entries_string_to_element) |
+                         stdexec::then([this](ftxui::Element element) {
+                           ui_.post_task([this, elem = std::move(element)]() {
+                             ui_.update_curdir_entries(std::move(elem));
+                             ui_.post_event(DuckEvent::refresh);
+                           });
+                         });
 
       scope_.spawn(rename_task);
-
       ui_.toggle_rename_dialog();
       return true;
     }
@@ -260,6 +268,7 @@ InputHandler::update_directory_preview_async(const int &selected) {
          stdexec::then([this](ftxui::Element preview) {
            ui_.post_task([this, pv = std::move(preview)]() {
              ui_.update_entries_preview(std::move(pv));
+             ui_.post_event(DuckEvent::refresh);
            });
          });
 }
@@ -276,6 +285,7 @@ InputHandler::update_text_preview_async(const int &selected) {
          stdexec::then([this](std::string preview) {
            ui_.post_task([this, pv = std::move(preview)]() {
              ui_.update_text_preview(std::move(pv));
+             ui_.post_event(DuckEvent::refresh);
            });
          });
 }
@@ -315,39 +325,41 @@ void InputHandler::enter_direcotry() {
         stdexec::then([]() { return true; }) |
         stdexec::then(FileManager::update_curdir_entries) |
         stdexec::then(FileManager::format_entries) |
-        stdexec::then([this](std::vector<std::string> entries) {
-          ui_.post_task([this, es = std::move(entries)]() {
-            ui_.enter_direcotry(std::move(es));
+        stdexec::then(FileManager::entries_string_to_element) |
+        stdexec::then([this](ftxui::Element element) {
+          ui_.post_task([this, elem = std::move(element)]() {
+            ui_.enter_direcotry(std::move(elem));
             ui_.post_event(DuckEvent::refresh);
             update_preview_async();
           });
         });
+
     scope_.spawn(std::move(task));
   }
 }
 
 void InputHandler::leave_direcotry() {
-  auto task =
-      stdexec::schedule(Scheduler::io_scheduler()) |
-      stdexec::then([]() { return FileManager::cur_parent_path(); }) |
-      stdexec::then(FileManager::update_current_path) |
-      stdexec::then([]() { return true; }) |
-      stdexec::then(FileManager::update_curdir_entries) |
-      stdexec::then(FileManager::format_entries) |
-      stdexec::then([this](std::vector<std::string> entries) {
-        return std::make_pair(std::move(entries),
-                              FileManager::previous_path_index());
-      }) |
-      stdexec::then([this](std::pair<std::vector<std::string>, int> pair) {
-        ui_.post_task([this, pr = std::move(pair)]() {
-          ui_.leave_direcotry(pr.first, pr.second);
-          ui_.post_event(DuckEvent::refresh);
-        });
-        return pair.second;
-      }) |
-      stdexec::let_value([this](const int &selected) {
-        return update_directory_preview_async(selected);
-      });
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then([]() { return FileManager::cur_parent_path(); }) |
+              stdexec::then(FileManager::update_current_path) |
+              stdexec::then([]() { return true; }) |
+              stdexec::then(FileManager::update_curdir_entries) |
+              stdexec::then(FileManager::format_entries) |
+              stdexec::then(FileManager::entries_string_to_element) |
+              stdexec::then([this](ftxui::Element entries) {
+                return std::make_pair(std::move(entries),
+                                      FileManager::previous_path_index());
+              }) |
+              stdexec::then([this](std::pair<ftxui::Element, int> pair) {
+                ui_.post_task([this, pr = std::move(pair)]() {
+                  ui_.leave_direcotry(pr.first, pr.second);
+                  ui_.post_event(DuckEvent::refresh);
+                });
+                return pair.second;
+              }) |
+              stdexec::let_value([this](const int &selected) {
+                return update_directory_preview_async(selected);
+              });
   scope_.spawn(std::move(task));
 }
 

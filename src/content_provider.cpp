@@ -10,6 +10,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
+#include <print>
 
 namespace duck {
 
@@ -27,20 +28,19 @@ ContentProvider::menu_entries_transform() {
   };
 }
 
-ftxui::Element ContentProvider::left_pane() {
-  auto [width, height] = ui_.screen_size();
-  auto menu = ftxui::vbox();
+ftxui::Element ContentProvider::left_pane(int width) {
   auto pane =
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                  ftxui::bold |
                  ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             ui_.menu()->Render()) |
+             ui_.curdir_entries()) |
       ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  ;
   return pane;
 }
 
-ftxui::Element ContentProvider::right_pane() {
-  auto [width, height] = ui_.screen_size();
+ftxui::Element ContentProvider::right_pane(int width) {
+
   auto pane = window(ftxui::text(" Content Preview ") | ftxui::bold,
                      [this] {
                        const auto selected_path =
@@ -63,9 +63,15 @@ ftxui::Element ContentProvider::right_pane() {
   return pane;
 }
 
-std::function<ftxui::Element()> ContentProvider::layout() {
-  return
-      [this]() { return hbox(left_pane(), ftxui::separator(), right_pane()); };
+ftxui::Component ContentProvider::layout() {
+  auto dummy = ftxui::Button({});
+  auto render = ftxui::Renderer(dummy, [this]() {
+    auto [width, height] = ui_.screen_size();
+
+    std::print(stderr, "width {}, height {}", width, height);
+    return ftxui::hbox(left_pane(width), ftxui::separator(), right_pane(width));
+  });
+  return render;
 }
 
 ftxui::Element ContentProvider::deleted_entries() {
