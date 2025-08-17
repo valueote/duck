@@ -27,40 +27,45 @@ ContentProvider::menu_entries_transform() {
   };
 }
 
+ftxui::Element ContentProvider::left_pane() {
+  auto [width, height] = ui_.screen_size();
+  auto left =
+      window(ftxui::text(" " + FileManager::current_path().string() + " ") |
+                 ftxui::bold |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2),
+             ui_.menu()->Render() | ftxui::frame) |
+      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  return left;
+}
+
+ftxui::Element ContentProvider::right_pane() {
+  auto [width, height] = ui_.screen_size();
+  auto right = window(ftxui::text(" Content Preview ") | ftxui::bold,
+                      [this] {
+                        const auto selected_path =
+                            FileManager::selected_entry(ui_.selected());
+                        if (not selected_path) {
+                          return ftxui::text("No item selected");
+                        }
+
+                        if (fs::is_directory(selected_path.value())) {
+                          return ui_.entries_preview() |
+                                 ftxui::color(color_scheme_.text());
+                        }
+
+                        return ftxui::paragraph(ui_.text_preview()) |
+                               ftxui::color(color_scheme_.text()) |
+                               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
+                               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
+                      }() |
+                          ftxui::frame) |
+               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  return right;
+}
+
 std::function<ftxui::Element()> ContentProvider::layout() {
-  return [this]() {
-    auto screen_size = ui_.screen_size();
-    auto left_pane =
-        window(ftxui::text(" " + FileManager::current_path().string() + " ") |
-                   ftxui::bold |
-                   ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN,
-                               screen_size.first / 2),
-               ui_.menu()->Render()) |
-        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
-
-    auto right_pane =
-        window(ftxui::text(" Content Preview ") | ftxui::bold,
-               [this] {
-                 const auto selected_path =
-                     FileManager::selected_entry(ui_.selected());
-                 if (not selected_path) {
-                   return ftxui::text("No item selected");
-                 }
-
-                 if (fs::is_directory(selected_path.value())) {
-                   return ui_.entries_preview() |
-                          ftxui::color(color_scheme_.text());
-                 }
-
-                 return ftxui::paragraph(ui_.text_preview()) |
-                        ftxui::color(color_scheme_.text()) |
-                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
-                        ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
-               }()) |
-        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
-
-    return hbox(left_pane, ftxui::separator(), right_pane);
-  };
+  return
+      [this]() { return hbox(left_pane(), ftxui::separator(), right_pane()); };
 }
 
 ftxui::Element ContentProvider::deleted_entries() {
