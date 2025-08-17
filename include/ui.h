@@ -18,6 +18,8 @@ namespace duck {
 class Ui {
 private:
   std::vector<std::string> curdir_string_entries_;
+  std::vector<std::string> entires_view_;
+
   std::shared_mutex ui_lock_;
   std::string text_preview_;
   ftxui::Element entries_preview_;
@@ -33,7 +35,9 @@ private:
   std::string rename_input_;
 
   std::stack<int> previous_selected_;
-  int selected_;
+  int global_selected_;
+  int view_selected_;
+
   bool show_deletion_dialog_;
   int rename_cursor_positon_;
   bool show_rename_dialog_;

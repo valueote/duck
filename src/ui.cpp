@@ -12,16 +12,17 @@
 namespace duck {
 
 Ui::Ui()
-    : selected_{0}, show_deletion_dialog_{false}, show_rename_dialog_{false},
-      entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
+    : global_selected_{0}, show_deletion_dialog_{false},
+      show_rename_dialog_{false}, entries_preview_{ftxui::emptyElement()},
+      text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::Fullscreen()} {}
 
 void Ui::set_menu(
     const std::function<ftxui::Element(const ftxui::EntryState &state)>
         entries_transform) {
-  menu_option_.focused_entry = &selected_;
+  menu_option_.focused_entry = &global_selected_;
   menu_option_.entries_option.transform = entries_transform;
-  menu_ = Menu(&curdir_string_entries_, &(selected_), menu_option_);
+  menu_ = Menu(&curdir_string_entries_, &(global_selected_), menu_option_);
 }
 
 void Ui::set_input_handler(
@@ -65,7 +66,8 @@ void Ui::finalize_layout() {
       auto top_layer = ftxui::vbox({
           ftxui::vbox({}) |
               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                          (selected_ > 2 ? selected_ - 2 : selected_ + 2)),
+                          (global_selected_ > 2 ? global_selected_ - 2
+                                                : global_selected_ + 2)),
           ftxui::hbox({
               dialog_element,
           }),
@@ -90,18 +92,18 @@ void Ui::finalize_layout() {
 
 // move selected up and down can only be used in ui thread
 void Ui::move_selected_up(const int max) {
-  if (selected_ > 0) {
-    selected_--;
+  if (global_selected_ > 0) {
+    global_selected_--;
   } else {
-    selected_ = max;
+    global_selected_ = max;
   }
 }
 
 void Ui::move_selected_down(const int max) {
-  if (selected_ < max) {
-    selected_++;
+  if (global_selected_ < max) {
+    global_selected_++;
   } else {
-    selected_ = 0;
+    global_selected_ = 0;
   }
 }
 
@@ -128,9 +130,9 @@ void Ui::toggle_rename_dialog() {
 void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
   update_curdir_entries_string(std::move(curdir_entries_string));
   if (previous_selected_.empty()) {
-    selected_ = 0;
+    global_selected_ = 0;
   } else {
-    selected_ = previous_selected_.top();
+    global_selected_ = previous_selected_.top();
     previous_selected_.pop();
   }
 }
@@ -138,8 +140,8 @@ void Ui::enter_direcotry(std::vector<std::string> curdir_entries_string) {
 void Ui::leave_direcotry(std::vector<std::string> curdir_entries_string,
                          const int &previous_path_index) {
   update_curdir_entries_string(std::move(curdir_entries_string));
-  previous_selected_.push(selected_);
-  selected_ = previous_path_index;
+  previous_selected_.push(global_selected_);
+  global_selected_ = previous_path_index;
 }
 
 void Ui::update_curdir_entries_string(
@@ -171,7 +173,7 @@ void Ui::render() { screen_.Loop(tui_); }
 
 void Ui::exit() { screen_.Exit(); }
 
-int Ui::selected() { return selected_; }
+int Ui::selected() { return global_selected_; }
 
 // Screen has a internal task queue which is protected by a mutex, so this
 // opration is safe without holding ui_lock;

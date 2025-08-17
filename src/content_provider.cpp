@@ -57,7 +57,7 @@ std::function<ftxui::Element()> ContentProvider::preview() {
                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
                }() |
-                   ftxui::vscroll_indicator | ftxui::frame) |
+                   ftxui::frame) |
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     return hbox(left_pane, ftxui::separator(), right_pane);

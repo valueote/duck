@@ -98,13 +98,15 @@ public:
   selected_entry(const int &selected);
 
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static std::string text_preview(const int &selected);
+  static std::string text_preview(const int &selected,
+                                  std::pair<int, int> size);
 
   static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
   static void update_current_path(const fs::path &new_path);
 
   static std::vector<fs::directory_entry>
-  directory_preview(const int &selected);
+  directory_preview(const std::pair<int, int> &selected_and_size);
+
   static stdexec::sender auto text_preview_async(const int &selected);
 };
 

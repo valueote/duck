@@ -244,12 +244,16 @@ InputHandler::rename_dialog_handler() {
 
 stdexec::sender auto
 InputHandler::update_directory_preview_async(const int &selected) {
+  const auto [width, height] = ui_.screen_size();
+
   return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
            ui_.post_task([this] {
              ui_.update_entries_preview(ftxui::text("Loading..."));
            });
          }) |
-         stdexec::then([selected]() { return selected; }) |
+         stdexec::then([selected, height]() {
+           return std::make_pair(selected, height);
+         }) |
          stdexec::then(FileManager::directory_preview) |
          stdexec::then(FileManager::format_entries) |
          stdexec::then(FileManager::entries_string_to_element) |
@@ -262,11 +266,13 @@ InputHandler::update_directory_preview_async(const int &selected) {
 
 stdexec::sender auto
 InputHandler::update_text_preview_async(const int &selected) {
+  auto screen_size = ui_.screen_size();
   return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
            ui_.post_task([this]() { ui_.update_text_preview("Loading..."); });
          }) |
-         stdexec::then([selected]() { return selected; }) |
-         stdexec::then(FileManager::text_preview) |
+         stdexec::then([selected, screen_size]() {
+           return FileManager::text_preview(selected, screen_size);
+         }) |
          stdexec::then([this](std::string preview) {
            ui_.post_task([this, pv = std::move(preview)]() {
              ui_.update_text_preview(std::move(pv));
