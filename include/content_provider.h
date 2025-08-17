@@ -14,7 +14,8 @@ private:
   Ui &ui_;
   const ColorScheme &color_scheme_;
   std::mutex mutex_;
-
+  ftxui::Element left_pane();
+  ftxui::Element right_pane();
   ftxui::Element deleted_entries();
 
 public:
