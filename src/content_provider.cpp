@@ -27,15 +27,15 @@ ContentProvider::menu_entries_transform() {
   };
 }
 
-std::function<ftxui::Element()> ContentProvider::preview() {
+std::function<ftxui::Element()> ContentProvider::layout() {
   return [this]() {
     auto screen_size = ui_.screen_size();
     auto left_pane =
-        window(
-            ftxui::text(" " + FileManager::current_path().string() + " ") |
-                ftxui::bold |
-                ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2),
-            ui_.menu()->Render() | ftxui::frame) |
+        window(ftxui::text(" " + FileManager::current_path().string() + " ") |
+                   ftxui::bold |
+                   ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN,
+                               screen_size.first / 2),
+               ui_.menu()->Render()) |
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     auto right_pane =
@@ -56,8 +56,7 @@ std::function<ftxui::Element()> ContentProvider::preview() {
                         ftxui::color(color_scheme_.text()) |
                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
                         ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
-               }() |
-                   ftxui::frame) |
+               }()) |
         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 2);
 
     return hbox(left_pane, ftxui::separator(), right_pane);

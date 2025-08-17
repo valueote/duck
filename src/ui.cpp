@@ -26,9 +26,8 @@ void Ui::set_menu(
 }
 
 void Ui::set_input_handler(
-    const std::function<bool(const ftxui::Event &)> handler,
-    const std::function<bool(const ftxui::Event &)> test) {
-  menu_ = menu_ | ftxui::CatchEvent(handler) | ftxui::CatchEvent(test);
+    const std::function<bool(const ftxui::Event &)> handler) {
+  menu_ = menu_ | ftxui::CatchEvent(handler);
 }
 
 void Ui::set_layout(const std::function<ftxui::Element()> preview) {
