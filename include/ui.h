@@ -10,7 +10,6 @@
 #include <shared_mutex>
 #include <stack>
 #include <string>
-#include <utility>
 
 namespace duck {
 
@@ -83,7 +82,6 @@ public:
   void post_event(ftxui::Event event);
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);
-  std::pair<int, int> screen_size();
 };
 
 } // namespace duck

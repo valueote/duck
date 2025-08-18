@@ -92,8 +92,9 @@ public:
   static std::vector<std::string>
   format_entries(const std::vector<fs::directory_entry> &entries);
   static ftxui::Element
+  entries_string_to_element(std::vector<std::string> entries, int selected);
+  static ftxui::Element
   entries_string_to_element(std::vector<std::string> entries);
-
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
 

@@ -10,6 +10,8 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
+#include <ftxui/screen/screen.hpp>
+#include <ftxui/screen/terminal.hpp>
 #include <print>
 
 namespace duck {
@@ -66,8 +68,7 @@ ftxui::Element ContentProvider::right_pane(int width) {
 ftxui::Component ContentProvider::layout() {
   auto dummy = ftxui::Button({});
   auto render = ftxui::Renderer(dummy, [this]() {
-    auto [width, height] = ui_.screen_size();
-
+    auto [width, height] = ftxui::Terminal::Size();
     std::print(stderr, "width {}, height {}", width, height);
     return ftxui::hbox(left_pane(width), ftxui::separator(), right_pane(width));
   });
@@ -111,30 +112,29 @@ ftxui::Component ContentProvider::deletion_dialog() {
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
   auto dialog_renderer = ftxui::Renderer(button_container, [yes_button,
                                                             no_button, this] {
-    auto screen_size = ui_.screen_size();
-    auto dialog_content = ftxui::vbox(
-        {deleted_entries() | ftxui::color(ftxui::Color::White), ftxui::filler(),
-         ftxui::separator(),
-         ftxui::hbox({
-             ftxui::filler(),
-             yes_button->Render(),
-             ftxui::separatorEmpty() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 3),
-             no_button->Render(),
-             ftxui::filler(),
-         })});
+    auto [width, height] = ftxui::Terminal::Size();
+    auto dialog_content =
+        ftxui::vbox({deleted_entries() | ftxui::color(ftxui::Color::White),
+                     ftxui::filler(), ftxui::separator(),
+                     ftxui::hbox({
+                         ftxui::filler(),
+                         yes_button->Render(),
+                         ftxui::separatorEmpty() |
+                             ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3),
+                         no_button->Render(),
+                         ftxui::filler(),
+                     })});
 
     return ftxui::window(
-               ftxui::vbox({ftxui::text("Permanently delete selected file?") |
-                                ftxui::color(color_scheme_.warning()) |
-                                ftxui::bold | ftxui::hcenter |
-                                ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                            screen_size.first / 3 * 2),
-                            ftxui::filler()}),
+               ftxui::vbox(
+                   {ftxui::text("Permanently delete selected file?") |
+                        ftxui::color(color_scheme_.warning()) | ftxui::bold |
+                        ftxui::hcenter |
+                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3 * 2),
+                    ftxui::filler()}),
                dialog_content) |
-           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, screen_size.first / 3 * 2) |
-           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                       screen_size.second / 3 * 2) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3 * 2) |
+           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height / 3 * 2) |
            ftxui::color(color_scheme_.border()) | ftxui::clear_under;
     ;
   });
@@ -153,7 +153,7 @@ ftxui::Component ContentProvider::rename_dialog() {
 
   auto input = ftxui::Input(&ui_.rename_input(), option);
   auto renderer = ftxui::Renderer(input, [this, input] {
-    const auto [width, height] = ui_.screen_size();
+    const auto [width, height] = ftxui::Terminal::Size();
     auto dialog = ftxui::window(ftxui::text("Rename"), input->Render()) |
                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2) |
                   ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3) |

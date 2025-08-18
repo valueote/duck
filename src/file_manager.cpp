@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 #include <iterator>
 #include <mutex>
 #include <optional>
@@ -373,7 +375,9 @@ FileManager::directory_preview(const std::pair<int, int> &selected_and_size) {
 
 std::string FileManager::text_preview(const int &selected,
                                       std::pair<int, int> size) {
-  const auto [max_width, max_lines] = size;
+  auto [max_width, max_lines] = size;
+  max_width /= 2;
+  max_width += 3;
   const auto entry = selected_entry(selected);
   std::ifstream file(entry.value().path());
 
@@ -440,6 +444,22 @@ std::string FileManager::format_directory_entries_without_lock(
     selected_marker = "█ ";
   }
   return selected_marker + FileManager::entry_name_with_icon(entry);
+}
+
+ftxui::Element
+FileManager::entries_string_to_element(std::vector<std::string> entries,
+                                       int selected) {
+  auto result = entries | std::views::transform([](std::string &entry) {
+                  return ftxui::text(std::move(entry));
+                }) |
+                std::ranges::to<std::vector>();
+  if (result.empty()) {
+    result.push_back(ftxui::text("[Empty folder]"));
+  } else if (selected >= 0 && selected < static_cast<int>(result.size())) {
+    result[selected] |= ftxui::bold | ftxui::color(ftxui::Color::Black) |
+                        ftxui::bgcolor(ftxui::Color::RGB(186, 187, 241));
+  }
+  return ftxui::vbox(std::move(result));
 }
 
 ftxui::Element

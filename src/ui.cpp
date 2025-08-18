@@ -170,9 +170,6 @@ int Ui::selected() { return global_selected_; }
 // opration is safe without holding ui_lock;
 void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
 
-std::pair<int, int> Ui::screen_size() {
-  return {screen_.dimx(), screen_.dimy()};
-}
 void Ui::post_event(ftxui::Event event) { screen_.PostEvent(std::move(event)); }
 
 void Ui::restored_io(const std::function<void()> closure) {
