@@ -78,8 +78,8 @@ public:
   static bool yanking();
   static bool cutting();
 
-  static void start_yanking();
-  static void start_cutting();
+  static void start_yanking(const int selected);
+  static void start_cutting(const int selected);
   static void yank_or_rename(const int &selected);
   static bool is_marked(const fs::directory_entry &entry);
   static void toggle_mark_on_selected(const int &selected);
@@ -97,6 +97,9 @@ public:
   entries_string_to_element(std::vector<std::string> entries);
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
+
+  static ftxui::Element
+  entries_to_element(const std::vector<fs::directory_entry> &entries);
 
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
   static std::string text_preview(const int &selected,

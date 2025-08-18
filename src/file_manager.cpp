@@ -203,16 +203,24 @@ void FileManager::toggle_hidden_entries() {
   instance().show_hidden_ = !instance().show_hidden_;
 }
 
-void FileManager::start_yanking() {
+void FileManager::start_yanking(const int selected) {
   std::unique_lock lock{file_manager_mutex_};
-  instance().is_yanking_ = true;
-  instance().is_renaming_ = false;
+  auto &instance = FileManager::instance();
+  instance.is_yanking_ = true;
+  instance.is_renaming_ = false;
+  if (instance.marked_entires_.empty()) {
+    instance.marked_entires_.insert(instance.curdir_entries_[selected]);
+  }
 }
 
-void FileManager::start_cutting() {
+void FileManager::start_cutting(const int selected) {
   std::unique_lock lock{file_manager_mutex_};
-  instance().is_renaming_ = true;
-  instance().is_yanking_ = false;
+  auto &instance = FileManager::instance();
+  instance.is_renaming_ = true;
+  instance.is_yanking_ = false;
+  if (instance.marked_entires_.empty()) {
+    instance.marked_entires_.insert(instance.curdir_entries_[selected]);
+  }
 }
 
 fs::path FileManager::get_dest_path(const fs::directory_entry &entry,
@@ -474,6 +482,33 @@ FileManager::entries_string_to_element(std::vector<std::string> entries) {
   return ftxui::vbox(std::move(result));
 }
 
+ftxui::Element FileManager::entries_to_element(
+    const std::vector<fs::directory_entry> &entries) {
+  auto &instance = FileManager::instance();
+  if (entries.empty()) {
+    return ftxui::text({"[No items]"});
+  }
+
+  auto empty = "  ";
+
+  auto result = entries |
+                std::views::transform([](const fs::directory_entry &entry) {
+                  auto filename = ftxui::text(entry_name_with_icon(entry));
+                  auto marker = ftxui::text("  ");
+                  if (is_marked(entry)) {
+                    marker = ftxui::text("█ ");
+                    if (yanking()) {
+                      marker |= ftxui::color(ftxui::Color::Red);
+                    } else if (cutting()) {
+                      marker |= ftxui::color(ftxui::Color::Aquamarine1);
+                    }
+                  }
+                  return ftxui::hbox({marker, filename});
+                }) |
+                std::ranges::to<std::vector>();
+  return ftxui::vbox(std::move(result));
+}
+
 std::vector<std::string>
 FileManager::format_entries(const std::vector<fs::directory_entry> &entries) {
   auto &instance = FileManager::instance();
@@ -501,7 +536,6 @@ void FileManager::Lru<Key, Value>::touch_without_lock(const Key &path) {
 
 template <typename Key, typename Value>
 std::optional<Value> FileManager::Lru<Key, Value>::get(const Key &path) {
-
   std::unique_lock lock{lru_mutex_};
   auto it = map_.find(path);
   if (it == map_.end()) {

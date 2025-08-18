@@ -35,10 +35,11 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
           stdexec::then([this]() { return ui_.selected(); }) |
           stdexec::then(FileManager::toggle_mark_on_selected) |
           stdexec::then(FileManager::curdir_entries) |
-          stdexec::then(FileManager::format_entries) |
-          stdexec::then([selected](std::vector<std::string> entries) {
-            return FileManager::entries_string_to_element(entries, selected);
-          }) |
+          // stdexec::then(FileManager::format_entries) |
+          // stdexec::then([selected](std::vector<std::string> entries) {
+          //   return FileManager::entries_string_to_element(entries, selected);
+          // }) |
+          stdexec::then(FileManager::entries_to_element) |
           stdexec::then([this](ftxui::Element element) {
             ui_.post_task([this, elmt = std::move(element)]() {
               ui_.update_curdir_entries(std::move(elmt));
@@ -54,6 +55,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
       ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
+      update_menu_async();
       update_preview_async();
 
       return true;
@@ -62,6 +64,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('k') ||
         event == ftxui::Event::ArrowUp) {
       ui_.move_selected_up(FileManager::curdir_entries().size() - 1);
+      update_menu_async();
       update_preview_async();
       return true;
     }
@@ -87,12 +90,17 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('y')) {
-      FileManager::start_yanking();
+      auto selected = ui_.selected();
+      auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+                  stdexec::then(
+                      [selected]() { FileManager::start_yanking(selected); }) |
+                  stdexec::then([this]() { update_menu_async(); });
+      scope_.spawn(task);
       return true;
     }
 
     if (event == ftxui::Event::Character('x')) {
-      FileManager::start_cutting();
+      FileManager::start_cutting(ui_.selected());
       return true;
     }
 
@@ -315,6 +323,21 @@ InputHandler::update_text_preview_async(const int &selected) {
              ui_.post_event(DuckEvent::refresh);
            });
          });
+}
+
+void InputHandler::update_menu_async() {
+  const int selected = ui_.selected();
+  const auto selected_path = FileManager::selected_entry(selected);
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then(FileManager::curdir_entries) |
+              stdexec::then(FileManager::entries_to_element) |
+              stdexec::then([this](ftxui::Element element) {
+                ui_.post_task([this, elmt = std::move(element)]() {
+                  ui_.update_curdir_entries(std::move(elmt));
+                  ui_.post_event(DuckEvent::refresh);
+                });
+              });
+  scope_.spawn(task);
 }
 
 void InputHandler::update_preview_async() {
