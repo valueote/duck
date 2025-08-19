@@ -6,6 +6,7 @@
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <stdexec/execution.hpp>
+#include <vector>
 
 namespace duck {
 class InputHandler {
@@ -26,19 +27,20 @@ public:
 
   stdexec::sender auto update_directory_preview_async(const int &selected);
   stdexec::sender auto update_text_preview_async(const int &selected);
-  stdexec::sender auto refresh_menu_async();
+  void refresh_menu_async();
 };
 
-inline stdexec::sender auto InputHandler::refresh_menu_async() {
-  return stdexec::schedule(Scheduler::io_scheduler()) |
-         stdexec::then(FileManager::curdir_entries) |
-         stdexec::then(FileManager::entries_to_element) |
-         stdexec::then([this](ftxui::Element element) {
-           ui_.post_task([this, elmt = std::move(element)]() {
-             ui_.update_curdir_entries(std::move(elmt));
-             ui_.post_event(ftxui::Event::Custom);
-           });
-         });
+inline void InputHandler::refresh_menu_async() {
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then(FileManager::curdir_entries) |
+              stdexec::then(FileManager::entries_to_elements) |
+              stdexec::then([this](std::vector<ftxui::Element> element) {
+                ui_.post_task([this, elmt = std::move(element)]() {
+                  ui_.update_curdir_entries(std::move(elmt));
+                  ui_.post_event(ftxui::Event::Custom);
+                });
+              });
+  scope_.spawn(task);
 }
 
 } // namespace duck

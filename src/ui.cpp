@@ -8,6 +8,7 @@
 #include <ftxui/screen/screen.hpp>
 #include <string>
 #include <unistd.h>
+#include <vector>
 namespace duck {
 
 Ui::Ui()
@@ -117,7 +118,7 @@ void Ui::toggle_rename_dialog() {
   }
 }
 
-void Ui::enter_direcotry(ftxui::Element curdir_entries) {
+void Ui::enter_direcotry(std::vector<ftxui::Element> curdir_entries) {
   update_curdir_entries(std::move(curdir_entries));
   if (previous_selected_.empty()) {
     global_selected_ = 0;
@@ -127,15 +128,18 @@ void Ui::enter_direcotry(ftxui::Element curdir_entries) {
   }
 }
 
-void Ui::leave_direcotry(ftxui::Element curdir_entries,
+void Ui::leave_direcotry(std::vector<ftxui::Element> curdir_entries,
                          const int &previous_path_index) {
   update_curdir_entries(std::move(curdir_entries));
   previous_selected_.push(global_selected_);
   global_selected_ = previous_path_index;
 }
 
-void Ui::update_curdir_entries(ftxui::Element new_entries) {
+void Ui::update_curdir_entries(std::vector<ftxui::Element> new_entries) {
   curdir_entries_ = std::move(new_entries);
+  curdir_entries_[global_selected_] |=
+      ftxui::color(ftxui::Color::Black) |
+      ftxui::bgcolor(ftxui::Color::Aquamarine1);
 }
 
 void Ui::update_entries_preview(ftxui::Element new_entries) {
@@ -147,7 +151,7 @@ void Ui::update_rename_input(std::string str) {
   rename_cursor_positon_ = rename_input_.size();
 }
 
-ftxui::Element Ui::curdir_entries() { return curdir_entries_; }
+std::vector<ftxui::Element> Ui::curdir_entries() { return curdir_entries_; }
 
 ftxui::Element Ui::entries_preview() { return entries_preview_; }
 

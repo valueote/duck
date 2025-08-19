@@ -59,8 +59,7 @@ private:
                              const fs::path &current_path);
 
   std::vector<fs::directory_entry>
-  load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
-                                      bool use_cache);
+  load_directory_entries_without_lock(const fs::path &path, bool show_hidden);
   static bool delete_entry_without_lock(const fs::directory_entry &entry);
 
   std::string
@@ -91,6 +90,10 @@ public:
 
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
+
+  static std::vector<ftxui::Element>
+  entries_to_elements(const std::vector<fs::directory_entry> &entries);
+
   static ftxui::Element
   entries_to_element(const std::vector<fs::directory_entry> &entries);
 
@@ -98,7 +101,7 @@ public:
   static std::string text_preview(const int &selected,
                                   std::pair<int, int> size);
 
-  static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
+  static std::vector<fs::directory_entry> update_curdir_entries();
   static void update_current_path(const fs::path &new_path);
 
   static std::vector<fs::directory_entry>

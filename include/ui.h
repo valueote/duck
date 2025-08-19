@@ -10,6 +10,7 @@
 #include <shared_mutex>
 #include <stack>
 #include <string>
+#include <vector>
 
 namespace duck {
 
@@ -18,8 +19,9 @@ private:
   std::shared_mutex ui_lock_;
   std::string text_preview_;
 
-  ftxui::Element curdir_entries_;
+  std::vector<ftxui::Element> curdir_entries_;
   ftxui::Element entries_preview_;
+
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
   ftxui::MenuOption menu_option_;
@@ -61,14 +63,14 @@ public:
   void toggle_rename_dialog();
   void toggle_hidden_entries();
 
-  void enter_direcotry(ftxui::Element curdir_entries);
-  void leave_direcotry(ftxui::Element curdir_entries,
+  void enter_direcotry(std::vector<ftxui::Element> curdir_entries);
+  void leave_direcotry(std::vector<ftxui::Element> curdir_entries,
                        const int &previous_path_index);
   void update_entries_preview(ftxui::Element new_entries);
-  void update_curdir_entries(ftxui::Element new_entries);
+  void update_curdir_entries(std::vector<ftxui::Element> new_elements);
   void update_rename_input(std::string str);
 
-  ftxui::Element curdir_entries();
+  std::vector<ftxui::Element> curdir_entries();
   ftxui::Element entries_preview();
   void update_text_preview(std::string new_text_preview);
   std::string text_preview();

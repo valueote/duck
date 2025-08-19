@@ -25,12 +25,12 @@ FileManager::FileManager()
       parent_path_{current_path_.parent_path()}, lru_cache_{lru_cache_size},
       is_yanking_{false}, is_renaming_{false}, show_hidden_{false} {
 
-  curdir_entries_ = std::move(
-      load_directory_entries_without_lock(current_path_, false, true));
+  curdir_entries_ =
+      std::move(load_directory_entries_without_lock(current_path_, false));
 
   if (fs::is_directory(curdir_entries_[0])) {
-    preview_entries_ = std::move(load_directory_entries_without_lock(
-        curdir_entries_[0], show_hidden_, true));
+    preview_entries_ = std::move(
+        load_directory_entries_without_lock(curdir_entries_[0], show_hidden_));
   }
 
   clipboard_entries_.reserve(64);
@@ -109,8 +109,7 @@ FileManager::selected_entry(const int &selected) {
 
 std::vector<fs::directory_entry>
 FileManager::load_directory_entries_without_lock(const fs::path &path,
-                                                 bool show_hidden,
-                                                 bool reload) {
+                                                 bool show_hidden) {
   if (!fs::is_directory(path)) {
     return {};
   }
@@ -118,7 +117,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   std::vector<fs::directory_entry> entries;
 
   auto cache = std::move(lru_cache_.get(path));
-  if (cache.has_value() && reload) {
+  if (cache.has_value()) {
     entries = std::move(cache.value());
     return entries;
   }
@@ -150,8 +149,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   return entries;
 }
 
-std::vector<fs::directory_entry>
-FileManager::update_curdir_entries(bool use_cache) {
+std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
   auto &instance = FileManager::instance();
   fs::path target_path{};
   bool show_hidden{};
@@ -162,8 +160,8 @@ FileManager::update_curdir_entries(bool use_cache) {
     show_hidden = instance.show_hidden_;
   }
 
-  auto entries = std::move(instance.load_directory_entries_without_lock(
-      target_path, show_hidden, use_cache));
+  auto entries = std::move(
+      instance.load_directory_entries_without_lock(target_path, show_hidden));
 
   {
     std::unique_lock lock{file_manager_mutex_};
@@ -367,8 +365,8 @@ FileManager::directory_preview(const std::pair<int, int> &selected_and_size) {
     show_hidden = instance.show_hidden_;
   }
 
-  auto entries = std::move(instance().load_directory_entries_without_lock(
-      target_path, show_hidden, true));
+  auto entries = std::move(
+      instance().load_directory_entries_without_lock(target_path, show_hidden));
   {
     std::unique_lock lock{file_manager_mutex_};
     instance().preview_entries_.assign(
@@ -454,11 +452,11 @@ std::string FileManager::format_directory_entries_without_lock(
   return selected_marker + FileManager::entry_name_with_icon(entry);
 }
 
-ftxui::Element FileManager::entries_to_element(
+std::vector<ftxui::Element> FileManager::entries_to_elements(
     const std::vector<fs::directory_entry> &entries) {
   auto &instance = FileManager::instance();
   if (entries.empty()) {
-    return ftxui::text({"[No items]"});
+    return {ftxui::text({"[No items]"})};
   }
 
   auto empty = "  ";
@@ -478,7 +476,12 @@ ftxui::Element FileManager::entries_to_element(
                   return ftxui::hbox({marker, filename});
                 }) |
                 std::ranges::to<std::vector>();
-  return ftxui::vbox(std::move(result));
+  return result;
+}
+
+ftxui::Element FileManager::entries_to_element(
+    const std::vector<fs::directory_entry> &entries) {
+  return ftxui::vbox(entries_to_elements(entries));
 }
 
 template <typename Key, typename Value>
