@@ -40,6 +40,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
               ui_.update_curdir_entries(std::move(elmt));
               ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
               ui_.post_event(DuckEvent::refresh);
+              update_preview_async();
             });
           });
 

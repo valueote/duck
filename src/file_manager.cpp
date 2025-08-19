@@ -455,7 +455,6 @@ std::vector<ftxui::Element> FileManager::entries_to_elements(
   if (entries.empty()) {
     return {ftxui::text({"[No items]"})};
   }
-
   auto empty = "  ";
 
   auto result = entries |
@@ -465,9 +464,9 @@ std::vector<ftxui::Element> FileManager::entries_to_elements(
                   if (is_marked(entry)) {
                     marker = ftxui::text("█ ");
                     if (yanking()) {
-                      marker |= ftxui::color(ftxui::Color::Red);
+                      marker |= ftxui::color(ftxui::Color::Blue);
                     } else if (cutting()) {
-                      marker |= ftxui::color(ftxui::Color::Black);
+                      marker |= ftxui::color(ftxui::Color::Red);
                     }
                   }
                   return ftxui::hbox({marker, filename});

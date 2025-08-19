@@ -29,18 +29,51 @@ ContentProvider::menu_entries_transform() {
     return ftxui::text(state.label) | style;
   };
 }
-
 ftxui::Element ContentProvider::left_pane(int width) {
   auto selected = ui_.global_selected();
-  auto entries = ui_.curdir_entries();
-  entries[selected] |= ftxui::color(ftxui::Color::Black) |
-                       ftxui::bgcolor(color_scheme_.selected());
+  auto all_entries = ui_.curdir_entries();
+
+  if (all_entries.empty()) {
+    return window(
+               ftxui::text(" " + FileManager::current_path().string() + " ") |
+                   ftxui::bold |
+                   ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
+               ftxui::vbox({})) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  }
+
+  constexpr int max_visible_entries = 50;
+
+  std::vector<ftxui::Element> visible_entries;
+  int selected_in_view = selected;
+
+  if (all_entries.size() > max_visible_entries) {
+    int start_index = selected - max_visible_entries / 2;
+
+    start_index = std::max(0, start_index);
+    start_index = std::min(start_index, static_cast<int>(all_entries.size() -
+                                                         max_visible_entries));
+
+    int end_index = start_index + max_visible_entries;
+    selected_in_view = selected - start_index;
+
+    visible_entries.assign(
+        std::make_move_iterator(all_entries.begin() + start_index),
+        std::make_move_iterator(all_entries.begin() + end_index));
+  } else {
+    visible_entries = std::move(all_entries);
+  }
+
+  visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
+                                       ftxui::bgcolor(color_scheme_.selected());
+
   auto pane =
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                  ftxui::bold |
                  ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             ftxui::vbox(std::move(entries))) |
+             ftxui::vbox(std::move(visible_entries))) |
       ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+
   return pane;
 }
 
