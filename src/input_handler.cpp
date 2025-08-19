@@ -121,7 +121,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
       auto selected = ui_.selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then([selected]() { return selected; }) |
-                  stdexec::then(FileManager::yank_or_rename) |
+                  stdexec::then(FileManager::yank_or_cutting) |
                   stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn_future(task);
       return true;
@@ -130,14 +130,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('.')) {
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then(FileManager::toggle_hidden_entries) |
-                  stdexec::then(FileManager::update_curdir_entries) |
-                  stdexec::then(FileManager::entries_to_elements) |
-                  stdexec::then([this](std::vector<ftxui::Element> elements) {
-                    ui_.post_task([this, elmt = std::move(elements)]() {
-                      ui_.update_curdir_entries(std::move(elmt));
-                      ui_.post_event(DuckEvent::refresh);
-                    });
-                  });
+                  stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn_future(task);
       return true;
     }

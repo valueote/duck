@@ -23,7 +23,7 @@ constexpr size_t lru_cache_size = 50;
 FileManager::FileManager()
     : current_path_{fs::current_path()},
       parent_path_{current_path_.parent_path()}, lru_cache_{lru_cache_size},
-      is_yanking_{false}, is_renaming_{false}, show_hidden_{false} {
+      is_yanking_{false}, is_cutting_{false}, show_hidden_{false} {
 
   curdir_entries_ =
       std::move(load_directory_entries_without_lock(current_path_, false));
@@ -88,7 +88,7 @@ bool FileManager::yanking() {
 
 bool FileManager::cutting() {
   std::shared_lock lock{file_manager_mutex_};
-  return instance().is_renaming_;
+  return instance().is_cutting_;
 }
 
 std::expected<fs::directory_entry, std::string>
@@ -205,7 +205,7 @@ void FileManager::start_yanking(const int selected) {
   std::unique_lock lock{file_manager_mutex_};
   auto &instance = FileManager::instance();
   instance.is_yanking_ = true;
-  instance.is_renaming_ = false;
+  instance.is_cutting_ = false;
   if (instance.marked_entires_.empty()) {
     instance.marked_entires_.insert(instance.curdir_entries_[selected]);
   }
@@ -214,7 +214,7 @@ void FileManager::start_yanking(const int selected) {
 void FileManager::start_cutting(const int selected) {
   std::unique_lock lock{file_manager_mutex_};
   auto &instance = FileManager::instance();
-  instance.is_renaming_ = true;
+  instance.is_cutting_ = true;
   instance.is_yanking_ = false;
   if (instance.marked_entires_.empty()) {
     instance.marked_entires_.insert(instance.curdir_entries_[selected]);
@@ -249,9 +249,9 @@ void FileManager::rename_entries(
   }
 }
 
-void FileManager::yank_or_rename(const int &selected) {
+void FileManager::yank_or_cutting(const int &selected) {
   auto &instance = FileManager::instance();
-  if (!instance.is_renaming_ && !instance.is_yanking_) {
+  if (!instance.is_cutting_ && !instance.is_yanking_) {
     return;
   }
   std::vector<fs::directory_entry> entries;
@@ -268,7 +268,7 @@ void FileManager::yank_or_rename(const int &selected) {
     }
     instance.marked_entires_.clear();
     current_path = instance.current_path_;
-    is_renaming = instance.is_renaming_;
+    is_renaming = instance.is_cutting_;
   }
   if (is_renaming) {
     rename_entries(entries, current_path);
@@ -327,7 +327,14 @@ bool FileManager::delete_marked_entries() {
 
 void FileManager::clear_marked_entries() {
   std::unique_lock lock(file_manager_mutex_);
-  instance().marked_entires_.clear();
+  auto &instance = FileManager::instance();
+  if (instance.is_yanking_ || instance.is_cutting_) {
+    instance.is_yanking_ = false;
+    instance.is_cutting_ = false;
+  } else {
+
+    instance.marked_entires_.clear();
+  }
 }
 
 bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
@@ -470,7 +477,7 @@ std::vector<ftxui::Element> FileManager::entries_to_elements(
                     if (yanking()) {
                       marker |= ftxui::color(ftxui::Color::Red);
                     } else if (cutting()) {
-                      marker |= ftxui::color(ftxui::Color::Aquamarine1);
+                      marker |= ftxui::color(ftxui::Color::Black);
                     }
                   }
                   return ftxui::hbox({marker, filename});

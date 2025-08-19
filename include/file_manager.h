@@ -44,7 +44,7 @@ private:
   std::set<fs::directory_entry> marked_entires_;
   std::vector<fs::directory_entry> clipboard_entries_;
   bool is_yanking_;
-  bool is_renaming_;
+  bool is_cutting_;
   bool show_hidden_;
 
   FileManager();
@@ -79,7 +79,7 @@ public:
 
   static void start_yanking(const int selected);
   static void start_cutting(const int selected);
-  static void yank_or_rename(const int &selected);
+  static void yank_or_cutting(const int &selected);
   static bool is_marked(const fs::directory_entry &entry);
   static void toggle_mark_on_selected(const int &selected);
   static void toggle_hidden_entries();
