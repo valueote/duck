@@ -31,13 +31,16 @@ ContentProvider::menu_entries_transform() {
 }
 
 ftxui::Element ContentProvider::left_pane(int width) {
+  auto selected = ui_.global_selected();
+  auto entries = ui_.curdir_entries();
+  entries[selected] |= ftxui::color(ftxui::Color::Black) |
+                       ftxui::bgcolor(color_scheme_.selected());
   auto pane =
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                  ftxui::bold |
                  ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             ftxui::vbox(ui_.curdir_entries())) |
+             ftxui::vbox(std::move(entries))) |
       ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
-  ;
   return pane;
 }
 
@@ -46,7 +49,7 @@ ftxui::Element ContentProvider::right_pane(int width) {
   auto pane = window(ftxui::text(" Content Preview ") | ftxui::bold,
                      [this] {
                        const auto selected_path =
-                           FileManager::selected_entry(ui_.selected());
+                           FileManager::selected_entry(ui_.global_selected());
                        if (not selected_path) {
                          return ftxui::text("No item selected");
                        }
@@ -85,7 +88,7 @@ ftxui::Element ContentProvider::deleted_entries() {
         std::ranges::to<std::vector>();
     return ftxui::vbox({lines});
   } else {
-    auto selected_path = FileManager::selected_entry(ui_.selected());
+    auto selected_path = FileManager::selected_entry(ui_.global_selected());
     if (!selected_path.has_value()) {
       return ftxui::text("[ERROR] No file selected for deletion.");
     }

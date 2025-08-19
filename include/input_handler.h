@@ -1,12 +1,9 @@
 #pragma once
-#include "file_manager.h"
-#include "scheduler.h"
 #include "ui.h"
 #include <exec/async_scope.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <stdexec/execution.hpp>
-#include <vector>
 
 namespace duck {
 class InputHandler {

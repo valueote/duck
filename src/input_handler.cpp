@@ -28,10 +28,10 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character(' ')) {
-      auto selected = ui_.selected();
+      auto global_selected = ui_.global_selected();
       auto task =
           stdexec::schedule(Scheduler::io_scheduler()) |
-          stdexec::then([this, selected]() { return selected; }) |
+          stdexec::then([this, global_selected]() { return global_selected; }) |
           stdexec::then(FileManager::toggle_mark_on_selected) |
           stdexec::then(FileManager::curdir_entries) |
           stdexec::then(FileManager::entries_to_elements) |
@@ -50,7 +50,6 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
       ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
-      refresh_menu_async();
       update_preview_async();
 
       return true;
@@ -59,7 +58,6 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('k') ||
         event == ftxui::Event::ArrowUp) {
       ui_.move_selected_up(FileManager::curdir_entries().size() - 1);
-      refresh_menu_async();
       update_preview_async();
       return true;
     }
@@ -85,27 +83,29 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('y')) {
-      auto selected = ui_.selected();
+      auto global_selected = ui_.global_selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-                  stdexec::then(
-                      [selected]() { FileManager::start_yanking(selected); }) |
+                  stdexec::then([global_selected]() {
+                    FileManager::start_yanking(global_selected);
+                  }) |
                   stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn(task);
       return true;
     }
 
     if (event == ftxui::Event::Character('x')) {
-      auto selected = ui_.selected();
+      auto global_selected = ui_.global_selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-                  stdexec::then(
-                      [selected]() { FileManager::start_cutting(selected); }) |
+                  stdexec::then([global_selected]() {
+                    FileManager::start_cutting(global_selected);
+                  }) |
                   stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn(task);
       return true;
     }
 
     if (event == ftxui::Event::Character('r')) {
-      ui_.update_rename_input(FileManager::selected_entry(ui_.selected())
+      ui_.update_rename_input(FileManager::selected_entry(ui_.global_selected())
                                   .value()
                                   .path()
                                   .filename()
@@ -116,7 +116,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Character('p')) {
-      auto selected = ui_.selected();
+      auto selected = ui_.global_selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then([selected]() { return selected; }) |
                   stdexec::then(FileManager::yank_or_cut) |
@@ -134,7 +134,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Escape) {
-      auto selected = ui_.selected();
+      auto selected = ui_.global_selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then(FileManager::clear_marked_entries) |
                   stdexec::then([this]() { refresh_menu_async(); });
@@ -154,7 +154,7 @@ std::function<bool(ftxui::Event)> InputHandler::test_handler() {
 std::function<bool(const ftxui::Event &)>
 InputHandler::deletion_dialog_handler() {
   return [this](const ftxui::Event &event) {
-    auto selected = ui_.selected();
+    auto selected = ui_.global_selected();
     if (event == ftxui::Event::Character('y')) {
       if (not FileManager::marked_entries().empty()) {
         auto task = stdexec::schedule(Scheduler::io_scheduler()) |
@@ -174,7 +174,7 @@ InputHandler::deletion_dialog_handler() {
         scope_.spawn(task);
       } else {
         auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-                    stdexec::then([this]() { return ui_.selected(); }) |
+                    stdexec::then([this]() { return ui_.global_selected(); }) |
                     stdexec::then(FileManager::delete_selected_entry) |
                     stdexec::then([](bool success) {
                       return FileManager::update_curdir_entries();
@@ -212,7 +212,7 @@ InputHandler::rename_dialog_handler() {
     }
 
     if (event == ftxui::Event::Return) {
-      int selected = ui_.selected();
+      int selected = ui_.global_selected();
       auto str = ui_.rename_input();
       auto rename_task =
           stdexec::schedule(Scheduler::io_scheduler()) |
@@ -283,7 +283,7 @@ void InputHandler::refresh_menu_async() {
 }
 
 void InputHandler::update_preview_async() {
-  const int selected = ui_.selected();
+  const int selected = ui_.global_selected();
   const auto selected_path = FileManager::selected_entry(selected);
   if (selected_path) {
     if (fs::is_directory(selected_path.value())) {
@@ -298,7 +298,7 @@ void InputHandler::update_preview_async() {
 
 void InputHandler::enter_direcotry() {
   auto entry =
-      FileManager::selected_entry(ui_.selected())
+      FileManager::selected_entry(ui_.global_selected())
           .and_then([](fs::directory_entry entry)
                         -> std::expected<fs::directory_entry, std::string> {
             if (fs::is_directory(entry)) {
@@ -356,7 +356,7 @@ void InputHandler::open_file() {
   const static std::unordered_map<std::string, std::string> handlers = {
       {".txt", "nvim"},       {".cpp", "nvim"},  {".c", "nvim"},
       {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
-  auto selected_file_opt = FileManager::selected_entry(ui_.selected());
+  auto selected_file_opt = FileManager::selected_entry(ui_.global_selected());
   if (!selected_file_opt.has_value()) {
     return;
   }

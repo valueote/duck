@@ -118,28 +118,29 @@ void Ui::toggle_rename_dialog() {
   }
 }
 
+// FIX:: the previous_selected_ logic is uncorrect
 void Ui::enter_direcotry(std::vector<ftxui::Element> curdir_entries) {
-  update_curdir_entries(std::move(curdir_entries));
   if (previous_selected_.empty()) {
     global_selected_ = 0;
   } else {
     global_selected_ = previous_selected_.top();
     previous_selected_.pop();
   }
+  update_curdir_entries(std::move(curdir_entries));
 }
 
 void Ui::leave_direcotry(std::vector<ftxui::Element> curdir_entries,
                          const int &previous_path_index) {
-  update_curdir_entries(std::move(curdir_entries));
   previous_selected_.push(global_selected_);
   global_selected_ = previous_path_index;
+  update_curdir_entries(std::move(curdir_entries));
 }
 
 void Ui::update_curdir_entries(std::vector<ftxui::Element> new_entries) {
   curdir_entries_ = std::move(new_entries);
-  curdir_entries_[global_selected_] |=
-      ftxui::color(ftxui::Color::Black) |
-      ftxui::bgcolor(ftxui::Color::Aquamarine1);
+  if (global_selected_ >= curdir_entries_.size()) {
+    global_selected_ = 0;
+  }
 }
 
 void Ui::update_entries_preview(ftxui::Element new_entries) {
@@ -168,7 +169,7 @@ void Ui::render() { screen_.Loop(tui_); }
 
 void Ui::exit() { screen_.Exit(); }
 
-int Ui::selected() { return global_selected_; }
+int Ui::global_selected() { return global_selected_; }
 
 // Screen has a internal task queue which is protected by a mutex, so this
 // opration is safe without holding ui_lock;

@@ -64,7 +64,6 @@ private:
                            const fs::path &current_path);
   static void rename_entries(const std::vector<fs::directory_entry> &entries,
                              const fs::path &current_path);
-  static std::string entry_name_with_icon(const fs::directory_entry &entry);
 
 public:
   static const fs::path &current_path();
@@ -92,6 +91,7 @@ public:
   static std::vector<fs::directory_entry> update_curdir_entries();
   static void update_current_path(const fs::path &new_path);
 
+  static std::string entry_name_with_icon(const fs::directory_entry &entry);
   static std::vector<ftxui::Element>
   entries_to_elements(const std::vector<fs::directory_entry> &entries);
   static ftxui::Element

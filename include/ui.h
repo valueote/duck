@@ -79,7 +79,7 @@ public:
 
   void render();
   void exit();
-  int selected();
+  int global_selected();
   bool show_hidden();
   void post_event(ftxui::Event event);
   void post_task(std::function<void()> task);
