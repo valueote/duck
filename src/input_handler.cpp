@@ -2,8 +2,6 @@
 #include "duck_event.h"
 #include "file_manager.h"
 #include "scheduler.h"
-#include "stdexec/__detail/__execution_fwd.hpp"
-#include "stdexec/__detail/__let.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -121,7 +119,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
       auto selected = ui_.selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then([selected]() { return selected; }) |
-                  stdexec::then(FileManager::yank_or_cutting) |
+                  stdexec::then(FileManager::yank_or_cut) |
                   stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn_future(task);
       return true;
@@ -268,6 +266,20 @@ InputHandler::update_text_preview_async(const int &selected) {
              ui_.post_event(DuckEvent::refresh);
            });
          });
+}
+
+// Just read the curdir_entries and update the menu entries
+void InputHandler::refresh_menu_async() {
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then(FileManager::curdir_entries) |
+              stdexec::then(FileManager::entries_to_elements) |
+              stdexec::then([this](std::vector<ftxui::Element> elements) {
+                ui_.post_task([this, elmt = std::move(elements)]() {
+                  ui_.update_curdir_entries(std::move(elmt));
+                  ui_.post_event(ftxui::Event::Custom);
+                });
+              });
+  scope_.spawn(task);
 }
 
 void InputHandler::update_preview_async() {

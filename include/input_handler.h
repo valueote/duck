@@ -30,17 +30,4 @@ public:
   void refresh_menu_async();
 };
 
-inline void InputHandler::refresh_menu_async() {
-  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then(FileManager::curdir_entries) |
-              stdexec::then(FileManager::entries_to_elements) |
-              stdexec::then([this](std::vector<ftxui::Element> element) {
-                ui_.post_task([this, elmt = std::move(element)]() {
-                  ui_.update_curdir_entries(std::move(elmt));
-                  ui_.post_event(ftxui::Event::Custom);
-                });
-              });
-  scope_.spawn(task);
-}
-
 } // namespace duck

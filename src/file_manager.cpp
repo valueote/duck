@@ -41,6 +41,61 @@ FileManager &FileManager::instance() {
   return instance;
 }
 
+std::vector<fs::directory_entry>
+FileManager::load_directory_entries_without_lock(const fs::path &path,
+                                                 bool show_hidden) {
+  if (!fs::is_directory(path)) {
+    return {};
+  }
+
+  std::vector<fs::directory_entry> entries;
+
+  auto cache = std::move(lru_cache_.get(path));
+  if (cache.has_value()) {
+    entries = std::move(cache.value());
+    return entries;
+  }
+
+  std::vector<fs::directory_entry> dirs;
+  std::vector<fs::directory_entry> files;
+  dirs.reserve(512);
+  files.reserve(512);
+  entries.reserve(1024);
+
+  for (auto &entry : fs::directory_iterator(
+           path, fs::directory_options::skip_permission_denied)) {
+    if (entry.path().empty()) {
+      continue;
+    }
+    if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
+      continue;
+    }
+    (entry.is_directory() ? dirs : files).push_back(std::move(entry));
+  }
+
+  std::ranges::sort(dirs);
+  std::ranges::sort(files);
+  std::ranges::move(dirs, std::back_inserter(entries));
+  std::ranges::move(files, std::back_inserter(entries));
+
+  lru_cache_.insert(path, entries);
+
+  return entries;
+}
+
+bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
+  if (!fs::exists(entry)) {
+    std::println(stderr, "[ERROR] try to delete an unexisted file");
+    return false;
+  }
+  if (fs::is_directory(entry)) {
+    return fs::remove_all(entry);
+  } else {
+    return fs::remove(entry);
+  }
+  return true;
+}
+
 const fs::path &FileManager::current_path() {
   std::shared_lock lock{file_manager_mutex_};
   return instance().current_path_;
@@ -106,49 +161,6 @@ FileManager::selected_entry(const int &selected) {
   }
   return instance.curdir_entries_[selected];
 }
-
-std::vector<fs::directory_entry>
-FileManager::load_directory_entries_without_lock(const fs::path &path,
-                                                 bool show_hidden) {
-  if (!fs::is_directory(path)) {
-    return {};
-  }
-
-  std::vector<fs::directory_entry> entries;
-
-  auto cache = std::move(lru_cache_.get(path));
-  if (cache.has_value()) {
-    entries = std::move(cache.value());
-    return entries;
-  }
-
-  std::vector<fs::directory_entry> dirs;
-  std::vector<fs::directory_entry> files;
-  dirs.reserve(512);
-  files.reserve(512);
-  entries.reserve(1024);
-
-  for (auto &entry : fs::directory_iterator(
-           path, fs::directory_options::skip_permission_denied)) {
-    if (entry.path().empty()) {
-      continue;
-    }
-    if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
-      continue;
-    }
-    (entry.is_directory() ? dirs : files).push_back(std::move(entry));
-  }
-
-  std::ranges::sort(dirs);
-  std::ranges::sort(files);
-  std::ranges::move(dirs, std::back_inserter(entries));
-  std::ranges::move(files, std::back_inserter(entries));
-
-  lru_cache_.insert(path, entries);
-
-  return entries;
-}
-
 std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
   auto &instance = FileManager::instance();
   fs::path target_path{};
@@ -249,7 +261,7 @@ void FileManager::rename_entries(
   }
 }
 
-void FileManager::yank_or_cutting(const int &selected) {
+void FileManager::yank_or_cut(const int &selected) {
   auto &instance = FileManager::instance();
   if (!instance.is_cutting_ && !instance.is_yanking_) {
     return;
@@ -290,9 +302,9 @@ bool FileManager::delete_selected_entry(const int &selected) {
 
 void FileManager::rename_selected_entry(const int &selected,
                                         std::string new_name) {
-
   fs::directory_entry entry;
   fs::path cur_path;
+
   {
     std::shared_lock lock{file_manager_mutex_};
     entry = instance().curdir_entries_[selected];
@@ -305,11 +317,11 @@ void FileManager::rename_selected_entry(const int &selected,
     dest_path = cur_path / (new_name + std::format("_{}", cnt));
     cnt++;
   }
+
   fs::rename(entry, dest_path);
 }
 
 bool FileManager::delete_marked_entries() {
-
   std::unique_lock lock(file_manager_mutex_);
   auto &instance = FileManager::instance();
   if (instance.marked_entires_.empty()) {
@@ -335,19 +347,6 @@ void FileManager::clear_marked_entries() {
 
     instance.marked_entires_.clear();
   }
-}
-
-bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
-  if (!fs::exists(entry)) {
-    std::println(stderr, "[ERROR] try to delete an unexisted file");
-    return false;
-  }
-  if (fs::is_directory(entry)) {
-    return fs::remove_all(entry);
-  } else {
-    return fs::remove(entry);
-  }
-  return true;
 }
 
 std::vector<fs::directory_entry>
@@ -448,15 +447,6 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) {
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
 
   return std::format("{} {}", icon, filename);
-}
-
-std::string FileManager::format_directory_entries_without_lock(
-    const fs::directory_entry &entry) const {
-  std::string selected_marker = "  ";
-  if (std::ranges::find(marked_entires_, entry) != marked_entires_.end()) {
-    selected_marker = "█ ";
-  }
-  return selected_marker + FileManager::entry_name_with_icon(entry);
 }
 
 std::vector<ftxui::Element> FileManager::entries_to_elements(
