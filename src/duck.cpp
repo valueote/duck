@@ -22,9 +22,8 @@ void Duck::setup_ui() {
                  input_handler_.navigation_handler());
   ui_.finalize_layout();
 
-  ui_.update_curdir_entries(FileManager::entries_string_to_element(
-      FileManager::format_entries(FileManager::update_curdir_entries(true)),
-      0));
+  ui_.update_curdir_entries(FileManager::entries_to_element(
+      FileManager::update_curdir_entries(true)));
   input_handler_.update_preview_async();
 }
 } // namespace duck

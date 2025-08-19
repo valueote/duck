@@ -89,15 +89,8 @@ public:
   static void rename_selected_entry(const int &selected, std::string new_name);
   static bool delete_marked_entries();
 
-  static std::vector<std::string>
-  format_entries(const std::vector<fs::directory_entry> &entries);
-  static ftxui::Element
-  entries_string_to_element(std::vector<std::string> entries, int selected);
-  static ftxui::Element
-  entries_string_to_element(std::vector<std::string> entries);
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
-
   static ftxui::Element
   entries_to_element(const std::vector<fs::directory_entry> &entries);
 

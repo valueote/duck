@@ -454,34 +454,6 @@ std::string FileManager::format_directory_entries_without_lock(
   return selected_marker + FileManager::entry_name_with_icon(entry);
 }
 
-ftxui::Element
-FileManager::entries_string_to_element(std::vector<std::string> entries,
-                                       int selected) {
-  auto result = entries | std::views::transform([](std::string &entry) {
-                  return ftxui::text(std::move(entry));
-                }) |
-                std::ranges::to<std::vector>();
-  if (result.empty()) {
-    result.push_back(ftxui::text("[Empty folder]"));
-  } else if (selected >= 0 && selected < static_cast<int>(result.size())) {
-    result[selected] |= ftxui::bold | ftxui::color(ftxui::Color::Black) |
-                        ftxui::bgcolor(ftxui::Color::RGB(186, 187, 241));
-  }
-  return ftxui::vbox(std::move(result));
-}
-
-ftxui::Element
-FileManager::entries_string_to_element(std::vector<std::string> entries) {
-  auto result = entries | std::views::transform([](std::string &entry) {
-                  return ftxui::text(std::move(entry));
-                }) |
-                std::ranges::to<std::vector>();
-  if (result.empty()) {
-    result.push_back(ftxui::text("[Empty folder]"));
-  }
-  return ftxui::vbox(std::move(result));
-}
-
 ftxui::Element FileManager::entries_to_element(
     const std::vector<fs::directory_entry> &entries) {
   auto &instance = FileManager::instance();
@@ -507,23 +479,6 @@ ftxui::Element FileManager::entries_to_element(
                 }) |
                 std::ranges::to<std::vector>();
   return ftxui::vbox(std::move(result));
-}
-
-std::vector<std::string>
-FileManager::format_entries(const std::vector<fs::directory_entry> &entries) {
-  auto &instance = FileManager::instance();
-  if (entries.empty()) {
-    return std::vector<std::string>{"[No items]"};
-  }
-  std::vector<std::string> entries_string{};
-  entries_string.reserve(entries.size());
-
-  std::shared_lock lock{file_manager_mutex_};
-  for (auto &entry : entries) {
-    entries_string.push_back(
-        instance.format_directory_entries_without_lock(entry));
-  }
-  return entries_string;
 }
 
 template <typename Key, typename Value>

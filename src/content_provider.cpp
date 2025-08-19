@@ -35,7 +35,7 @@ ftxui::Element ContentProvider::left_pane(int width) {
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                  ftxui::bold |
                  ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             ui_.curdir_entries()) |
+             ftxui::vbox(ui_.curdir_entries())) |
       ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   ;
   return pane;
