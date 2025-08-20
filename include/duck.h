@@ -17,7 +17,6 @@ private:
 public:
   Duck();
   void run();
-  void stop();
 };
 
 } // namespace duck

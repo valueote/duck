@@ -78,15 +78,15 @@ public:
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
 
-  static void start_yanking(const int selected);
-  static void start_cutting(const int selected);
-  static void yank_or_cut(const int &selected);
+  static void start_yanking(int selected);
+  static void start_cutting(int selected);
+  static void yank_or_cut(int selected);
   static bool is_marked(const fs::directory_entry &entry);
-  static void toggle_mark_on_selected(const int &selected);
+  static void toggle_mark_on_selected(int selected);
   static void clear_marked_entries();
   static void toggle_hidden_entries();
-  static bool delete_selected_entry(const int &selected);
-  static void rename_selected_entry(const int &selected, std::string new_name);
+  static bool delete_selected_entry(int selected);
+  static void rename_selected_entry(int selected, const std::string &new_name);
   static bool delete_marked_entries();
   static std::vector<fs::directory_entry> update_curdir_entries();
   static void update_current_path(const fs::path &new_path);
@@ -98,8 +98,7 @@ public:
   entries_to_element(const std::vector<fs::directory_entry> &entries);
   static std::vector<fs::directory_entry>
   directory_preview(const std::pair<int, int> &selected_and_size);
-  static std::string text_preview(const int &selected,
-                                  std::pair<int, int> size);
+  static std::string text_preview(int selected, std::pair<int, int> size);
 };
 
 } // namespace duck

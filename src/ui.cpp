@@ -8,32 +8,32 @@
 #include <ftxui/screen/screen.hpp>
 #include <string>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 namespace duck {
 
 Ui::Ui()
-    : global_selected_{0}, show_deletion_dialog_{false},
-      show_rename_dialog_{false}, active_pane_{0},
+    : global_selected_{0}, show_deletion_dialog_{false}, view_selected_{0},
+      rename_cursor_positon_{0}, show_rename_dialog_{false}, active_pane_{0},
       curdir_entries_{ftxui::emptyElement()},
       entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {}
 
-void Ui::set_layout(const ftxui::Component layout,
-                    const std::function<bool(const ftxui::Event &)> handler) {
-  main_layout_ = layout | ftxui::CatchEvent(handler);
+void Ui::set_layout(ftxui::Component layout,
+                    std::function<bool(const ftxui::Event &)> handler) {
+  main_layout_ = std::move(layout) | ftxui::CatchEvent(handler);
 }
 
 void Ui::set_deletion_dialog(
-    const ftxui::Component deletion_dialog,
-    const std::function<bool(const ftxui::Event &)> handler) {
+    ftxui::Component deletion_dialog,
+    std::function<bool(const ftxui::Event &)> handler) {
   deletion_dialog_ =
-      deletion_dialog | ftxui::CatchEvent(handler) | ftxui::center;
+      std::move(deletion_dialog) | ftxui::CatchEvent(handler) | ftxui::center;
 }
 
-void Ui::set_rename_dialog(
-    const ftxui::Component rename_dialog,
-    const std::function<bool(const ftxui::Event &)> handler) {
-  rename_dialog_ = rename_dialog | ftxui::CatchEvent(handler);
+void Ui::set_rename_dialog(ftxui::Component rename_dialog,
+                           std::function<bool(const ftxui::Event &)> handler) {
+  rename_dialog_ = std::move(rename_dialog) | ftxui::CatchEvent(handler);
 }
 
 void Ui::finalize_layout() {
@@ -130,7 +130,7 @@ void Ui::enter_direcotry(std::vector<ftxui::Element> curdir_entries) {
 }
 
 void Ui::leave_direcotry(std::vector<ftxui::Element> curdir_entries,
-                         const int &previous_path_index) {
+                         int previous_path_index) {
   previous_selected_.push(global_selected_);
   global_selected_ = previous_path_index;
   update_curdir_entries(std::move(curdir_entries));
@@ -149,7 +149,7 @@ void Ui::update_entries_preview(ftxui::Element new_entries) {
 
 void Ui::update_rename_input(std::string str) {
   rename_input_ = std::move(str);
-  rename_cursor_positon_ = rename_input_.size();
+  rename_cursor_positon_ = static_cast<int>(rename_input_.size());
 }
 
 std::vector<ftxui::Element> Ui::curdir_entries() { return curdir_entries_; }
@@ -169,7 +169,7 @@ void Ui::render() { screen_.Loop(tui_); }
 
 void Ui::exit() { screen_.Exit(); }
 
-int Ui::global_selected() { return global_selected_; }
+int Ui::global_selected() const { return global_selected_; }
 
 // Screen has a internal task queue which is protected by a mutex, so this
 // opration is safe without holding ui_lock;
@@ -177,8 +177,8 @@ void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
 
 void Ui::post_event(ftxui::Event event) { screen_.PostEvent(std::move(event)); }
 
-void Ui::restored_io(const std::function<void()> closure) {
-  screen_.WithRestoredIO(closure);
+void Ui::restored_io(std::function<void()> closure) {
+  screen_.WithRestoredIO(std::move(closure));
 }
 
 } // namespace duck

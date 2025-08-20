@@ -12,3 +12,6 @@ debug
 gdb.txt
 test_speed
 speed
+.idea
+line.sh
+old_build
