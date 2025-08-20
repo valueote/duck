@@ -28,12 +28,12 @@ FileManager::FileManager()
       parent_path_{current_path_.parent_path()}, lru_cache_{lru_cache_size},
       is_yanking_{false}, is_cutting_{false}, show_hidden_{false} {
 
-  curdir_entries_ =
-      std::move(load_directory_entries_without_lock(current_path_, false));
+  curdir_entries_ = std::move(
+      load_directory_entries_without_lock(current_path_, false, true));
 
   if (fs::is_directory(curdir_entries_[0])) {
-    preview_entries_ = std::move(
-        load_directory_entries_without_lock(curdir_entries_[0], show_hidden_));
+    preview_entries_ = std::move(load_directory_entries_without_lock(
+        curdir_entries_[0], show_hidden_, true));
   }
 
   clipboard_entries_.reserve(clipboard_reserve);
@@ -46,7 +46,8 @@ FileManager &FileManager::instance() {
 
 std::vector<fs::directory_entry>
 FileManager::load_directory_entries_without_lock(const fs::path &path,
-                                                 bool show_hidden) {
+                                                 bool show_hidden,
+                                                 bool use_cache) {
   if (!fs::is_directory(path)) {
     return {};
   }
@@ -54,7 +55,7 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   std::vector<fs::directory_entry> entries;
 
   auto cache = std::move(lru_cache_.get(path));
-  if (cache.has_value()) {
+  if (cache.has_value() && use_cache) {
     entries = std::move(cache.value());
     return entries;
   }
@@ -164,7 +165,9 @@ FileManager::selected_entry(const int &selected) {
   }
   return instance.curdir_entries_[selected];
 }
-std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
+
+std::vector<fs::directory_entry>
+FileManager::update_curdir_entries(bool use_cache) {
   auto &instance = FileManager::instance();
   fs::path target_path{};
   bool show_hidden{};
@@ -175,8 +178,8 @@ std::vector<fs::directory_entry> FileManager::update_curdir_entries() {
     show_hidden = instance.show_hidden_;
   }
 
-  auto entries = std::move(
-      instance.load_directory_entries_without_lock(target_path, show_hidden));
+  auto entries = std::move(instance.load_directory_entries_without_lock(
+      target_path, show_hidden, use_cache));
 
   {
     std::unique_lock lock{file_manager_mutex_};
@@ -373,8 +376,8 @@ FileManager::directory_preview(const std::pair<int, int> &selected_and_size) {
     show_hidden = instance.show_hidden_;
   }
 
-  auto entries = std::move(
-      instance().load_directory_entries_without_lock(target_path, show_hidden));
+  auto entries = std::move(instance().load_directory_entries_without_lock(
+      target_path, show_hidden, false));
   {
     std::unique_lock lock{file_manager_mutex_};
     instance().preview_entries_.assign(

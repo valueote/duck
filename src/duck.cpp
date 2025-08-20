@@ -23,8 +23,8 @@ void Duck::setup_ui() {
                  input_handler_.operation_handler());
   ui_.finalize_layout();
 
-  ui_.update_curdir_entries(
-      FileManager::entries_to_elements(FileManager::update_curdir_entries()));
+  ui_.update_curdir_entries(FileManager::entries_to_elements(
+      FileManager::update_curdir_entries(false)));
   input_handler_.update_preview_async();
 }
 } // namespace duck

@@ -168,7 +168,7 @@ InputHandler::deletion_dialog_handler() {
         auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                     stdexec::then(FileManager::delete_marked_entries) |
                     stdexec::then([](bool success) {
-                      return FileManager::update_curdir_entries();
+                      return FileManager::update_curdir_entries(false);
                     }) |
                     stdexec::then(FileManager::entries_to_elements) |
                     stdexec::then([this](std::vector<ftxui::Element> element) {
@@ -185,7 +185,7 @@ InputHandler::deletion_dialog_handler() {
                     stdexec::then([this]() { return ui_.global_selected(); }) |
                     stdexec::then(FileManager::delete_selected_entry) |
                     stdexec::then([](bool success) {
-                      return FileManager::update_curdir_entries();
+                      return FileManager::update_curdir_entries(false);
                     }) |
                     stdexec::then(FileManager::entries_to_elements) |
                     stdexec::then([this](std::vector<ftxui::Element> element) {
@@ -222,14 +222,23 @@ InputHandler::rename_dialog_handler() {
     if (event == ftxui::Event::Return) {
       int selected = ui_.global_selected();
       auto str = ui_.rename_input();
-      auto rename_task = stdexec::schedule(Scheduler::io_scheduler()) |
-                         stdexec::then([selected, str]() {
-                           FileManager::rename_selected_entry(selected, str);
-                         }) |
-                         stdexec::then([this]() { refresh_menu_async(); });
+      auto rename_task =
+          stdexec::schedule(Scheduler::io_scheduler()) |
+          stdexec::then([selected, str]() {
+            FileManager::rename_selected_entry(selected, str);
+          }) |
+          stdexec::then(
+              []() { return FileManager::update_curdir_entries(false); }) |
+          stdexec::then(FileManager::entries_to_elements) |
+          stdexec::then([this](std::vector<ftxui::Element> element) {
+            ui_.post_task([this, elem = std::move(element)]() {
+              ui_.update_curdir_entries(elem);
+              ui_.post_event(DuckEvent::refresh);
+              ui_.toggle_rename_dialog();
+            });
+          });
 
       scope_.spawn(rename_task);
-      ui_.toggle_rename_dialog();
       return true;
     }
     return false;
@@ -317,8 +326,9 @@ void InputHandler::enter_direcotry() {
     auto task =
         stdexec::schedule(Scheduler::io_scheduler()) |
         stdexec::then([et = std::move(entry)]() { return et.value().path(); }) |
-        stdexec::then(FileManager::update_current_path) |
-        stdexec::then(FileManager::update_curdir_entries) |
+        stdexec::then(FileManager::update_current_path) | stdexec::then([]() {
+          return FileManager::update_curdir_entries(true);
+        }) |
         stdexec::then(FileManager::entries_to_elements) |
         stdexec::then([this](std::vector<ftxui::Element> elements) {
           ui_.post_task([this, elem = std::move(elements)]() {
@@ -337,7 +347,7 @@ void InputHandler::leave_direcotry() {
       stdexec::schedule(Scheduler::io_scheduler()) |
       stdexec::then(FileManager::cur_parent_path) |
       stdexec::then(FileManager::update_current_path) |
-      stdexec::then(FileManager::update_curdir_entries) |
+      stdexec::then([]() { return FileManager::update_curdir_entries(true); }) |
       stdexec::then(FileManager::entries_to_elements) |
       stdexec::then([this](std::vector<ftxui::Element> entries) {
         return std::make_pair(std::move(entries),

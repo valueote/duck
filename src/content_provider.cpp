@@ -103,7 +103,6 @@ ftxui::Component ContentProvider::layout() {
   auto dummy = ftxui::Button({});
   auto render = ftxui::Renderer(dummy, [this]() {
     auto [width, height] = ftxui::Terminal::Size();
-    std::print(stderr, "width {}, height {}", width, height);
     return ftxui::hbox(left_pane(width), ftxui::separator(), right_pane(width));
   });
   return render;
