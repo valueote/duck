@@ -28,7 +28,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
       ui_.move_selected_down(
-          static_cast<int>(FileManager::curdir_entries().size() - 1));
+          static_cast<int>(FileManager::curdir_entries().size()));
       update_preview_async();
 
       return true;
@@ -37,7 +37,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     if (event == ftxui::Event::Character('k') ||
         event == ftxui::Event::ArrowUp) {
       ui_.move_selected_up(
-          static_cast<int>(FileManager::curdir_entries().size() - 1));
+          static_cast<int>(FileManager::curdir_entries().size()));
       update_preview_async();
       return true;
     }
@@ -89,7 +89,7 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
             ui_.post_task([this, elmt = std::move(elements)]() {
               ui_.update_curdir_entries(elmt);
               ui_.move_selected_down(
-                  static_cast<int>(FileManager::curdir_entries().size() - 1));
+                  static_cast<int>(FileManager::curdir_entries().size()));
               ui_.post_event(DuckEvent::refresh);
               update_preview_async();
             });

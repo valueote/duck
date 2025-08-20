@@ -82,21 +82,18 @@ void Ui::finalize_layout() {
   });
 }
 
-// move selected up and down can only be used in ui thread
 void Ui::move_selected_up(const int max) {
-  if (global_selected_ > 0) {
-    global_selected_--;
-  } else {
-    global_selected_ = max;
+  if (max == 0) {
+    return;
   }
+  global_selected_ = (global_selected_ + max - 1) % max;
 }
 
 void Ui::move_selected_down(const int max) {
-  if (global_selected_ < max) {
-    global_selected_++;
-  } else {
-    global_selected_ = 0;
+  if (max == 0) {
+    return;
   }
+  global_selected_ = (global_selected_ + 1) % max;
 }
 
 void Ui::toggle_deletion_dialog() {

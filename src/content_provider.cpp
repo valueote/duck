@@ -12,9 +12,10 @@
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <ftxui/screen/terminal.hpp>
-#include <print>
 
 namespace duck {
+
+constexpr int viewport_size = 50;
 
 ContentProvider::ContentProvider(Ui &ui, const ColorScheme &color_scheme)
     : ui_{ui}, color_scheme_{color_scheme} {}
@@ -29,6 +30,7 @@ ContentProvider::menu_entries_transform() {
     return ftxui::text(state.label) | style;
   };
 }
+
 ftxui::Element ContentProvider::left_pane(int width) {
   auto selected = ui_.global_selected();
   auto all_entries = ui_.curdir_entries();
@@ -42,19 +44,18 @@ ftxui::Element ContentProvider::left_pane(int width) {
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   }
 
-  constexpr int max_visible_entries = 50;
-
   std::vector<ftxui::Element> visible_entries;
-  int selected_in_view = selected;
+  int selected_in_view{0};
 
-  if (all_entries.size() > max_visible_entries) {
-    int start_index = selected - (max_visible_entries / 2);
+  if (all_entries.size() > viewport_size) {
+    int start_index = selected - (viewport_size / 2);
 
     start_index = std::max(0, start_index);
-    start_index = std::min(start_index, static_cast<int>(all_entries.size() -
-                                                         max_visible_entries));
+    start_index = std::min(
+        start_index, static_cast<int>(all_entries.size() - viewport_size));
 
-    int end_index = start_index + max_visible_entries;
+    int end_index = start_index + viewport_size;
+
     selected_in_view = selected - start_index;
 
     visible_entries.assign(
@@ -62,6 +63,7 @@ ftxui::Element ContentProvider::left_pane(int width) {
         std::make_move_iterator(all_entries.begin() + end_index));
   } else {
     visible_entries = std::move(all_entries);
+    selected_in_view = selected;
   }
 
   visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
