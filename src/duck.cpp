@@ -19,7 +19,8 @@ void Duck::setup_ui() {
                         input_handler_.rename_dialog_handler());
 
   ui_.set_layout(content_provider_.layout(),
-                 input_handler_.navigation_handler());
+                 input_handler_.navigation_handler(),
+                 input_handler_.operation_handler());
   ui_.finalize_layout();
 
   ui_.update_curdir_entries(

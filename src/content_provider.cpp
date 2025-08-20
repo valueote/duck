@@ -48,7 +48,7 @@ ftxui::Element ContentProvider::left_pane(int width) {
   int selected_in_view = selected;
 
   if (all_entries.size() > max_visible_entries) {
-    int start_index = selected - max_visible_entries / 2;
+    int start_index = selected - (max_visible_entries / 2);
 
     start_index = std::max(0, start_index);
     start_index = std::min(start_index, static_cast<int>(all_entries.size() -
@@ -93,9 +93,7 @@ ftxui::Element ContentProvider::right_pane(int width) {
                        }
 
                        return ftxui::paragraph(ui_.text_preview()) |
-                              ftxui::color(color_scheme_.text()) |
-                              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
-                              ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 20);
+                              ftxui::color(color_scheme_.text());
                      }()) |
               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   return pane;
@@ -120,22 +118,23 @@ ftxui::Element ContentProvider::deleted_entries() {
         }) |
         std::ranges::to<std::vector>();
     return ftxui::vbox({lines});
-  } else {
-    auto selected_path = FileManager::selected_entry(ui_.global_selected());
-    if (!selected_path.has_value()) {
-      return ftxui::text("[ERROR] No file selected for deletion.");
-    }
-    return ftxui::vbox({
-        ftxui::text(std::format("{}", selected_path->path().string())),
-    });
   }
+
+  auto selected_path = FileManager::selected_entry(ui_.global_selected());
+  if (!selected_path.has_value()) {
+    return ftxui::text("[ERROR] No file selected for deletion.");
+  }
+
+  return ftxui::vbox({
+      ftxui::text(std::format("{}", selected_path->path().string())),
+  });
 }
 
 ftxui::Component ContentProvider::deletion_dialog() {
   ftxui::ButtonOption button_option;
-  button_option.transform = [](const ftxui::EntryState &s) {
-    auto style = s.active ? ftxui::bold : ftxui::nothing;
-    return ftxui::text(s.label) | style | ftxui::center;
+  button_option.transform = [](const ftxui::EntryState &state) {
+    auto style = state.active ? ftxui::bold : ftxui::nothing;
+    return ftxui::text(state.label) | style | ftxui::center;
   };
 
   auto yes_button = ftxui::Button(

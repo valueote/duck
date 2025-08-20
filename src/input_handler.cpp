@@ -18,39 +18,17 @@
 // access data of ui in the handler without lock
 
 namespace duck {
+using std::exit;
+using std::move;
+
 InputHandler::InputHandler(Ui &ui) : ui_{ui} {}
 
 std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
   return [this](const ftxui::Event &event) {
-    if (event == ftxui::Event::Return) {
-      open_file();
-      return true;
-    }
-
-    if (event == ftxui::Event::Character(' ')) {
-      auto global_selected = ui_.global_selected();
-      auto task =
-          stdexec::schedule(Scheduler::io_scheduler()) |
-          stdexec::then([this, global_selected]() { return global_selected; }) |
-          stdexec::then(FileManager::toggle_mark_on_selected) |
-          stdexec::then(FileManager::curdir_entries) |
-          stdexec::then(FileManager::entries_to_elements) |
-          stdexec::then([this](std::vector<ftxui::Element> elements) {
-            ui_.post_task([this, elmt = std::move(elements)]() {
-              ui_.update_curdir_entries(std::move(elmt));
-              ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
-              ui_.post_event(DuckEvent::refresh);
-              update_preview_async();
-            });
-          });
-
-      scope_.spawn(task);
-      return true;
-    }
-
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
-      ui_.move_selected_down(FileManager::curdir_entries().size() - 1);
+      ui_.move_selected_down(
+          static_cast<int>(FileManager::curdir_entries().size() - 1));
       update_preview_async();
 
       return true;
@@ -58,7 +36,8 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character('k') ||
         event == ftxui::Event::ArrowUp) {
-      ui_.move_selected_up(FileManager::curdir_entries().size() - 1);
+      ui_.move_selected_up(
+          static_cast<int>(FileManager::curdir_entries().size() - 1));
       update_preview_async();
       return true;
     }
@@ -75,6 +54,48 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
 
     if (event == ftxui::Event::Character('q')) {
       ui_.exit();
+      return true;
+    }
+    if (event == ftxui::Event::Escape) {
+      auto selected = ui_.global_selected();
+      auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+                  stdexec::then(FileManager::clear_marked_entries) |
+                  stdexec::then([this]() { refresh_menu_async(); });
+
+      scope_.spawn(task);
+      return true;
+    }
+
+    return false;
+  };
+}
+
+std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
+  return [this](const ftxui::Event &event) {
+    if (event == ftxui::Event::Return) {
+      open_file();
+      return true;
+    }
+
+    if (event == ftxui::Event::Character(' ')) {
+      auto global_selected = ui_.global_selected();
+      auto task =
+          stdexec::schedule(Scheduler::io_scheduler()) |
+          stdexec::then([this, global_selected]() { return global_selected; }) |
+          stdexec::then(FileManager::toggle_mark_on_selected) |
+          stdexec::then(FileManager::curdir_entries) |
+          stdexec::then(FileManager::entries_to_elements) |
+          stdexec::then([this](std::vector<ftxui::Element> elements) {
+            ui_.post_task([this, elmt = std::move(elements)]() {
+              ui_.update_curdir_entries(elmt);
+              ui_.move_selected_down(
+                  static_cast<int>(FileManager::curdir_entries().size() - 1));
+              ui_.post_event(DuckEvent::refresh);
+              update_preview_async();
+            });
+          });
+
+      scope_.spawn(task);
       return true;
     }
 
@@ -134,22 +155,8 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
       return true;
     }
 
-    if (event == ftxui::Event::Escape) {
-      auto selected = ui_.global_selected();
-      auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-                  stdexec::then(FileManager::clear_marked_entries) |
-                  stdexec::then([this]() { refresh_menu_async(); });
-
-      scope_.spawn(task);
-      return true;
-    }
-
     return false;
   };
-}
-
-std::function<bool(ftxui::Event)> InputHandler::test_handler() {
-  return [this](ftxui::Event event) { return false; };
 }
 
 std::function<bool(const ftxui::Event &)>
@@ -166,7 +173,7 @@ InputHandler::deletion_dialog_handler() {
                     stdexec::then(FileManager::entries_to_elements) |
                     stdexec::then([this](std::vector<ftxui::Element> element) {
                       ui_.post_task([this, elem = std::move(element)]() {
-                        ui_.update_curdir_entries(std::move(elem));
+                        ui_.update_curdir_entries(elem);
                         ui_.post_event(DuckEvent::refresh);
                         ui_.toggle_deletion_dialog();
                       });
@@ -183,7 +190,7 @@ InputHandler::deletion_dialog_handler() {
                     stdexec::then(FileManager::entries_to_elements) |
                     stdexec::then([this](std::vector<ftxui::Element> element) {
                       ui_.post_task([this, elem = std::move(element)]() {
-                        ui_.update_curdir_entries(std::move(elem));
+                        ui_.update_curdir_entries(elem);
                         ui_.post_event(DuckEvent::refresh);
                         ui_.toggle_deletion_dialog();
                       });
@@ -215,12 +222,11 @@ InputHandler::rename_dialog_handler() {
     if (event == ftxui::Event::Return) {
       int selected = ui_.global_selected();
       auto str = ui_.rename_input();
-      auto rename_task =
-          stdexec::schedule(Scheduler::io_scheduler()) |
-          stdexec::then([selected, str]() {
-            FileManager::rename_selected_entry(selected, str);
-          }) |
-          stdexec::then([this]() { return refresh_menu_async(); });
+      auto rename_task = stdexec::schedule(Scheduler::io_scheduler()) |
+                         stdexec::then([selected, str]() {
+                           FileManager::rename_selected_entry(selected, str);
+                         }) |
+                         stdexec::then([this]() { refresh_menu_async(); });
 
       scope_.spawn(rename_task);
       ui_.toggle_rename_dialog();
@@ -245,7 +251,7 @@ InputHandler::update_directory_preview_async(const int &selected) {
          stdexec::then(FileManager::entries_to_element) |
          stdexec::then([this](ftxui::Element preview) {
            ui_.post_task([this, pv = std::move(preview)]() {
-             ui_.update_entries_preview(std::move(pv));
+             ui_.update_entries_preview(pv);
              ui_.post_event(DuckEvent::refresh);
            });
          });
@@ -262,8 +268,8 @@ InputHandler::update_text_preview_async(const int &selected) {
                                             std::make_pair(width, height));
          }) |
          stdexec::then([this](std::string preview) {
-           ui_.post_task([this, pv = std::move(preview)]() {
-             ui_.update_text_preview(std::move(pv));
+           ui_.post_task([this, prev = std::move(preview)]() {
+             ui_.update_text_preview(prev);
              ui_.post_event(DuckEvent::refresh);
            });
          });
@@ -276,7 +282,7 @@ void InputHandler::refresh_menu_async() {
               stdexec::then(FileManager::entries_to_elements) |
               stdexec::then([this](std::vector<ftxui::Element> elements) {
                 ui_.post_task([this, elmt = std::move(elements)]() {
-                  ui_.update_curdir_entries(std::move(elmt));
+                  ui_.update_curdir_entries(elmt);
                   ui_.post_event(ftxui::Event::Custom);
                 });
               });
@@ -288,11 +294,9 @@ void InputHandler::update_preview_async() {
   const auto selected_path = FileManager::selected_entry(selected);
   if (selected_path) {
     if (fs::is_directory(selected_path.value())) {
-      auto task = update_directory_preview_async(selected);
-      scope_.spawn(std::move(task));
+      scope_.spawn(update_directory_preview_async(selected));
     } else {
-      auto task = update_text_preview_async(selected);
-      scope_.spawn(std::move(task));
+      scope_.spawn(update_text_preview_async(selected));
     }
   }
 }
@@ -305,9 +309,8 @@ void InputHandler::enter_direcotry() {
             if (fs::is_directory(entry)) {
               return std::expected<fs::directory_entry, std::string>{
                   std::move(entry)};
-            } else {
-              return std::unexpected<std::string>{""};
             }
+            return std::unexpected<std::string>{""};
           });
 
   if (entry) {
@@ -319,7 +322,7 @@ void InputHandler::enter_direcotry() {
         stdexec::then(FileManager::entries_to_elements) |
         stdexec::then([this](std::vector<ftxui::Element> elements) {
           ui_.post_task([this, elem = std::move(elements)]() {
-            ui_.enter_direcotry(std::move(elem));
+            ui_.enter_direcotry(elem);
             ui_.post_event(DuckEvent::refresh);
             update_preview_async();
           });
@@ -341,8 +344,8 @@ void InputHandler::leave_direcotry() {
                               FileManager::previous_path_index());
       }) |
       stdexec::then([this](std::pair<std::vector<ftxui::Element>, int> pair) {
-        ui_.post_task([this, pr = std::move(pair)]() {
-          ui_.leave_direcotry(pr.first, pr.second);
+        ui_.post_task([this, pair = std::move(pair)]() {
+          ui_.leave_direcotry(pair.first, pair.second);
           ui_.post_event(DuckEvent::refresh);
         });
         return pair.second;
@@ -350,7 +353,7 @@ void InputHandler::leave_direcotry() {
       stdexec::let_value([this](const int &selected) {
         return update_directory_preview_async(selected);
       });
-  scope_.spawn(std::move(task));
+  scope_.spawn(task);
 }
 
 void InputHandler::open_file() {
@@ -382,7 +385,7 @@ void InputHandler::open_file() {
 
       std::exit(EXIT_FAILURE);
     } else {
-      int status;
+      int status{0};
       waitpid(pid, &status, 0);
     }
   });

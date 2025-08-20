@@ -47,7 +47,8 @@ private:
 public:
   Ui();
   void set_layout(ftxui::Component layout,
-                  std::function<bool(const ftxui::Event &)> handler);
+                  std::function<bool(const ftxui::Event &)> navigation_handler,
+                  std::function<bool(const ftxui::Event &)> operation_handler);
   void set_deletion_dialog(ftxui::Component deletion_dialog,
                            std::function<bool(const ftxui::Event &)> handler);
 

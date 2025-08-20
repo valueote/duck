@@ -1,24 +1,11 @@
 Checks: >
   bugprone-*,
   cppcoreguidelines-*,
-  modernize-use-auto,
-  modernize-use-nullptr,
-  modernize-pass-by-value,
-  modernize-use-default-member-init,
-  modernize-use-equals-default,
-  modernize-use-equals-delete,
-  modernize-loop-convert,
-  modernize-use-emplace,
-  modernize-use-find,
-  modernize-avoid-c-arrays,
-  modernize-use-noexcept,
-  modernize-concat-nested-namespaces,
-  modernize-raw-string-litera,
-  modernize-return-braced-init-list,
-  modernize-deprecated-headers,
-  modernize-redundant-void-arg,
-  modernize-unary-static-assert,
+  modernize-*,
+  -modernize-use-trailing-return-type,
   performance-*,
-  readability-*
+  readability-*,
+  -readability-identifier-length,
+  concurrency-*
 
 HeaderFilterRegex: '(^|/)(src|include)/'

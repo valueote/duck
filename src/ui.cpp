@@ -19,9 +19,12 @@ Ui::Ui()
       entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {}
 
-void Ui::set_layout(ftxui::Component layout,
-                    std::function<bool(const ftxui::Event &)> handler) {
-  main_layout_ = std::move(layout) | ftxui::CatchEvent(handler);
+void Ui::set_layout(
+    ftxui::Component layout,
+    std::function<bool(const ftxui::Event &)> navigation_handler,
+    std::function<bool(const ftxui::Event &)> operation_handler) {
+  main_layout_ = std::move(layout) | ftxui::CatchEvent(navigation_handler) |
+                 ftxui::CatchEvent(operation_handler);
 }
 
 void Ui::set_deletion_dialog(
