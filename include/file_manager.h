@@ -41,7 +41,7 @@ private:
   std::vector<fs::directory_entry> curdir_entries_;
   std::vector<fs::directory_entry> hidden_entries_;
   std::vector<fs::directory_entry> preview_entries_;
-  std::set<fs::directory_entry> marked_entires_;
+  std::set<fs::directory_entry> marked_entries_;
   std::vector<fs::directory_entry> clipboard_entries_;
   bool is_yanking_;
   bool is_cutting_;

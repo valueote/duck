@@ -127,7 +127,7 @@ const std::vector<fs::directory_entry> &FileManager::preview_entries() {
 
 const std::set<fs::directory_entry> &FileManager::marked_entries() {
   std::shared_lock lock{file_manager_mutex_};
-  return instance().marked_entires_;
+  return instance().marked_entries_;
 }
 
 int FileManager::previous_path_index() {
@@ -205,12 +205,12 @@ void FileManager::toggle_mark_on_selected(const int selected) {
       selected >= instance.curdir_entries_.size()) {
     return;
   }
-  if (auto iter = std::ranges::find(instance.marked_entires_,
+  if (auto iter = std::ranges::find(instance.marked_entries_,
                                     instance.curdir_entries_[selected]);
-      iter != instance.marked_entires_.end()) {
-    instance.marked_entires_.erase(iter);
+      iter != instance.marked_entries_.end()) {
+    instance.marked_entries_.erase(iter);
   } else {
-    instance.marked_entires_.insert(instance.curdir_entries_[selected]);
+    instance.marked_entries_.insert(instance.curdir_entries_[selected]);
   }
 }
 
@@ -224,8 +224,8 @@ void FileManager::start_yanking(const int selected) {
   auto &instance = FileManager::instance();
   instance.is_yanking_ = true;
   instance.is_cutting_ = false;
-  if (instance.marked_entires_.empty()) {
-    instance.marked_entires_.insert(instance.curdir_entries_[selected]);
+  if (instance.marked_entries_.empty()) {
+    instance.marked_entries_.insert(instance.curdir_entries_[selected]);
   }
 }
 
@@ -234,8 +234,8 @@ void FileManager::start_cutting(const int selected) {
   auto &instance = FileManager::instance();
   instance.is_cutting_ = true;
   instance.is_yanking_ = false;
-  if (instance.marked_entires_.empty()) {
-    instance.marked_entires_.insert(instance.curdir_entries_[selected]);
+  if (instance.marked_entries_.empty()) {
+    instance.marked_entries_.insert(instance.curdir_entries_[selected]);
   }
 }
 
@@ -278,13 +278,13 @@ void FileManager::yank_or_cut(const int selected) {
 
   {
     std::unique_lock lock{file_manager_mutex_};
-    if (instance.marked_entires_.empty()) {
+    if (instance.marked_entries_.empty()) {
       entries.push_back(instance.curdir_entries_[selected]);
     } else {
       entries = std::move(std::vector<fs::directory_entry>{
-          instance.marked_entires_.begin(), instance.marked_entires_.end()});
+          instance.marked_entries_.begin(), instance.marked_entries_.end()});
     }
-    instance.marked_entires_.clear();
+    instance.marked_entries_.clear();
     current_path = instance.current_path_;
     is_renaming = instance.is_cutting_;
   }
@@ -297,7 +297,7 @@ void FileManager::yank_or_cut(const int selected) {
 
 bool FileManager::is_marked(const fs::directory_entry &entry) {
   std::shared_lock lock(file_manager_mutex_);
-  return instance().marked_entires_.contains(entry);
+  return instance().marked_entries_.contains(entry);
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
@@ -329,16 +329,16 @@ void FileManager::rename_selected_entry(const int selected,
 bool FileManager::delete_marked_entries() {
   std::unique_lock lock(file_manager_mutex_);
   auto &instance = FileManager::instance();
-  if (instance.marked_entires_.empty()) {
+  if (instance.marked_entries_.empty()) {
     std::println(stderr, "[ERROR] try to delete empty file");
     return false;
   }
 
-  for (const auto &entry : instance.marked_entires_) {
+  for (const auto &entry : instance.marked_entries_) {
     FileManager::delete_entry_without_lock(entry);
   }
 
-  instance.marked_entires_.clear();
+  instance.marked_entries_.clear();
   return true;
 }
 
@@ -350,7 +350,7 @@ void FileManager::clear_marked_entries() {
     instance.is_cutting_ = false;
   } else {
 
-    instance.marked_entires_.clear();
+    instance.marked_entries_.clear();
   }
 }
 
@@ -458,7 +458,7 @@ std::vector<ftxui::Element> FileManager::entries_to_elements(
     const std::vector<fs::directory_entry> &entries) {
   auto &instance = FileManager::instance();
   if (entries.empty()) {
-    return {ftxui::text({"[No items]"})};
+    return {};
   }
   const auto *empty = "  ";
 
