@@ -15,7 +15,7 @@ private:
 public:
   InputHandler(Ui &ui);
   std::function<bool(const ftxui::Event &)> navigation_handler();
-  std::function<bool(ftxui::Event)> test_handler();
+  std::function<bool(ftxui::Event)> operation_handler();
   std::function<bool(const ftxui::Event &)> deletion_dialog_handler();
   std::function<bool(const ftxui::Event &)> rename_dialog_handler();
   void update_preview_async();
@@ -24,6 +24,7 @@ public:
 
   stdexec::sender auto update_directory_preview_async(const int &selected);
   stdexec::sender auto update_text_preview_async(const int &selected);
+  void refresh_menu_async();
 };
 
 } // namespace duck

@@ -44,11 +44,19 @@ private:
   std::set<fs::directory_entry> marked_entires_;
   std::vector<fs::directory_entry> clipboard_entries_;
   bool is_yanking_;
-  bool is_renaming_;
+  bool is_cutting_;
   bool show_hidden_;
+  static inline std::shared_mutex file_manager_mutex_;
 
   FileManager();
+
   static FileManager &instance();
+
+  std::vector<fs::directory_entry>
+  load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
+                                      bool use_cache);
+
+  static bool delete_entry_without_lock(const fs::directory_entry &entry);
 
   static fs::path get_dest_path(const fs::directory_entry &entry,
                                 const fs::path &current_path);
@@ -58,16 +66,7 @@ private:
   static void rename_entries(const std::vector<fs::directory_entry> &entries,
                              const fs::path &current_path);
 
-  std::vector<fs::directory_entry>
-  load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
-                                      bool use_cache);
-  static bool delete_entry_without_lock(const fs::directory_entry &entry);
-
-  std::string
-  format_directory_entries_without_lock(const fs::directory_entry &entry) const;
-
 public:
-  static inline std::shared_mutex file_manager_mutex_;
   static const fs::path &current_path();
   static const fs::path &cur_parent_path();
   static const fs::path &previous_path();
@@ -77,37 +76,30 @@ public:
   static int previous_path_index();
   static bool yanking();
   static bool cutting();
-
-  static void start_yanking();
-  static void start_cutting();
-  static void yank_or_rename(const int &selected);
-  static bool is_marked(const fs::directory_entry &entry);
-  static void toggle_mark_on_selected(const int &selected);
-  static void toggle_hidden_entries();
-  static void clear_marked_entries();
-  static bool delete_selected_entry(const int &selected);
-  static void rename_selected_entry(const int &selected, std::string new_name);
-  static bool delete_marked_entries();
-
-  static std::vector<std::string>
-  format_entries(const std::vector<fs::directory_entry> &entries);
-  static ftxui::Element
-  entries_string_to_element(std::vector<std::string> entries);
-
   static std::expected<fs::directory_entry, std::string>
   selected_entry(const int &selected);
 
-  static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static std::string text_preview(const int &selected,
-                                  std::pair<int, int> size);
-
+  static void start_yanking(int selected);
+  static void start_cutting(int selected);
+  static void yank_or_cut(int selected);
+  static bool is_marked(const fs::directory_entry &entry);
+  static void toggle_mark_on_selected(int selected);
+  static void clear_marked_entries();
+  static void toggle_hidden_entries();
+  static bool delete_selected_entry(int selected);
+  static void rename_selected_entry(int selected, const std::string &new_name);
+  static bool delete_marked_entries();
   static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
   static void update_current_path(const fs::path &new_path);
 
+  static std::string entry_name_with_icon(const fs::directory_entry &entry);
+  static std::vector<ftxui::Element>
+  entries_to_elements(const std::vector<fs::directory_entry> &entries);
+  static ftxui::Element
+  entries_to_element(const std::vector<fs::directory_entry> &entries);
   static std::vector<fs::directory_entry>
   directory_preview(const std::pair<int, int> &selected_and_size);
-
-  static stdexec::sender auto text_preview_async(const int &selected);
+  static std::string text_preview(int selected, std::pair<int, int> size);
 };
 
 } // namespace duck

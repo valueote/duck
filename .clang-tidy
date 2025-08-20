@@ -1,0 +1,11 @@
+Checks: >
+  bugprone-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  readability-*,
+  -readability-identifier-length,
+  concurrency-*
+
+HeaderFilterRegex: '(^|/)(src|include)/'
