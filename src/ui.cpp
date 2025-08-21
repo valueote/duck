@@ -13,9 +13,8 @@
 namespace duck {
 
 Ui::Ui()
-    : global_selected_{0}, show_deletion_dialog_{false}, view_selected_{0},
-      rename_cursor_positon_{0}, show_rename_dialog_{false}, active_pane_{0},
-      curdir_entries_{ftxui::emptyElement()},
+    : global_selected_{0}, view_selected_{0}, rename_cursor_positon_{0},
+      active_pane_{0}, curdir_entries_{ftxui::emptyElement()},
       entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {}
 
@@ -43,8 +42,8 @@ void Ui::finalize_layout() {
   auto components_tab = ftxui::Container::Tab(
       {
           main_layout_,
-          rename_dialog_,
           deletion_dialog_,
+          rename_dialog_,
       },
       &active_pane_);
   main_layout_->TakeFocus();
@@ -52,33 +51,30 @@ void Ui::finalize_layout() {
   tui_ = ftxui::Renderer(components_tab, [&] {
     auto main_ui_layer = main_layout_->Render();
 
-    if (show_rename_dialog_) {
-      auto dialog_element = rename_dialog_->Render();
-
+    switch (active_pane_) {
+    case static_cast<int>(pane::RENAME): {
       auto top_layer = ftxui::vbox({
           ftxui::vbox({}) |
               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
                           (global_selected_ > 2 ? global_selected_ - 2
                                                 : global_selected_ + 2)),
-          ftxui::hbox({
-              dialog_element,
-          }),
+          ftxui::hbox({rename_dialog_->Render()}),
       });
       return ftxui::dbox({
           main_ui_layer,
           top_layer,
       });
     }
-
-    if (show_deletion_dialog_) {
+    case static_cast<int>(pane::DELETION): {
       return ftxui::dbox({
           main_ui_layer,
           ftxui::filler(),
           deletion_dialog_->Render() | ftxui::center,
       });
     }
-
-    return main_ui_layer;
+    default:
+      return main_ui_layer;
+    }
   });
 }
 
@@ -97,24 +93,22 @@ void Ui::move_selected_down(const int max) {
 }
 
 void Ui::toggle_deletion_dialog() {
-  show_deletion_dialog_ = !show_deletion_dialog_;
-  if (show_deletion_dialog_) {
-    active_pane_ = static_cast<int>(pane::DELETION);
-    deletion_dialog_->TakeFocus();
-  } else {
+  if (active_pane_ == static_cast<int>(pane::DELETION)) {
     active_pane_ = static_cast<int>(pane::MAIN);
     main_layout_->TakeFocus();
+  } else {
+    active_pane_ = static_cast<int>(pane::DELETION);
+    deletion_dialog_->TakeFocus();
   }
 }
 
 void Ui::toggle_rename_dialog() {
-  show_rename_dialog_ = !show_rename_dialog_;
-  if (show_rename_dialog_) {
-    active_pane_ = static_cast<int>(pane::RENAME);
-    rename_dialog_->TakeFocus();
-  } else {
+  if (active_pane_ == static_cast<int>(pane::RENAME)) {
     active_pane_ = static_cast<int>(pane::MAIN);
     main_layout_->TakeFocus();
+  } else {
+    active_pane_ = static_cast<int>(pane::RENAME);
+    rename_dialog_->TakeFocus();
   }
 }
 

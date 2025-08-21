@@ -36,13 +36,9 @@ private:
   int global_selected_;
   int view_selected_;
 
-  bool show_deletion_dialog_;
   int rename_cursor_positon_;
-  bool show_rename_dialog_;
-  enum class pane : uint8_t { MAIN = 0, DELETION, RENAME };
+  enum class pane : int8_t { MAIN = 0, DELETION, RENAME };
   int active_pane_;
-
-  stdexec::run_loop loop_;
 
 public:
   Ui();

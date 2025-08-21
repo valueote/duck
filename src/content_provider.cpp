@@ -37,7 +37,7 @@ ftxui::Element ContentProvider::left_pane(int width) {
                ftxui::text(" " + FileManager::current_path().string() + " ") |
                    ftxui::bold |
                    ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-               ftxui::vbox({ftxui::text("[Empty folder]")})) |
+               ftxui::vbox({ftxui::text("[Empty directory]")})) |
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   }
 
