@@ -6,9 +6,7 @@
 #include <ftxui/dom/elements.hpp>
 
 namespace duck {
-Duck::Duck() : input_handler_(ui_), content_provider_(ui_, color_scheme_) {
-  setup_ui();
-}
+Duck::Duck() : input_handler_(ui_), content_provider_(ui_) { setup_ui(); }
 
 void Duck::run() { ui_.render(); }
 

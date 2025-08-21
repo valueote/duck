@@ -15,16 +15,15 @@
 
 namespace duck {
 
-ContentProvider::ContentProvider(Ui &ui, const ColorScheme &color_scheme)
-    : ui_{ui}, color_scheme_{color_scheme} {}
+ContentProvider::ContentProvider(Ui &ui) : ui_{ui} {}
 
 std::function<ftxui::Element(const ftxui::EntryState &state)>
 ContentProvider::menu_entries_transform() {
   return [this](const ftxui::EntryState &state) {
     auto style = state.active
-                     ? ftxui::bgcolor(color_scheme_.selected()) | ftxui::bold |
+                     ? ftxui::bgcolor(ColorScheme::selected()) | ftxui::bold |
                            ftxui::color(ftxui::Color::Black)
-                     : ftxui::color(color_scheme_.text());
+                     : ftxui::color(ColorScheme::text());
     return ftxui::text(state.label) | style;
   };
 }
@@ -66,7 +65,7 @@ ftxui::Element ContentProvider::left_pane(int width) {
     selected_in_view = selected;
   }
   visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
-                                       ftxui::bgcolor(color_scheme_.selected());
+                                       ftxui::bgcolor(ColorScheme::selected());
 
   auto pane =
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
@@ -90,11 +89,11 @@ ftxui::Element ContentProvider::right_pane(int width) {
 
                        if (fs::is_directory(selected_path.value())) {
                          return ui_.entries_preview() |
-                                ftxui::color(color_scheme_.text());
+                                ftxui::color(ColorScheme::text());
                        }
 
                        return ftxui::paragraph(ui_.text_preview()) |
-                              ftxui::color(color_scheme_.text());
+                              ftxui::color(ColorScheme::text());
                      }()) |
               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   return pane;
@@ -163,14 +162,14 @@ ftxui::Component ContentProvider::deletion_dialog() {
     return ftxui::window(
                ftxui::vbox(
                    {ftxui::text("Permanently delete selected file?") |
-                        ftxui::color(color_scheme_.warning()) | ftxui::bold |
+                        ftxui::color(ColorScheme::warning()) | ftxui::bold |
                         ftxui::hcenter |
                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3 * 2),
                     ftxui::filler()}),
                dialog_content) |
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3 * 2) |
            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height / 3 * 2) |
-           ftxui::color(color_scheme_.border()) | ftxui::clear_under;
+           ftxui::color(ColorScheme::border()) | ftxui::clear_under;
     ;
   });
   return dialog_renderer;
@@ -181,7 +180,7 @@ ftxui::Component ContentProvider::rename_dialog() {
   ftxui::InputOption option = ftxui::InputOption::Default();
   option.cursor_position = &ui_.rename_cursor_positon();
   option.transform = [this](ftxui::InputState state) -> ftxui::Element {
-    state.element |= color(color_scheme_.text());
+    state.element |= color(ColorScheme::text());
     return state.element;
   };
   option.cursor_position = &ui_.rename_cursor_positon();

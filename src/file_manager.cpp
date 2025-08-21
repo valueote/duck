@@ -88,10 +88,6 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
 }
 
 bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
-  if (!fs::exists(entry)) {
-    std::println(stderr, "[ERROR] try to delete an unexisted file");
-    return false;
-  }
 
   if (fs::is_directory(entry)) {
     return fs::remove_all(entry) != 0U;

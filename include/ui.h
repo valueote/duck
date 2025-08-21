@@ -1,5 +1,4 @@
 #pragma once
-#include "stdexec/__detail/__run_loop.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -74,7 +73,7 @@ public:
 
   void render();
   void exit();
-  int global_selected() const;
+  [[nodiscard]] int global_selected() const;
   bool show_hidden();
   void post_event(ftxui::Event event);
   void post_task(std::function<void()> task);

@@ -12,7 +12,6 @@ namespace duck {
 class ContentProvider {
 private:
   Ui &ui_;
-  const ColorScheme &color_scheme_;
   std::mutex mutex_;
   ftxui::Element left_pane(int width);
   ftxui::Element right_pane(int width);
@@ -21,7 +20,7 @@ private:
   ftxui::Element right_pane();
 
 public:
-  ContentProvider(Ui &ui, const ColorScheme &color_scheme);
+  ContentProvider(Ui &ui);
 
   std::function<ftxui::Element(const ftxui::EntryState &state)>
   menu_entries_transform();

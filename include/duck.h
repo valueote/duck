@@ -1,5 +1,4 @@
 #pragma once
-#include "colorscheme.h"
 #include "content_provider.h"
 #include "input_handler.h"
 #include "ui.h"
@@ -7,7 +6,6 @@
 namespace duck {
 class Duck {
 private:
-  ColorScheme color_scheme_;
   Ui ui_;
   InputHandler input_handler_;
   ContentProvider content_provider_;

@@ -37,24 +37,36 @@ private:
     ftxui::Color Base = ftxui::Color::RGB(48, 52, 70);         // #303446
     ftxui::Color Mantle = ftxui::Color::RGB(41, 44, 60);       // #292c3c
     ftxui::Color Crust = ftxui::Color::RGB(35, 38, 52);        // #232634
-  } CatppuccinFrappe;
+  } CatppuccinFrappe_;
 
-  std::unordered_map<std::string, ftxui::Color> color_map_ = {
-      {"text", CatppuccinFrappe.Text},
-      {"border", CatppuccinFrappe.Blue},
-      {"surface0", CatppuccinFrappe.Surface0},
-      {"selected", CatppuccinFrappe.Lavender},
-      {"warning", CatppuccinFrappe.Yellow},
-      {"file", CatppuccinFrappe.Text},
-      {"dir", CatppuccinFrappe.Sapphire},
-  };
+  std::unordered_map<std::string, ftxui::Color> color_map_;
+
+  ColorScheme()
+      : color_map_{
+            {"text", CatppuccinFrappe_.Text},
+            {"border", CatppuccinFrappe_.Blue},
+            {"surface0", CatppuccinFrappe_.Surface0},
+            {"selected", CatppuccinFrappe_.Lavender},
+            {"warning", CatppuccinFrappe_.Yellow},
+            {"file", CatppuccinFrappe_.Text},
+            {"dir", CatppuccinFrappe_.Sapphire},
+        } {}
 
 public:
-  ftxui::Color text() const;
-  ftxui::Color border() const;
-  ftxui::Color surface0() const;
-  ftxui::Color selected() const;
-  ftxui::Color warning() const;
+  ~ColorScheme() = default;
+  ColorScheme(const ColorScheme &) = delete;
+  ColorScheme &operator=(const ColorScheme &) = delete;
+
+  static ColorScheme &instance() {
+    static ColorScheme inst;
+    return inst;
+  }
+
+  static ftxui::Color text();
+  static ftxui::Color border();
+  static ftxui::Color surface0();
+  static ftxui::Color selected();
+  static ftxui::Color warning();
 };
 
 } // namespace duck

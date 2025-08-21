@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdexec/__detail/__schedulers.hpp"
 #include <exec/static_thread_pool.hpp>
 #include <stdexec/concepts.hpp>
 #include <stdexec/execution.hpp>
@@ -19,6 +18,7 @@ private:
   static Scheduler &instance();
 
 public:
+  ~Scheduler() = default;
   Scheduler(const Scheduler &) = delete;
   Scheduler &operator=(const Scheduler &) = delete;
   Scheduler(Scheduler &&) = delete;
