@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "ftxui/dom/elements.hpp"
+#include <algorithm>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -38,19 +39,25 @@ void Ui::set_rename_dialog(ftxui::Component rename_dialog,
   rename_dialog_ = std::move(rename_dialog) | ftxui::CatchEvent(handler);
 }
 
+void Ui::set_creation_dialog(
+    ftxui::Component new_entry_dialog,
+    std::function<bool(const ftxui::Event &)> handler) {
+  creation_dialog_ = std::move(new_entry_dialog) | ftxui::CatchEvent(handler);
+}
+
 void Ui::finalize_layout() {
   auto components_tab = ftxui::Container::Tab(
       {
           main_layout_,
           deletion_dialog_,
           rename_dialog_,
+          creation_dialog_,
       },
       &active_pane_);
   main_layout_->TakeFocus();
 
   tui_ = ftxui::Renderer(components_tab, [&] {
     auto main_ui_layer = main_layout_->Render();
-
     switch (active_pane_) {
     case static_cast<int>(pane::RENAME): {
       auto top_layer = ftxui::vbox({
@@ -70,6 +77,13 @@ void Ui::finalize_layout() {
           main_ui_layer,
           ftxui::filler(),
           deletion_dialog_->Render() | ftxui::center,
+      });
+    }
+    case static_cast<int>(pane::CREATION): {
+      return ftxui::dbox({
+          main_ui_layer,
+          ftxui::filler(),
+          creation_dialog_->Render() | ftxui::center,
       });
     }
     default:
@@ -109,6 +123,16 @@ void Ui::toggle_rename_dialog() {
   } else {
     active_pane_ = static_cast<int>(pane::RENAME);
     rename_dialog_->TakeFocus();
+  }
+}
+
+void Ui::toggle_creation_dialog() {
+  if (active_pane_ == static_cast<int>(pane::CREATION)) {
+    active_pane_ = static_cast<int>(pane::MAIN);
+    main_layout_->TakeFocus();
+  } else {
+    active_pane_ = static_cast<int>(pane::CREATION);
+    creation_dialog_->TakeFocus();
   }
 }
 
@@ -156,6 +180,8 @@ void Ui::update_text_preview(std::string new_text_preview) {
 std::string Ui::text_preview() { return text_preview_; }
 
 std::string &Ui::rename_input() { return rename_input_; }
+
+std::string &Ui::new_entry_input() { return new_entry_input_; }
 
 int &Ui ::rename_cursor_positon() { return rename_cursor_positon_; }
 

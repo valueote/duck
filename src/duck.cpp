@@ -15,7 +15,8 @@ void Duck::setup_ui() {
                           input_handler_.deletion_dialog_handler());
   ui_.set_rename_dialog(content_provider_.rename_dialog(),
                         input_handler_.rename_dialog_handler());
-
+  ui_.set_creation_dialog(content_provider_.creation_dialog(),
+                          input_handler_.creation_dialog_handler());
   ui_.set_layout(content_provider_.layout(),
                  input_handler_.navigation_handler(),
                  input_handler_.operation_handler());

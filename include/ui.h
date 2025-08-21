@@ -23,20 +23,21 @@ private:
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component main_layout_;
-  ftxui::MenuOption menu_option_;
   ftxui::Component tui_;
-  ftxui::Component menu_;
-
   ftxui::Component deletion_dialog_;
+
+  ftxui::Component creation_dialog_;
+  std::string new_entry_input_;
+
   ftxui::Component rename_dialog_;
   std::string rename_input_;
+  int rename_cursor_positon_;
 
   std::stack<int> previous_selected_;
   int global_selected_;
   int view_selected_;
 
-  int rename_cursor_positon_;
-  enum class pane : int8_t { MAIN = 0, DELETION, RENAME };
+  enum class pane : int8_t { MAIN = 0, DELETION, RENAME, CREATION };
   int active_pane_;
 
 public:
@@ -49,13 +50,16 @@ public:
 
   void set_rename_dialog(ftxui::Component rename_dialog,
                          std::function<bool(const ftxui::Event &)> handler);
+
+  void set_creation_dialog(ftxui::Component new_entry_dialog,
+                           std::function<bool(const ftxui::Event &)> handler);
   void finalize_layout();
 
   void move_selected_up(int max);
   void move_selected_down(int max);
   void toggle_deletion_dialog();
   void toggle_rename_dialog();
-  void toggle_hidden_entries();
+  void toggle_creation_dialog();
 
   void enter_direcotry(std::vector<ftxui::Element> curdir_entries);
   void leave_direcotry(std::vector<ftxui::Element> curdir_entries,
@@ -69,6 +73,7 @@ public:
   void update_text_preview(std::string new_text_preview);
   std::string text_preview();
   std::string &rename_input();
+  std::string &new_entry_input();
   int &rename_cursor_positon();
 
   void render();

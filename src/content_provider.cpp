@@ -183,12 +183,33 @@ ftxui::Component ContentProvider::rename_dialog() {
     state.element |= color(ColorScheme::text());
     return state.element;
   };
-  option.cursor_position = &ui_.rename_cursor_positon();
 
   auto input = ftxui::Input(&ui_.rename_input(), option);
   auto renderer = ftxui::Renderer(input, [this, input] {
     const auto [width, height] = ftxui::Terminal::Size();
     auto dialog = ftxui::window(ftxui::text("Rename"), input->Render()) |
+                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2) |
+                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3) |
+                  ftxui::clear_under;
+    ;
+    return dialog;
+  });
+
+  return renderer;
+}
+
+ftxui::Component ContentProvider::creation_dialog() {
+  ftxui::InputOption option = ftxui::InputOption::Default();
+  option.cursor_position = &ui_.rename_cursor_positon();
+  option.transform = [this](ftxui::InputState state) -> ftxui::Element {
+    state.element |= color(ColorScheme::text());
+    return state.element;
+  };
+
+  auto input = ftxui::Input(&ui_.new_entry_input(), option);
+  auto renderer = ftxui::Renderer(input, [this, input] {
+    const auto [width, height] = ftxui::Terminal::Size();
+    auto dialog = ftxui::window(ftxui::text("Create"), input->Render()) |
                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2) |
                   ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3) |
                   ftxui::clear_under;

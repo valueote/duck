@@ -104,6 +104,11 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
       return true;
     }
 
+    if (event == ftxui::Event::Character('a')) {
+      ui_.toggle_creation_dialog();
+      return true;
+    }
+
     if (event == ftxui::Event::Character('y')) {
       auto global_selected = ui_.global_selected();
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
@@ -239,6 +244,21 @@ InputHandler::rename_dialog_handler() {
           });
 
       scope_.spawn(rename_task);
+      return true;
+    }
+    return false;
+  };
+}
+
+std::function<bool(const ftxui::Event &)>
+InputHandler::creation_dialog_handler() {
+  return [this](const ftxui::Event &event) {
+    if (event == ftxui::Event::Escape) {
+      ui_.toggle_creation_dialog();
+      return true;
+    }
+
+    if (event == ftxui::Event::Return) {
       return true;
     }
     return false;

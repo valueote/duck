@@ -26,6 +26,7 @@ public:
   menu_entries_transform();
   ftxui::Component deletion_dialog();
   ftxui::Component rename_dialog();
+  ftxui::Component creation_dialog();
   ftxui::Component layout();
 };
 } // namespace duck

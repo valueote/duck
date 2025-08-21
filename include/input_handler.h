@@ -18,6 +18,7 @@ public:
   std::function<bool(ftxui::Event)> operation_handler();
   std::function<bool(const ftxui::Event &)> deletion_dialog_handler();
   std::function<bool(const ftxui::Event &)> rename_dialog_handler();
+  std::function<bool(const ftxui::Event &)> creation_dialog_handler();
   void update_preview_async();
   void enter_direcotry();
   void leave_direcotry();

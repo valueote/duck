@@ -4,11 +4,10 @@ int main() {
   d.run();
 }
 
-// TODO: Improve async to implement better performance
-// TODO: Add lazy loading for directory entries
-// TODO: implement error handler for filemanager yanking and cutting
-// TODO: Implement better log
 // TODO: Forbid delete current dir when navigating to it
+// TODO: implement task cancelation
+// TODO: Add lazy loading for directory entries
+// TODO: Implement better log
 // TODO: Add preview for image
 // TODO: implement better color scheme
 // TODO: Add realtime response for filesystem changing;
