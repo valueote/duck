@@ -89,6 +89,7 @@ public:
   static bool delete_selected_entry(int selected);
   static void rename_selected_entry(int selected, const std::string &new_name);
   static bool delete_marked_entries();
+  static void create_new_entry(const std::string &name);
   static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
   static void update_current_path(const fs::path &new_path);
 

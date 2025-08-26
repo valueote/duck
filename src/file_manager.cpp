@@ -201,6 +201,16 @@ void FileManager::toggle_mark_on_selected(const int selected) {
       selected >= instance.curdir_entries_.size()) {
     return;
   }
+
+  if (std::ranges::find_if(
+          instance.marked_entries_,
+          [&instance, selected](const fs::directory_entry &entry) {
+            return entry.path() ==
+                   instance.curdir_entries_[selected].path().parent_path();
+          }) != instance.marked_entries_.end()) {
+    return;
+  }
+
   if (auto iter = std::ranges::find(instance.marked_entries_,
                                     instance.curdir_entries_[selected]);
       iter != instance.marked_entries_.end()) {
@@ -336,6 +346,21 @@ bool FileManager::delete_marked_entries() {
 
   instance.marked_entries_.clear();
   return true;
+}
+
+void FileManager::create_new_entry(const std::string &filename) {
+  if (filename.empty()) {
+    return;
+  }
+  std::shared_lock lock{file_manager_mutex_};
+  auto dest_path = instance().current_path_ / filename;
+
+  if (filename.ends_with('/')) {
+    fs::create_directories(dest_path);
+  } else {
+    std::ofstream ofs(dest_path);
+    ofs.close();
+  }
 }
 
 void FileManager::clear_marked_entries() {

@@ -8,7 +8,6 @@ namespace duck {
 
 class Scheduler {
 private:
-  exec::static_thread_pool ui_pool_;
   exec::static_thread_pool io_pool_;
   exec::static_thread_pool cpu_pool_;
   exec::static_thread_pool priority_pool_;
@@ -27,8 +26,6 @@ public:
   static exec::static_thread_pool::scheduler io_scheduler();
 
   static exec::static_thread_pool::scheduler cpu_scheduler();
-
-  static exec::static_thread_pool::scheduler ui_scheduler();
 
   static stdexec::scheduler auto priority_scheduler();
 };

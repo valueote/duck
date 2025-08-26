@@ -1,6 +1,5 @@
 #include "ui.h"
 #include "ftxui/dom/elements.hpp"
-#include <algorithm>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>

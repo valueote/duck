@@ -4,13 +4,16 @@
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <stdexec/execution.hpp>
+#include <stdexec/stop_token.hpp>
 
 namespace duck {
 class InputHandler {
 private:
   Ui &ui_;
   exec::async_scope scope_;
+  std::optional<stdexec::inplace_stop_source> stop_source_;
   void open_file();
+  stdexec::inplace_stop_token get_token();
 
 public:
   InputHandler(Ui &ui);
