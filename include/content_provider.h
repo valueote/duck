@@ -27,6 +27,7 @@ public:
   ftxui::Component deletion_dialog();
   ftxui::Component rename_dialog();
   ftxui::Component creation_dialog();
+  ftxui::Component notification();
   ftxui::Component layout();
 };
 } // namespace duck

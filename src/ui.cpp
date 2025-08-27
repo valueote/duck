@@ -18,7 +18,7 @@ Ui::Ui()
       entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {}
 
-void Ui::set_layout(
+void Ui::set_main_layout(
     ftxui::Component layout,
     std::function<bool(const ftxui::Event &)> navigation_handler,
     std::function<bool(const ftxui::Event &)> operation_handler) {
@@ -44,13 +44,18 @@ void Ui::set_creation_dialog(
   creation_dialog_ = std::move(new_entry_dialog) | ftxui::CatchEvent(handler);
 }
 
-void Ui::finalize_layout() {
+void Ui::set_notification(ftxui::Component notification) {
+  notification_ = std::move(notification);
+}
+
+void Ui::finalize_tui() {
   auto components_tab = ftxui::Container::Tab(
       {
           main_layout_,
           deletion_dialog_,
           rename_dialog_,
           creation_dialog_,
+          notification_,
       },
       &active_pane_);
   main_layout_->TakeFocus();
@@ -78,6 +83,7 @@ void Ui::finalize_layout() {
           deletion_dialog_->Render() | ftxui::center,
       });
     }
+
     case static_cast<int>(pane::CREATION): {
       return ftxui::dbox({
           main_ui_layer,
@@ -85,6 +91,21 @@ void Ui::finalize_layout() {
           creation_dialog_->Render() | ftxui::center,
       });
     }
+
+    case static_cast<int>(pane::NOTIFICATION): {
+
+      auto top_layer = ftxui::hbox(
+          {ftxui::filler(), ftxui::vbox({
+                                ftxui::hbox(notification_->Render()),
+                                ftxui::filler(),
+                            })});
+      return ftxui::dbox({
+          main_ui_layer,
+          ftxui::filler(),
+          top_layer,
+      });
+    }
+
     default:
       return main_ui_layer;
     }
@@ -109,7 +130,7 @@ void Ui::toggle_deletion_dialog() {
   if (active_pane_ == static_cast<int>(pane::DELETION)) {
     active_pane_ = static_cast<int>(pane::MAIN);
     main_layout_->TakeFocus();
-  } else {
+  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
     active_pane_ = static_cast<int>(pane::DELETION);
     deletion_dialog_->TakeFocus();
   }
@@ -119,7 +140,7 @@ void Ui::toggle_rename_dialog() {
   if (active_pane_ == static_cast<int>(pane::RENAME)) {
     active_pane_ = static_cast<int>(pane::MAIN);
     main_layout_->TakeFocus();
-  } else {
+  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
     active_pane_ = static_cast<int>(pane::RENAME);
     rename_dialog_->TakeFocus();
   }
@@ -129,9 +150,17 @@ void Ui::toggle_creation_dialog() {
   if (active_pane_ == static_cast<int>(pane::CREATION)) {
     active_pane_ = static_cast<int>(pane::MAIN);
     main_layout_->TakeFocus();
-  } else {
+  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
     active_pane_ = static_cast<int>(pane::CREATION);
     creation_dialog_->TakeFocus();
+  }
+}
+
+void Ui::toggle_notification() {
+  if (active_pane_ == static_cast<int>(pane::NOTIFICATION)) {
+    active_pane_ = static_cast<int>(pane::MAIN);
+  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+    active_pane_ = static_cast<int>(pane::NOTIFICATION);
   }
 }
 
@@ -160,6 +189,10 @@ void Ui::update_curdir_entries(std::vector<ftxui::Element> new_entries) {
   }
 }
 
+void Ui::update_text_preview(std::string new_text_preview) {
+  text_preview_ = std::move(new_text_preview);
+}
+
 void Ui::update_entries_preview(ftxui::Element new_entries) {
   entries_preview_ = std::move(new_entries);
 }
@@ -169,18 +202,20 @@ void Ui::update_rename_input(std::string str) {
   rename_cursor_positon_ = static_cast<int>(rename_input_.size());
 }
 
+void Ui::update_notification(std::string str) {
+  notification_content_ = std::move(str);
+}
+
 std::vector<ftxui::Element> Ui::curdir_entries() { return curdir_entries_; }
 
 ftxui::Element Ui::entries_preview() { return entries_preview_; }
-
-void Ui::update_text_preview(std::string new_text_preview) {
-  text_preview_ = std::move(new_text_preview);
-}
 std::string Ui::text_preview() { return text_preview_; }
 
 std::string &Ui::rename_input() { return rename_input_; }
 
 std::string &Ui::new_entry_input() { return new_entry_input_; }
+
+std::string Ui::notification_content() { return notification_content_; }
 
 int &Ui ::rename_cursor_positon() { return rename_cursor_positon_; }
 
@@ -191,7 +226,7 @@ void Ui::exit() { screen_.Exit(); }
 int Ui::global_selected() const { return global_selected_; }
 
 // Screen has a internal task queue which is protected by a mutex, so this
-// opration is safe without holding ui_lock;
+// opration is safe without lock;
 void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
 
 void Ui::post_event(ftxui::Event event) { screen_.PostEvent(std::move(event)); }

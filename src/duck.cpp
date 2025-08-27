@@ -17,10 +17,11 @@ void Duck::setup_ui() {
                         input_handler_.rename_dialog_handler());
   ui_.set_creation_dialog(content_provider_.creation_dialog(),
                           input_handler_.creation_dialog_handler());
-  ui_.set_layout(content_provider_.layout(),
-                 input_handler_.navigation_handler(),
-                 input_handler_.operation_handler());
-  ui_.finalize_layout();
+  ui_.set_main_layout(content_provider_.layout(),
+                      input_handler_.navigation_handler(),
+                      input_handler_.operation_handler());
+  ui_.set_notification(content_provider_.notification());
+  ui_.finalize_tui();
 
   ui_.update_curdir_entries(FileManager::entries_to_elements(
       FileManager::update_curdir_entries(false)));

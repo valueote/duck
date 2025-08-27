@@ -22,11 +22,12 @@ private:
   ftxui::Element entries_preview_;
 
   ftxui::ScreenInteractive screen_;
-  ftxui::Component main_layout_;
   ftxui::Component tui_;
+  ftxui::Component main_layout_;
   ftxui::Component deletion_dialog_;
-
   ftxui::Component creation_dialog_;
+  ftxui::Component notification_;
+  std::string notification_content_;
   std::string new_entry_input_;
 
   ftxui::Component rename_dialog_;
@@ -37,12 +38,19 @@ private:
   int global_selected_;
   int view_selected_;
 
-  enum class pane : int8_t { MAIN = 0, DELETION, RENAME, CREATION };
+  enum class pane : int8_t {
+    MAIN = 0,
+    DELETION,
+    RENAME,
+    CREATION,
+    NOTIFICATION
+  };
   int active_pane_;
 
 public:
   Ui();
-  void set_layout(ftxui::Component layout,
+  void
+  set_main_layout(ftxui::Component layout,
                   std::function<bool(const ftxui::Event &)> navigation_handler,
                   std::function<bool(const ftxui::Event &)> operation_handler);
   void set_deletion_dialog(ftxui::Component deletion_dialog,
@@ -53,13 +61,16 @@ public:
 
   void set_creation_dialog(ftxui::Component new_entry_dialog,
                            std::function<bool(const ftxui::Event &)> handler);
-  void finalize_layout();
+  void set_notification(ftxui::Component notification);
+
+  void finalize_tui();
 
   void move_selected_up(int max);
   void move_selected_down(int max);
   void toggle_deletion_dialog();
   void toggle_rename_dialog();
   void toggle_creation_dialog();
+  void toggle_notification();
 
   void enter_direcotry(std::vector<ftxui::Element> curdir_entries);
   void leave_direcotry(std::vector<ftxui::Element> curdir_entries,
@@ -67,6 +78,7 @@ public:
   void update_entries_preview(ftxui::Element new_entries);
   void update_curdir_entries(std::vector<ftxui::Element> new_entries);
   void update_rename_input(std::string str);
+  void update_notification(std::string str);
 
   std::vector<ftxui::Element> curdir_entries();
   ftxui::Element entries_preview();
@@ -74,6 +86,7 @@ public:
   std::string text_preview();
   std::string &rename_input();
   std::string &new_entry_input();
+  std::string notification_content();
   int &rename_cursor_positon();
 
   void render();

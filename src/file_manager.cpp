@@ -1,6 +1,5 @@
 #include "file_manager.h"
 #include <algorithm>
-#include <cstddef>
 #include <filesystem>
 #include <format>
 #include <fstream>

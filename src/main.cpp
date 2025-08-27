@@ -1,14 +1,11 @@
 #include "duck.h"
-#include <chrono>
-#include <exec/linux/io_uring_context.hpp>
-#include <print>
 
 int main() {
   duck::Duck d;
   d.run();
 }
-
-// TODO: Forbid delete current dir when navigating to it
+// TODO: Improve add_new_entry
+// TODO: Show a notification when try to mark entries in current dir
 // TODO: implement task cancelation
 // TODO: Add lazy loading for directory entries
 // TODO: Implement better log

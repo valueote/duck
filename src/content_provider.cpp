@@ -208,7 +208,7 @@ ftxui::Component ContentProvider::creation_dialog() {
 
   auto input = ftxui::Input(&ui_.new_entry_input(), option);
   auto renderer = ftxui::Renderer(input, [this, input] {
-    const auto [width, height] = ftxui::Terminal::Size();
+    const auto [width, _] = ftxui::Terminal::Size();
     auto dialog = ftxui::window(ftxui::text("Create"), input->Render()) |
                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2) |
                   ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3) |
@@ -218,6 +218,15 @@ ftxui::Component ContentProvider::creation_dialog() {
   });
 
   return renderer;
+}
+
+ftxui::Component ContentProvider::notification() {
+  return ftxui::Renderer([this]() {
+    auto [width, _] = ftxui::Terminal::Size();
+    return ftxui::window(ftxui::text("notification"),
+                         ftxui::text(ui_.notification_content())) |
+           ftxui::flex | ftxui::clear_under;
+  });
 }
 
 } // namespace duck

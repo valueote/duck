@@ -92,7 +92,6 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
                       ui_.update_curdir_entries(elmt);
                       ui_.move_selected_down(static_cast<int>(
                           FileManager::curdir_entries().size()));
-                      ui_.post_event(DuckEvent::refresh);
                       update_preview_async();
                     });
                   });
@@ -159,6 +158,12 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
                   stdexec::then(FileManager::toggle_hidden_entries) |
                   stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn_future(task);
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('n')) {
+      ui_.update_notification("Hello! this is a test for notificaton.");
+      ui_.toggle_notification();
       return true;
     }
 
@@ -328,8 +333,13 @@ InputHandler::update_text_preview_async(const int &selected) {
 
 // Just read the curdir_entries and update the menu entries
 void InputHandler::refresh_menu_async() {
+  auto token = get_token();
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then(FileManager::curdir_entries) |
+              stdexec::then([token]() {
+                if (token.stop_requested()) {
+                }
+                return FileManager::curdir_entries();
+              }) |
               stdexec::then(FileManager::entries_to_elements) |
               stdexec::then([this](std::vector<ftxui::Element> elements) {
                 ui_.post_task([this, elmt = std::move(elements)]() {
