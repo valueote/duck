@@ -40,6 +40,7 @@ private:
   fs::path parent_path_;
   std::vector<fs::directory_entry> curdir_entries_;
   std::vector<fs::directory_entry> hidden_entries_;
+
   std::vector<fs::directory_entry> preview_entries_;
   std::set<fs::directory_entry> marked_entries_;
   std::vector<fs::directory_entry> clipboard_entries_;

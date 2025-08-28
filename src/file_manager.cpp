@@ -65,21 +65,26 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
   files.reserve(files_reserve);
   entries.reserve(dirs_reserve + files_reserve);
 
-  for (const auto &entry : fs::directory_iterator(
+  for (auto entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
     if (entry.path().empty()) {
       continue;
     }
     if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
+      hidden_entries_.push_back(std::move(entry));
       continue;
     }
-    (entry.is_directory() ? dirs : files).push_back(entry);
+    entries.push_back(std::move(entry));
   }
 
-  std::ranges::sort(dirs);
-  std::ranges::sort(files);
-  std::ranges::move(dirs, std::back_inserter(entries));
-  std::ranges::move(files, std::back_inserter(entries));
+  std::ranges::sort(
+      entries, [](const fs::directory_entry &a, const fs::directory_entry &b) {
+        if (a.is_directory() != b.is_directory()) {
+          return a.is_directory() > b.is_directory();
+        }
+
+        return a.path().filename() < b.path().filename();
+      });
 
   lru_cache_.insert(path, entries);
 
