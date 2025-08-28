@@ -1,6 +1,4 @@
 #pragma once
-#include "colorscheme.h"
-#include "stdexec/__detail/__execution_fwd.hpp"
 #include "ui.h"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -12,10 +10,8 @@ namespace duck {
 class ContentProvider {
 private:
   Ui &ui_;
-  std::mutex mutex_;
-  ftxui::Element left_pane(int width);
-  ftxui::Element right_pane(int width);
   ftxui::Element deleted_entries();
+  ftxui::Element visible_entries();
   ftxui::Element left_pane();
   ftxui::Element right_pane();
 

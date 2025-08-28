@@ -26,9 +26,9 @@ ContentProvider::menu_entries_transform() {
   };
 }
 
-ftxui::Element ContentProvider::left_pane(int width) {
+ftxui::Element ContentProvider::visible_entries() {
+  auto [width, _] = ftxui::Terminal::Size();
   auto all_entries = ui_.curdir_entries();
-
   if (all_entries.empty()) {
     return window(
                ftxui::text(" " + FileManager::current_path().string() + " ") |
@@ -64,19 +64,23 @@ ftxui::Element ContentProvider::left_pane(int width) {
   }
   visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
                                        ftxui::bgcolor(ColorScheme::selected());
+  return ftxui::vbox(std::move(visible_entries));
+}
 
+ftxui::Element ContentProvider::left_pane() {
+  auto [width, _] = ftxui::Terminal::Size();
   auto pane =
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                  ftxui::bold |
                  ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             ftxui::vbox(std::move(visible_entries))) |
+             visible_entries()) |
       ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
 
   return pane;
 }
 
-ftxui::Element ContentProvider::right_pane(int width) {
-
+ftxui::Element ContentProvider::right_pane() {
+  auto [width, _] = ftxui::Terminal::Size();
   auto pane = window(ftxui::text(" Content Preview ") | ftxui::bold,
                      [this] {
                        const auto selected_path =
@@ -100,8 +104,7 @@ ftxui::Element ContentProvider::right_pane(int width) {
 ftxui::Component ContentProvider::layout() {
   auto dummy = ftxui::Button({});
   auto render = ftxui::Renderer(dummy, [this]() {
-    auto [width, height] = ftxui::Terminal::Size();
-    return ftxui::hbox(left_pane(width), ftxui::separator(), right_pane(width));
+    return ftxui::hbox(left_pane(), ftxui::separator(), right_pane());
   });
   return render;
 }
