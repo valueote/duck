@@ -64,7 +64,8 @@ ftxui::Element ContentProvider::visible_entries() {
   }
   visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
                                        ftxui::bgcolor(ColorScheme::selected());
-  return ftxui::vbox(std::move(visible_entries));
+  return ftxui::vbox(std::move(visible_entries)) |
+         ftxui::color(ColorScheme::dir());
 }
 
 ftxui::Element ContentProvider::left_pane() {

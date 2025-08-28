@@ -11,4 +11,8 @@ ftxui::Color ColorScheme::selected() { return color_map_.at("selected"); }
 
 ftxui::Color ColorScheme::warning() { return color_map_.at("warning"); }
 
+ftxui::Color ColorScheme::file() { return color_map_.at("file"); }
+
+ftxui::Color ColorScheme::dir() { return color_map_.at("dir"); }
+
 } // namespace duck

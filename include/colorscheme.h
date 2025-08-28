@@ -49,7 +49,7 @@ private:
               {"selected", CatppuccinFrappe.Lavender},
               {"warning", CatppuccinFrappe.Yellow},
               {"file", CatppuccinFrappe.Text},
-              {"dir", CatppuccinFrappe.Sapphire},
+              {"dir", CatppuccinFrappe.Rosewater},
           };
 
   ColorScheme() = default;
@@ -66,6 +66,8 @@ public:
   static ftxui::Color surface0();
   static ftxui::Color selected();
   static ftxui::Color warning();
+  static ftxui::Color file();
+  static ftxui::Color dir();
 };
 
 } // namespace duck
