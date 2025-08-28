@@ -187,14 +187,17 @@ void Ui::update_curdir_entries(std::vector<ftxui::Element> new_entries) {
   if (global_selected_ >= curdir_entries_.size()) {
     global_selected_ = 0;
   }
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
 void Ui::update_text_preview(std::string new_text_preview) {
   text_preview_ = std::move(new_text_preview);
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
 void Ui::update_entries_preview(ftxui::Element new_entries) {
   entries_preview_ = std::move(new_entries);
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
 void Ui::update_rename_input(std::string str) {

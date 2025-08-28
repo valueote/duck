@@ -7,7 +7,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(TBB REQUIRED)
-find_package(Boost REQUIRED COMPONENTS process)
 
 include(cmake/CPM.cmake)
 cpmaddpackage(
@@ -39,8 +38,23 @@ add_executable(
   src/scheduler.cpp)
 
 target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-target_link_libraries(duck PRIVATE ftxui::screen ftxui::dom ftxui::component
-                                   Boost::process)
-
+target_link_libraries(duck PRIVATE ftxui::screen ftxui::dom ftxui::component)
 target_link_libraries(duck PRIVATE STDEXEC::stdexec TBB::tbb)
+
+add_executable(
+  duck_tests EXCLUDE_FROM_ALL
+  src/ui.cpp
+  src/file_manager.cpp
+  src/input_handler.cpp
+  src/content_provider.cpp
+  src/duck.cpp
+  src/colorscheme.cpp
+  src/scheduler.cpp
+  tests/test_main.cpp
+  tests/file_manager_test.cpp)
+target_include_directories(
+  duck_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+                     ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  duck_tests PRIVATE ftxui::screen ftxui::dom ftxui::component STDEXEC::stdexec
+                     TBB::tbb)

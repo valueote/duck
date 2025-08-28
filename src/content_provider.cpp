@@ -2,8 +2,6 @@
 #include "colorscheme.h"
 #include "file_manager.h"
 #include "ui.h"
-#include <boost/asio.hpp>
-#include <boost/process.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
