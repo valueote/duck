@@ -483,43 +483,6 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) {
   return std::format("{} {}", icon, filename);
 }
 
-std::vector<ftxui::Element> FileManager::entries_to_elements(
-    const std::vector<fs::directory_entry> &entries) {
-  auto &instance = FileManager::instance();
-  if (entries.empty()) {
-    return {};
-  }
-  const auto *empty = "  ";
-
-  auto result = entries |
-                std::views::transform([](const fs::directory_entry &entry) {
-                  auto filename = ftxui::text(entry_name_with_icon(entry));
-                  auto marker = ftxui::text("  ");
-                  if (is_marked(entry)) {
-                    marker = ftxui::text("█ ");
-                    if (yanking()) {
-                      marker |= ftxui::color(ftxui::Color::Blue);
-                    } else if (cutting()) {
-                      marker |= ftxui::color(ftxui::Color::Red);
-                    }
-                  }
-                  auto elmt = ftxui::hbox({marker, filename});
-                  if (entry.is_directory()) {
-                    elmt |= ftxui::color(ColorScheme::dir());
-                  } else {
-                    elmt |= ftxui::color(ColorScheme::file());
-                  }
-                  return elmt;
-                }) |
-                std::ranges::to<std::vector>();
-  return result;
-}
-
-ftxui::Element FileManager::entries_to_element(
-    const std::vector<fs::directory_entry> &entries) {
-  return ftxui::vbox(entries_to_elements(entries));
-}
-
 template <typename Key, typename Value>
 FileManager::Lru<Key, Value>::Lru(size_t capacity) : capacity_(capacity) {}
 

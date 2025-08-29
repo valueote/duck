@@ -1,4 +1,5 @@
 #include "duck.h"
+#include "content_provider.h"
 #include "file_manager.h"
 #include "input_handler.h"
 #include "ui.h"
@@ -23,7 +24,7 @@ void Duck::setup_ui() {
   ui_.set_notification(content_provider_.notification());
   ui_.finalize_tui();
 
-  ui_.update_curdir_entries(FileManager::entries_to_elements(
+  ui_.update_curdir_entries(ContentProvider::entries_to_elements(
       FileManager::update_curdir_entries(false)));
   input_handler_.update_preview_async();
 }

@@ -98,10 +98,6 @@ public:
   static void update_current_path(const fs::path &new_path);
 
   static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static std::vector<ftxui::Element>
-  entries_to_elements(const std::vector<fs::directory_entry> &entries);
-  static ftxui::Element
-  entries_to_element(const std::vector<fs::directory_entry> &entries);
   static std::vector<fs::directory_entry>
   directory_preview(const std::pair<int, int> &selected_and_size);
   static std::string text_preview(int selected, std::pair<int, int> size);

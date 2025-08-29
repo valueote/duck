@@ -64,8 +64,7 @@ ftxui::Element ContentProvider::visible_entries() {
   }
   visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
                                        ftxui::bgcolor(ColorScheme::selected());
-  return ftxui::vbox(std::move(visible_entries)) |
-         ftxui::color(ColorScheme::dir());
+  return ftxui::vbox(std::move(visible_entries));
 }
 
 ftxui::Element ContentProvider::left_pane() {
@@ -229,6 +228,34 @@ ftxui::Component ContentProvider::notification() {
                          ftxui::text(ui_.notification_content())) |
            ftxui::flex | ftxui::clear_under;
   });
+}
+
+std::vector<ftxui::Element> ContentProvider::entries_to_elements(
+    const std::vector<fs::directory_entry> &entries) {
+  if (entries.empty()) {
+    return {};
+  }
+  return entries | std::views::transform([](const fs::directory_entry &entry) {
+           auto filename =
+               ftxui::text(FileManager::entry_name_with_icon(entry));
+           auto marker = ftxui::text("  ");
+           if (FileManager::is_marked(entry)) {
+             marker = ftxui::text("█ ");
+             if (FileManager::yanking()) {
+               marker |= ftxui::color(ftxui::Color::Blue);
+             } else if (FileManager::cutting()) {
+               marker |= ftxui::color(ftxui::Color::Red);
+             }
+           }
+           auto elmt = ftxui::hbox({marker, filename});
+           if (entry.is_directory()) {
+             elmt |= ftxui::color(ColorScheme::dir());
+           } else {
+             elmt |= ftxui::color(ColorScheme::file());
+           }
+           return elmt;
+         }) |
+         std::ranges::to<std::vector>();
 }
 
 } // namespace duck
