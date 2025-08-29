@@ -6,10 +6,10 @@
 #include <ftxui/screen/color.hpp>
 #include <iterator>
 #include <mutex>
+#include <optional>
 #include <print>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -22,16 +22,18 @@ constexpr size_t files_reserve = 256;
 
 FileManager::FileManager()
     : current_path_{fs::current_path()},
-      parent_path_{current_path_.parent_path()}, lru_cache_{lru_cache_size},
+      parent_path_{current_path_.parent_path()}, cache_{lru_cache_size},
       is_yanking_{false}, is_cutting_{false}, show_hidden_{false} {
 
-  curdir_entries_ = std::move(
-      load_directory_entries_without_lock(current_path_, false, true));
+  load_directory_entries(current_path_, false, true);
 
-  if (fs::is_directory(curdir_entries_[0])) {
-    preview_entries_ = std::move(load_directory_entries_without_lock(
-        curdir_entries_[0], show_hidden_, true));
-  }
+  cache_.get(current_path_)
+      .and_then([this](const auto &direcotry) -> std::optional<Direcotry> {
+        if (const auto &entries = direcotry.entries_; !entries.empty()) {
+          load_directory_entries(entries[0].path(), show_hidden_, true);
+        }
+        return std::nullopt;
+      });
 
   clipboard_entries_.reserve(clipboard_reserve);
 }
@@ -41,27 +43,22 @@ FileManager &FileManager::instance() {
   return instance;
 }
 
-std::vector<fs::directory_entry>
-FileManager::load_directory_entries_without_lock(const fs::path &path,
-                                                 bool show_hidden,
-                                                 bool use_cache) {
+void FileManager::load_directory_entries(const fs::path &path, bool show_hidden,
+                                         bool use_cache) {
   if (!fs::is_directory(path)) {
-    return {};
+    return;
   }
 
-  std::vector<fs::directory_entry> entries;
+  Direcotry direcotry;
 
-  auto cache = std::move(lru_cache_.get(path));
-  if (cache.has_value() && use_cache) {
-    entries = std::move(cache.value());
-    return entries;
+  if (auto cache = std::move(cache_.get(path));
+      cache.has_value() && use_cache) {
+    direcotry = std::move(cache.value());
+    return;
   }
 
-  std::vector<fs::directory_entry> dirs;
-  std::vector<fs::directory_entry> files;
-  dirs.reserve(dirs_reserve);
-  files.reserve(files_reserve);
-  entries.reserve(dirs_reserve + files_reserve);
+  direcotry.entries_.reserve(dirs_reserve);
+  direcotry.hidden_entries_.reserve(dirs_reserve);
 
   for (auto entry : fs::directory_iterator(
            path, fs::directory_options::skip_permission_denied)) {
@@ -69,20 +66,20 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
       continue;
     }
     if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
-      // hidden_entries_.push_back(std::move(entry));
+      direcotry.hidden_entries_.push_back(std::move(entry));
       continue;
     }
-    entries.push_back(std::move(entry));
+    direcotry.entries_.push_back(std::move(entry));
   }
 
-  std::ranges::sort(entries, entries_sorter);
-
-  lru_cache_.insert(path, entries);
-
-  return entries;
+  std::ranges::sort(direcotry.entries_, entries_sorter);
+  cache_.insert(path, direcotry);
 }
 
 bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
+  if (!entry.exists()) {
+    return false;
+  }
 
   if (fs::is_directory(entry)) {
     return fs::remove_all(entry) != 0U;
@@ -102,151 +99,171 @@ bool FileManager::entries_sorter(const fs::directory_entry &first,
 }
 
 const fs::path &FileManager::current_path() {
-  std::shared_lock lock{file_manager_mutex_};
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().current_path_;
 }
 
 const fs::path &FileManager::cur_parent_path() {
-  std::shared_lock lock{file_manager_mutex_};
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().parent_path_;
 }
 
 const fs::path &FileManager::previous_path() {
-  std::shared_lock lock{file_manager_mutex_};
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().previous_path_;
 }
 
-const std::vector<fs::directory_entry> &FileManager::curdir_entries() {
-  std::shared_lock lock{file_manager_mutex_};
-  return instance().curdir_entries_;
+std::vector<fs::directory_entry> FileManager::curdir_entries() {
+  fs::path current_path{};
+  auto &instance = FileManager::instance();
+
+  {
+    std::shared_lock lock{instance.file_manager_mutex_};
+    current_path = instance.current_path_;
+  }
+
+  return instance.cache_.get(current_path)
+      .transform([](const auto &direcotry) -> std::vector<fs::directory_entry> {
+        return direcotry.entries_;
+      })
+      .value_or({});
 }
 
-const std::vector<fs::directory_entry> &FileManager::preview_entries() {
-  std::shared_lock lock{file_manager_mutex_};
+std::vector<fs::directory_entry> FileManager::preview_entries() {
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().preview_entries_;
 }
 
-const std::set<fs::directory_entry> &FileManager::marked_entries() {
-  std::shared_lock lock{file_manager_mutex_};
+std::set<fs::directory_entry> FileManager::marked_entries() {
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().marked_entries_;
 }
 
 int FileManager::previous_path_index() {
-  if (auto iter = std::ranges::find(instance().curdir_entries_,
-                                    instance().previous_path_);
-      iter != instance().curdir_entries_.end()) {
-    return static_cast<int>(
-        std::distance(instance().curdir_entries_.begin(), iter));
+  fs::path current_path{};
+  fs::path previous_path{};
+  auto &instance = FileManager::instance();
+  {
+    std::shared_lock lock{instance.file_manager_mutex_};
+    current_path = instance.current_path_;
+    previous_path = instance.previous_path_;
+  }
+
+  auto curdir_entries = FileManager::curdir_entries();
+  if (auto iter = std::ranges::find(curdir_entries, previous_path);
+      iter != curdir_entries.end()) {
+    return static_cast<int>(std::distance(curdir_entries.begin(), iter));
   }
   return 0;
 }
 
 bool FileManager::yanking() {
-  std::shared_lock lock{file_manager_mutex_};
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().is_yanking_;
 }
 
 bool FileManager::cutting() {
-  std::shared_lock lock{file_manager_mutex_};
+  std::shared_lock lock{instance().file_manager_mutex_};
   return instance().is_cutting_;
 }
 
-std::expected<fs::directory_entry, std::string>
+std::optional<fs::directory_entry>
 FileManager::selected_entry(const int &selected) {
-  std::shared_lock lock{file_manager_mutex_};
-  auto &instance = FileManager::instance();
+  auto curdir_entries = FileManager::curdir_entries();
 
-  if (instance.curdir_entries_.empty()) {
-    return std::unexpected("No entries in current directory");
+  if (curdir_entries.empty()) {
+    return std::nullopt;
   }
 
-  if (selected < 0 || selected >= instance.curdir_entries_.size()) {
-    return std::unexpected("Selected index out of range: " +
-                           std::to_string(selected));
+  if (selected < 0 || selected >= curdir_entries.size()) {
+    return std::nullopt;
   }
-  return instance.curdir_entries_[selected];
+
+  return curdir_entries[selected];
 }
 
 std::vector<fs::directory_entry>
 FileManager::update_curdir_entries(bool use_cache) {
   auto &instance = FileManager::instance();
-  fs::path target_path{};
+  fs::path current_path{};
   bool show_hidden{};
 
   {
-    std::shared_lock lock{file_manager_mutex_};
-    target_path = instance.current_path_;
+    std::shared_lock lock{instance.file_manager_mutex_};
+    current_path = instance.current_path_;
     show_hidden = instance.show_hidden_;
   }
+  instance.load_directory_entries(current_path, show_hidden, use_cache);
 
-  auto entries = std::move(instance.load_directory_entries_without_lock(
-      target_path, show_hidden, use_cache));
-
-  {
-    std::unique_lock lock{file_manager_mutex_};
-    instance.curdir_entries_ = std::move(entries);
-    return instance.curdir_entries_;
-  }
+  return instance.cache_.get(current_path)
+      .transform([](const auto &direcotry) { return direcotry.entries_; })
+      .value_or({});
 }
 
 void FileManager::update_current_path(const fs::path &new_path) {
-  {
-    std::unique_lock lock{FileManager::file_manager_mutex_};
-    auto &instance = FileManager::instance();
-    instance.previous_path_ = instance.current_path_;
-    instance.current_path_ = new_path;
-    instance.parent_path_ = instance.current_path_.parent_path();
-  }
+  auto &instance = FileManager::instance();
+  std::unique_lock lock{instance.file_manager_mutex_};
+  instance.previous_path_ = instance.current_path_;
+  instance.current_path_ = new_path;
+  instance.parent_path_ = instance.current_path_.parent_path();
 }
 
 void FileManager::toggle_mark_on_selected(const int selected) {
-  std::unique_lock lock{file_manager_mutex_};
   auto &instance = FileManager::instance();
-  if (instance.curdir_entries_.empty() || selected < 0 ||
-      selected >= instance.curdir_entries_.size()) {
+  std::unique_lock lock{instance.file_manager_mutex_};
+
+  auto curdir_entries =
+      instance.cache_.get(instance.current_path_)
+          .transform([](const auto &direcotry) { return direcotry.entries_; })
+          .value_or({});
+
+  if (curdir_entries.empty() || selected < 0 ||
+      selected >= curdir_entries.size()) {
     return;
   }
 
   if (std::ranges::find_if(
-          instance.marked_entries_,
-          [&instance, selected](const fs::directory_entry &entry) {
+          instance.marked_entries_, [&instance, selected, &curdir_entries](
+                                        const fs::directory_entry &entry) {
             return entry.path() ==
-                   instance.curdir_entries_[selected].path().parent_path();
+                   curdir_entries[selected].path().parent_path();
           }) != instance.marked_entries_.end()) {
     return;
   }
 
-  if (auto iter = std::ranges::find(instance.marked_entries_,
-                                    instance.curdir_entries_[selected]);
+  if (auto iter =
+          std::ranges::find(instance.marked_entries_, curdir_entries[selected]);
       iter != instance.marked_entries_.end()) {
     instance.marked_entries_.erase(iter);
   } else {
-    instance.marked_entries_.insert(instance.curdir_entries_[selected]);
+    instance.marked_entries_.insert(curdir_entries[selected]);
   }
 }
 
 void FileManager::toggle_hidden_entries() {
-  std::unique_lock lock{file_manager_mutex_};
+  std::unique_lock lock{instance().file_manager_mutex_};
   instance().show_hidden_ = !instance().show_hidden_;
 }
 
 void FileManager::start_yanking(const int selected) {
-  std::unique_lock lock{file_manager_mutex_};
   auto &instance = FileManager::instance();
+
+  std::unique_lock lock{instance.file_manager_mutex_};
   instance.is_yanking_ = true;
   instance.is_cutting_ = false;
+
   if (instance.marked_entries_.empty()) {
-    instance.marked_entries_.insert(instance.curdir_entries_[selected]);
+    instance.marked_entries_.insert(curdir_entries()[selected]);
   }
 }
 
 void FileManager::start_cutting(const int selected) {
-  std::unique_lock lock{file_manager_mutex_};
   auto &instance = FileManager::instance();
+  std::unique_lock lock{instance.file_manager_mutex_};
   instance.is_cutting_ = true;
   instance.is_yanking_ = false;
   if (instance.marked_entries_.empty()) {
-    instance.marked_entries_.insert(instance.curdir_entries_[selected]);
+    instance.marked_entries_.insert(curdir_entries()[selected]);
   }
 }
 
@@ -285,21 +302,25 @@ void FileManager::yank_or_cut(const int selected) {
   }
   std::vector<fs::directory_entry> entries;
   fs::path current_path;
-  bool is_renaming{false};
+  bool is_cutting{false};
 
   {
-    std::unique_lock lock{file_manager_mutex_};
+    std::unique_lock lock{instance.file_manager_mutex_};
     if (instance.marked_entries_.empty()) {
-      entries.push_back(instance.curdir_entries_[selected]);
+      selected_entry(selected).transform([&entries](const auto &entry) {
+        entries.push_back(entry);
+        return entry;
+      });
     } else {
       entries = std::move(std::vector<fs::directory_entry>{
           instance.marked_entries_.begin(), instance.marked_entries_.end()});
     }
     instance.marked_entries_.clear();
     current_path = instance.current_path_;
-    is_renaming = instance.is_cutting_;
+    is_cutting = instance.is_cutting_;
   }
-  if (is_renaming) {
+
+  if (is_cutting) {
     rename_entries(entries, current_path);
   } else {
     yank_entries(entries, current_path);
@@ -307,23 +328,21 @@ void FileManager::yank_or_cut(const int selected) {
 }
 
 bool FileManager::is_marked(const fs::directory_entry &entry) {
-  std::shared_lock lock(file_manager_mutex_);
+  std::shared_lock lock(instance().file_manager_mutex_);
   return instance().marked_entries_.contains(entry);
 }
 
 bool FileManager::delete_selected_entry(const int selected) {
-  std::unique_lock lock{file_manager_mutex_};
-  return delete_entry_without_lock(instance().curdir_entries_[selected]);
+  std::unique_lock lock{instance().file_manager_mutex_};
+  return delete_entry_without_lock(selected_entry(selected).value_or({}));
 }
 
 void FileManager::rename_selected_entry(const int selected,
                                         const std::string &new_name) {
-  fs::directory_entry entry;
   fs::path cur_path;
 
   {
-    std::shared_lock lock{file_manager_mutex_};
-    entry = instance().curdir_entries_[selected];
+    std::shared_lock lock{instance().file_manager_mutex_};
     cur_path = instance().current_path_;
   }
 
@@ -334,11 +353,14 @@ void FileManager::rename_selected_entry(const int selected,
     cnt++;
   }
 
-  fs::rename(entry, dest_path);
+  selected_entry(selected).transform([dest_path](const auto &entry) {
+    fs::rename(entry, dest_path);
+    return 0;
+  });
 }
 
 bool FileManager::delete_marked_entries() {
-  std::unique_lock lock(file_manager_mutex_);
+  std::unique_lock lock(instance().file_manager_mutex_);
   auto &instance = FileManager::instance();
   if (instance.marked_entries_.empty()) {
     std::println(stderr, "[ERROR] try to delete empty file");
@@ -357,7 +379,7 @@ void FileManager::create_new_entry(const std::string &filename) {
   if (filename.empty()) {
     return;
   }
-  std::shared_lock lock{file_manager_mutex_};
+  std::shared_lock lock{instance().file_manager_mutex_};
   auto dest_path = instance().current_path_ / filename;
 
   if (filename.ends_with('/')) {
@@ -369,7 +391,7 @@ void FileManager::create_new_entry(const std::string &filename) {
 }
 
 void FileManager::clear_marked_entries() {
-  std::unique_lock lock(file_manager_mutex_);
+  std::unique_lock lock(instance().file_manager_mutex_);
   auto &instance = FileManager::instance();
   if (instance.is_yanking_ || instance.is_cutting_) {
     instance.is_yanking_ = false;
@@ -385,35 +407,38 @@ FileManager::directory_preview(const std::pair<int, int> &selected_and_size) {
   fs::path target_path;
   bool show_hidden{};
   auto [selected, preview_size] = selected_and_size;
+  auto &instance = FileManager::instance();
 
   {
-    auto &instance = FileManager::instance();
-    std::shared_lock lock{file_manager_mutex_};
-    if (instance.curdir_entries_.empty()) {
+    std::shared_lock lock{instance.file_manager_mutex_};
+    auto curdir_entries = FileManager::curdir_entries();
+    if (curdir_entries.empty()) {
       return {};
     }
-    if (selected < 0 || selected >= instance.curdir_entries_.size()) {
+    if (selected < 0 || selected >= curdir_entries.size()) {
       return {};
     }
-    if (not fs::is_directory(instance.curdir_entries_[selected])) {
+    if (not fs::is_directory(curdir_entries[selected])) {
       return {};
     }
-    target_path = instance.curdir_entries_[selected].path();
+    target_path = curdir_entries[selected].path();
     show_hidden = instance.show_hidden_;
   }
 
-  auto entries = std::move(instance().load_directory_entries_without_lock(
-      target_path, show_hidden, false));
-  {
-    std::unique_lock lock{file_manager_mutex_};
-    instance().preview_entries_.assign(
-        std::make_move_iterator(entries.begin()),
-        std::make_move_iterator(
-            entries.begin() +
-            std::min(preview_size, static_cast<int>(entries.size()))));
+  instance.load_directory_entries(target_path, show_hidden, true);
+  auto entries =
+      instance.cache_.get(target_path)
+          .transform([](const auto &direcotry) { return direcotry.entries_; })
+          .value_or({});
 
-    return instance().preview_entries_;
-  }
+  std::unique_lock lock{instance.file_manager_mutex_};
+  instance.preview_entries_.assign(
+      std::make_move_iterator(entries.begin()),
+      std::make_move_iterator(
+          entries.begin() +
+          std::min(preview_size, static_cast<int>(entries.size()))));
+
+  return instance.preview_entries_;
 }
 
 std::string FileManager::text_preview(const int selected,

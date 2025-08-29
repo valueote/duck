@@ -2,7 +2,7 @@
 
 namespace duck {
 
-constexpr size_t io_threads = 1;
+constexpr size_t io_threads = 2;
 constexpr size_t cpu_threads = 1;
 constexpr size_t priority_threads = 1;
 

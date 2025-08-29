@@ -9,6 +9,7 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/terminal.hpp>
 #include <functional>
+#include <optional>
 #include <print>
 #include <string>
 #include <sys/wait.h>
@@ -377,16 +378,14 @@ void InputHandler::update_preview_async() {
 }
 
 void InputHandler::enter_direcotry() {
-  auto entry =
-      FileManager::selected_entry(ui_.global_selected())
-          .and_then([](fs::directory_entry entry)
-                        -> std::expected<fs::directory_entry, std::string> {
-            if (fs::is_directory(entry)) {
-              return std::expected<fs::directory_entry, std::string>{
-                  std::move(entry)};
-            }
-            return std::unexpected<std::string>{""};
-          });
+  auto entry = FileManager::selected_entry(ui_.global_selected())
+                   .and_then([](fs::directory_entry entry)
+                                 -> std::optional<fs::directory_entry> {
+                     if (fs::is_directory(entry)) {
+                       return std::make_optional(entry);
+                     }
+                     return std::nullopt;
+                   });
 
   if (entry) {
     auto task =
@@ -420,6 +419,7 @@ void InputHandler::leave_direcotry() {
       }) |
       stdexec::then([this](std::pair<std::vector<ftxui::Element>, int> pair) {
         ui_.post_task([this, pair = std::move(pair)]() {
+          // FIX:: Passing previous_path_index is dumb, need change
           ui_.leave_direcotry(pair.first, pair.second);
         });
         return pair.second;

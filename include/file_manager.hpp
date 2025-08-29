@@ -17,12 +17,14 @@ namespace fs = std::filesystem;
 class FileManager {
 
 private:
-  Lru<fs::path, std::vector<fs::directory_entry>> lru_cache_;
+  // Lru<fs::path, std::vector<fs::directory_entry>> lru_cache_;
+  Lru<fs::path, Direcotry> cache_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
-  std::vector<fs::directory_entry> curdir_entries_;
-  std::vector<fs::directory_entry> hidden_entries_;
+
+  //  std::vector<fs::directory_entry> curdir_entries_;
+  //  std::vector<fs::directory_entry> hidden_entries_;
 
   std::vector<fs::directory_entry> preview_entries_;
   std::set<fs::directory_entry> marked_entries_;
@@ -30,15 +32,14 @@ private:
   bool is_yanking_;
   bool is_cutting_;
   bool show_hidden_;
-  static inline std::shared_mutex file_manager_mutex_;
+  std::shared_mutex file_manager_mutex_;
 
   FileManager();
 
   static FileManager &instance();
 
-  std::vector<fs::directory_entry>
-  load_directory_entries_without_lock(const fs::path &path, bool show_hidden,
-                                      bool use_cache);
+  void load_directory_entries(const fs::path &path, bool show_hidden,
+                              bool use_cache);
 
   static bool delete_entry_without_lock(const fs::directory_entry &entry);
 
@@ -57,15 +58,13 @@ public:
   static const fs::path &current_path();
   static const fs::path &cur_parent_path();
   static const fs::path &previous_path();
-  static const std::vector<fs::directory_entry> &curdir_entries();
-  static const std::vector<fs::directory_entry> &preview_entries();
-  static const std::set<fs::directory_entry> &marked_entries();
+  static std::vector<fs::directory_entry> curdir_entries();
+  static std::vector<fs::directory_entry> preview_entries();
+  static std::set<fs::directory_entry> marked_entries();
   static int previous_path_index();
   static bool yanking();
   static bool cutting();
-  static std::expected<fs::directory_entry, std::string>
-  selected_entry(const int &selected);
-
+  static std::optional<fs::directory_entry> selected_entry(const int &selected);
   static void start_yanking(int selected);
   static void start_cutting(int selected);
   static void yank_or_cut(int selected);

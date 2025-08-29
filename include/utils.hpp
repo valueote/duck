@@ -4,6 +4,7 @@
 #include <optional>
 #include <shared_mutex>
 #include <unordered_map>
+#include <vector>
 
 namespace duck {
 
@@ -57,4 +58,11 @@ public:
     }
   }
 };
+
+struct Direcotry {
+  fs::path path_;
+  std::vector<fs::directory_entry> entries_;
+  std::vector<fs::directory_entry> hidden_entries_;
+};
+
 } // namespace duck
