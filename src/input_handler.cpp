@@ -1,7 +1,7 @@
-#include "input_handler.h"
-#include "content_provider.h"
-#include "file_manager.h"
-#include "scheduler.h"
+#include "input_handler.hpp"
+#include "content_provider.hpp"
+#include "file_manager.hpp"
+#include "scheduler.hpp"
 #include "stdexec/stop_token.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>

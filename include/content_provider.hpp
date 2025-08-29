@@ -1,5 +1,5 @@
 #pragma once
-#include "ui.h"
+#include "ui.hpp"
 #include <filesystem>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>

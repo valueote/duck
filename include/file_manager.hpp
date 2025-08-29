@@ -1,15 +1,13 @@
 #pragma once
+#include "utils.hpp"
 #include <exec/task.hpp>
 #include <expected>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/node.hpp>
-#include <list>
-#include <optional>
 #include <set>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
-#include <unordered_map>
 #include <vector>
 
 namespace duck {
@@ -19,21 +17,6 @@ namespace fs = std::filesystem;
 class FileManager {
 
 private:
-  template <typename Key, typename Value> class Lru {
-  private:
-    size_t capacity_;
-    std::list<Key> lru_list_;
-    std::unordered_map<Key, typename std::list<Key>::iterator> map_;
-    std::unordered_map<Key, Value> cache_;
-    std::shared_mutex lru_mutex_;
-    void touch_without_lock(const Key &path);
-
-  public:
-    Lru(size_t capacity);
-    std::optional<Value> get(const Key &path);
-    void insert(const Key &path, const Value &data);
-  };
-
   Lru<fs::path, std::vector<fs::directory_entry>> lru_cache_;
   fs::path current_path_;
   fs::path previous_path_;

@@ -1,4 +1,4 @@
-#include "duck.h"
+#include "duck.hpp"
 
 int main() {
   duck::Duck d;

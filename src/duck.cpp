@@ -1,8 +1,8 @@
-#include "duck.h"
-#include "content_provider.h"
-#include "file_manager.h"
-#include "input_handler.h"
-#include "ui.h"
+#include "duck.hpp"
+#include "content_provider.hpp"
+#include "file_manager.hpp"
+#include "input_handler.hpp"
+#include "ui.hpp"
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 

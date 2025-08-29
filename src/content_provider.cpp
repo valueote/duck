@@ -1,7 +1,7 @@
-#include "content_provider.h"
-#include "colorscheme.h"
-#include "file_manager.h"
-#include "ui.h"
+#include "content_provider.hpp"
+#include "colorscheme.hpp"
+#include "file_manager.hpp"
+#include "ui.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>

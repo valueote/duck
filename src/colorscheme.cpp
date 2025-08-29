@@ -1,4 +1,4 @@
-#include "colorscheme.h"
+#include "colorscheme.hpp"
 #include <ftxui/screen/color.hpp>
 namespace duck {
 ftxui::Color ColorScheme::text() { return color_map_.at("text"); }

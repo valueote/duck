@@ -1,21 +1,18 @@
-#include "file_manager.h"
-#include "colorscheme.h"
+#include "file_manager.hpp"
 #include <algorithm>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
 #include <iterator>
 #include <mutex>
-#include <optional>
 #include <print>
-#include <ranges>
 #include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
 namespace duck {
 
 constexpr size_t lru_cache_size = 50;
@@ -481,50 +478,6 @@ FileManager::entry_name_with_icon(const fs::directory_entry &entry) {
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
 
   return std::format("{} {}", icon, filename);
-}
-
-template <typename Key, typename Value>
-FileManager::Lru<Key, Value>::Lru(size_t capacity) : capacity_(capacity) {}
-
-template <typename Key, typename Value>
-void FileManager::Lru<Key, Value>::touch_without_lock(const Key &path) {
-  lru_list_.splice(lru_list_.begin(), lru_list_, map_[path]);
-}
-
-template <typename Key, typename Value>
-std::optional<Value> FileManager::Lru<Key, Value>::get(const Key &path) {
-  std::unique_lock lock{lru_mutex_};
-  auto iter = map_.find(path);
-  if (iter == map_.end()) {
-    return std::nullopt;
-  }
-
-  touch_without_lock(path);
-
-  return cache_[path];
-}
-
-template <typename Key, typename Value>
-void FileManager::Lru<Key, Value>::insert(const Key &path, const Value &data) {
-  auto iter = map_.find(path);
-  std::unique_lock lock{lru_mutex_};
-  if (iter != map_.end()) {
-    cache_[path] = data;
-    touch_without_lock(path);
-  } else {
-    if (lru_list_.size() == capacity_) {
-      const fs::path &lru_path = lru_list_.back();
-
-      map_.erase(lru_path);
-      cache_.erase(lru_path);
-
-      lru_list_.pop_back();
-    }
-
-    lru_list_.push_front(path);
-    map_[path] = lru_list_.begin();
-    cache_[path] = data;
-  }
 }
 
 } // namespace duck

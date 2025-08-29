@@ -1,7 +1,7 @@
 #pragma once
-#include "content_provider.h"
-#include "input_handler.h"
-#include "ui.h"
+#include "content_provider.hpp"
+#include "input_handler.hpp"
+#include "ui.hpp"
 
 namespace duck {
 class Duck {
