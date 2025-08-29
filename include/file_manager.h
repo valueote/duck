@@ -67,6 +67,9 @@ private:
   static void rename_entries(const std::vector<fs::directory_entry> &entries,
                              const fs::path &current_path);
 
+  static bool entries_sorter(const fs::directory_entry &first,
+                             const fs::directory_entry &second);
+
 public:
   static const fs::path &current_path();
   static const fs::path &cur_parent_path();

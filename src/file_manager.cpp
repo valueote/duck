@@ -1,4 +1,5 @@
 #include "file_manager.h"
+#include "colorscheme.h"
 #include <algorithm>
 #include <filesystem>
 #include <format>
@@ -71,20 +72,13 @@ FileManager::load_directory_entries_without_lock(const fs::path &path,
       continue;
     }
     if (entry.path().filename().native()[0] == '.' && !show_hidden_) {
-      hidden_entries_.push_back(std::move(entry));
+      // hidden_entries_.push_back(std::move(entry));
       continue;
     }
     entries.push_back(std::move(entry));
   }
 
-  std::ranges::sort(
-      entries, [](const fs::directory_entry &a, const fs::directory_entry &b) {
-        if (a.is_directory() != b.is_directory()) {
-          return a.is_directory() > b.is_directory();
-        }
-
-        return a.path().filename() < b.path().filename();
-      });
+  std::ranges::sort(entries, entries_sorter);
 
   lru_cache_.insert(path, entries);
 
@@ -98,6 +92,16 @@ bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
   }
 
   return fs::remove(entry);
+}
+
+bool FileManager::entries_sorter(const fs::directory_entry &first,
+                                 const fs::directory_entry &second) {
+  if (first.is_directory() != second.is_directory()) {
+    return static_cast<int>(first.is_directory()) >
+           static_cast<int>(second.is_directory());
+  }
+
+  return first.path().filename() < second.path().filename();
 }
 
 const fs::path &FileManager::current_path() {
@@ -499,7 +503,13 @@ std::vector<ftxui::Element> FileManager::entries_to_elements(
                       marker |= ftxui::color(ftxui::Color::Red);
                     }
                   }
-                  return ftxui::hbox({marker, filename});
+                  auto elmt = ftxui::hbox({marker, filename});
+                  if (entry.is_directory()) {
+                    elmt |= ftxui::color(ColorScheme::dir());
+                  } else {
+                    elmt |= ftxui::color(ColorScheme::file());
+                  }
+                  return elmt;
                 }) |
                 std::ranges::to<std::vector>();
   return result;
