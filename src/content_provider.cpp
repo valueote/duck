@@ -29,14 +29,6 @@ ContentProvider::menu_entries_transform() {
 ftxui::Element ContentProvider::visible_entries() {
   auto [width, _] = ftxui::Terminal::Size();
   auto all_entries = ui_.curdir_entries();
-  if (all_entries.empty()) {
-    return window(
-               ftxui::text(" " + FileManager::current_path().string() + " ") |
-                   ftxui::bold |
-                   ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-               ftxui::vbox({ftxui::text("[Empty directory]")})) |
-           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
-  }
 
   int selected = ui_.global_selected();
   std::vector<ftxui::Element> visible_entries;
@@ -69,6 +61,16 @@ ftxui::Element ContentProvider::visible_entries() {
 
 ftxui::Element ContentProvider::left_pane() {
   auto [width, _] = ftxui::Terminal::Size();
+  auto all_entries = ui_.curdir_entries();
+  if (all_entries.empty()) {
+    return window(
+               ftxui::text(" " + FileManager::current_path().string() + " ") |
+                   ftxui::bold |
+                   ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
+               ftxui::vbox({ftxui::text("[Empty directory]")})) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  }
+
   auto pane =
       window(ftxui::text(" " + FileManager::current_path().string() + " ") |
                  ftxui::bold |
