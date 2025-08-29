@@ -158,10 +158,7 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
       std::print(stderr, "start  toggle hidden entries");
       auto task = stdexec::schedule(Scheduler::io_scheduler()) |
                   stdexec::then(FileManager::toggle_hidden_entries) |
-                  stdexec::then([this]() {
-                    std::print(stderr, "start  toggle hidden entries");
-                    reload_menu_async();
-                  });
+                  stdexec::then([this]() { refresh_menu_async(); });
       scope_.spawn_future(task);
       return true;
     }

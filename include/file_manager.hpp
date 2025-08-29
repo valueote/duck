@@ -17,14 +17,10 @@ namespace fs = std::filesystem;
 class FileManager {
 
 private:
-  // Lru<fs::path, std::vector<fs::directory_entry>> lru_cache_;
   Lru<fs::path, Direcotry> cache_;
   fs::path current_path_;
   fs::path previous_path_;
   fs::path parent_path_;
-
-  //  std::vector<fs::directory_entry> curdir_entries_;
-  //  std::vector<fs::directory_entry> hidden_entries_;
 
   std::vector<fs::directory_entry> preview_entries_;
   std::set<fs::directory_entry> marked_entries_;
@@ -38,8 +34,7 @@ private:
 
   static FileManager &instance();
 
-  void load_directory_entries(const fs::path &path, bool show_hidden,
-                              bool use_cache);
+  void load_directory_entries(const fs::path &path, bool use_cache);
 
   static bool delete_entry_without_lock(const fs::directory_entry &entry);
 
@@ -54,11 +49,17 @@ private:
   static bool entries_sorter(const fs::directory_entry &first,
                              const fs::directory_entry &second);
 
+  void remove_entry_from_cache();
+  void add_entry_to_the_cache();
+  void rename_entry_in_the_cache();
+
 public:
   static const fs::path &current_path();
   static const fs::path &cur_parent_path();
   static const fs::path &previous_path();
   static std::vector<fs::directory_entry> curdir_entries();
+  static std::vector<fs::directory_entry>
+  get_entries(const fs::path &target_path, bool show_hidden);
   static std::vector<fs::directory_entry> preview_entries();
   static std::set<fs::directory_entry> marked_entries();
   static int previous_path_index();
