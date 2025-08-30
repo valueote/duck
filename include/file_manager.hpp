@@ -36,7 +36,7 @@ private:
 
   void load_directory_entries(const fs::path &path, bool use_cache);
 
-  static bool delete_entry_without_lock(const fs::directory_entry &entry);
+  static bool delete_entry(const fs::directory_entry &entry);
 
   static fs::path get_dest_path(const fs::directory_entry &entry,
                                 const fs::path &current_path);

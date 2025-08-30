@@ -19,33 +19,42 @@ Ui::Ui()
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {}
 
 void Ui::set_main_layout(
-    ftxui::Component layout,
     std::function<bool(const ftxui::Event &)> navigation_handler,
     std::function<bool(const ftxui::Event &)> operation_handler) {
-  main_layout_ = std::move(layout) | ftxui::CatchEvent(navigation_handler) |
-                 ftxui::CatchEvent(operation_handler);
+  main_layout_ =
+      std::move(content_provider_.layout(curdir_entries_, entries_preview_,
+                                         text_preview_, global_selected_)) |
+      ftxui::CatchEvent(navigation_handler) |
+      ftxui::CatchEvent(operation_handler);
 }
 
 void Ui::set_deletion_dialog(
-    ftxui::Component deletion_dialog,
     std::function<bool(const ftxui::Event &)> handler) {
-  deletion_dialog_ =
-      std::move(deletion_dialog) | ftxui::CatchEvent(handler) | ftxui::center;
+  // deletion_dialog_ =
+  //     std::move(deletion_dialog) | ftxui::CatchEvent(handler) |
+  //     ftxui::center;
+  deletion_dialog_ = content_provider_.deletion_dialog(
+                         global_selected_, []() {}, []() {}) |
+                     ftxui::CatchEvent(handler);
 }
 
-void Ui::set_rename_dialog(ftxui::Component rename_dialog,
-                           std::function<bool(const ftxui::Event &)> handler) {
-  rename_dialog_ = std::move(rename_dialog) | ftxui::CatchEvent(handler);
+void Ui::set_rename_dialog(std::function<bool(const ftxui::Event &)> handler) {
+  //  rename_dialog_ = std::move(rename_dialog) | ftxui::CatchEvent(handler);
+  rename_dialog_ =
+      content_provider_.rename_dialog(rename_cursor_positon_, rename_input_)
+
+      | ftxui::CatchEvent(handler);
 }
 
 void Ui::set_creation_dialog(
-    ftxui::Component new_entry_dialog,
     std::function<bool(const ftxui::Event &)> handler) {
-  creation_dialog_ = std::move(new_entry_dialog) | ftxui::CatchEvent(handler);
+  creation_dialog_ =
+      content_provider_.creation_dialog(rename_cursor_positon_, rename_input_) |
+      ftxui::CatchEvent(handler);
 }
 
-void Ui::set_notification(ftxui::Component notification) {
-  notification_ = std::move(notification);
+void Ui::set_notification() {
+  notification_ = content_provider_.notification(notification_content_);
 }
 
 void Ui::finalize_tui() {

@@ -72,7 +72,7 @@ void FileManager::load_directory_entries(const fs::path &path, bool use_cache) {
   cache_.insert(path, direcotry);
 }
 
-bool FileManager::delete_entry_without_lock(const fs::directory_entry &entry) {
+bool FileManager::delete_entry(const fs::directory_entry &entry) {
   if (!entry.exists()) {
     return false;
   }
@@ -117,6 +117,7 @@ FileManager::get_entries(const fs::path &target_path, bool show_hidden) {
                      -> std::vector<fs::directory_entry> {
         auto entries = direcotry.entries_;
         if (show_hidden) {
+          entries.reserve(entries.size() + direcotry.hidden_entries_.size());
           std::ranges::copy(direcotry.hidden_entries_,
                             std::back_inserter(entries));
           std::ranges::sort(entries, entries_sorter);
@@ -353,7 +354,7 @@ bool FileManager::is_marked(const fs::directory_entry &entry) {
 
 bool FileManager::delete_selected_entry(const int selected) {
   std::unique_lock lock{instance().file_manager_mutex_};
-  return delete_entry_without_lock(selected_entry(selected).value_or({}));
+  return delete_entry(selected_entry(selected).value_or({}));
 }
 
 void FileManager::rename_selected_entry(const int selected,
@@ -387,7 +388,7 @@ bool FileManager::delete_marked_entries() {
   }
 
   for (const auto &entry : instance.marked_entries_) {
-    FileManager::delete_entry_without_lock(entry);
+    FileManager::delete_entry(entry);
   }
 
   instance.marked_entries_.clear();

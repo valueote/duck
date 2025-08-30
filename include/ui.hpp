@@ -1,4 +1,5 @@
 #pragma once
+#include "content_provider.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -17,7 +18,7 @@ class Ui {
 private:
   std::shared_mutex ui_lock_;
   std::string text_preview_;
-
+  ContentProvider content_provider_;
   std::vector<ftxui::Element> curdir_entries_;
   ftxui::Element entries_preview_;
 
@@ -50,18 +51,14 @@ private:
 public:
   Ui();
   void
-  set_main_layout(ftxui::Component layout,
-                  std::function<bool(const ftxui::Event &)> navigation_handler,
+  set_main_layout(std::function<bool(const ftxui::Event &)> navigation_handler,
                   std::function<bool(const ftxui::Event &)> operation_handler);
-  void set_deletion_dialog(ftxui::Component deletion_dialog,
-                           std::function<bool(const ftxui::Event &)> handler);
+  void set_deletion_dialog(std::function<bool(const ftxui::Event &)> handler);
 
-  void set_rename_dialog(ftxui::Component rename_dialog,
-                         std::function<bool(const ftxui::Event &)> handler);
+  void set_rename_dialog(std::function<bool(const ftxui::Event &)> handler);
 
-  void set_creation_dialog(ftxui::Component new_entry_dialog,
-                           std::function<bool(const ftxui::Event &)> handler);
-  void set_notification(ftxui::Component notification);
+  void set_creation_dialog(std::function<bool(const ftxui::Event &)> handler);
+  void set_notification();
 
   void finalize_tui();
 
