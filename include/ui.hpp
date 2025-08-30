@@ -33,11 +33,10 @@ private:
 
   ftxui::Component rename_dialog_;
   std::string rename_input_;
-  int rename_cursor_positon_;
+  int cursor_positon_;
 
   std::stack<int> previous_selected_;
-  int global_selected_;
-  int view_selected_;
+  int selected_;
 
   enum class pane : int8_t {
     MAIN = 0,
@@ -58,7 +57,6 @@ public:
   void set_rename_dialog(std::function<bool(const ftxui::Event &)> handler);
 
   void set_creation_dialog(std::function<bool(const ftxui::Event &)> handler);
-  void set_notification();
 
   void finalize_tui();
 
@@ -90,7 +88,6 @@ public:
   void exit();
   [[nodiscard]] int global_selected() const;
   bool show_hidden();
-  void post_event(ftxui::Event event);
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);
 };

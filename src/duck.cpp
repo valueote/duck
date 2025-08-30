@@ -17,10 +17,7 @@ void Duck::setup_ui() {
   ui_.set_deletion_dialog(input_handler_.deletion_dialog_handler());
   ui_.set_rename_dialog(input_handler_.rename_dialog_handler());
   ui_.set_creation_dialog(input_handler_.creation_dialog_handler());
-  ui_.set_notification();
-
   ui_.finalize_tui();
-
   ui_.update_curdir_entries(ContentProvider::entries_to_elements(
       FileManager::update_curdir_entries(false)));
   input_handler_.update_preview_async();
