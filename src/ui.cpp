@@ -12,11 +12,12 @@
 #include <vector>
 namespace duck {
 
-Ui::Ui()
+Ui::Ui(ContentProvider &content_provider)
     : selected_{0}, cursor_positon_{0}, active_pane_{0},
       curdir_entries_{ftxui::emptyElement()},
       entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
-      screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
+      screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()},
+      content_provider_{content_provider} {
   notification_ = content_provider_.notification(notification_content_);
 }
 
@@ -228,7 +229,7 @@ void Ui::render() { screen_.Loop(tui_); }
 
 void Ui::exit() { screen_.Exit(); }
 
-int Ui::global_selected() const { return selected_; }
+int Ui::selected() const { return selected_; }
 
 // Screen has a internal task queue which is protected by a mutex, so this
 // opration is safe without lock;

@@ -7,7 +7,11 @@
 #include <ftxui/dom/elements.hpp>
 
 namespace duck {
-Duck::Duck() : input_handler_(ui_) { setup_ui(); }
+Duck::Duck()
+    : content_provider_(file_manager_), ui_{content_provider_},
+      input_handler_{ui_, file_manager_} {
+  setup_ui();
+}
 
 void Duck::run() { ui_.render(); }
 
@@ -18,8 +22,8 @@ void Duck::setup_ui() {
   ui_.set_rename_dialog(input_handler_.rename_dialog_handler());
   ui_.set_creation_dialog(input_handler_.creation_dialog_handler());
   ui_.finalize_tui();
-  ui_.update_curdir_entries(ContentProvider::entries_to_elements(
-      FileManager::update_curdir_entries(false)));
+  ui_.update_curdir_entries(input_handler_.entries_to_elements(
+      file_manager_.update_curdir_entries(false)));
   input_handler_.update_preview_async();
 }
 } // namespace duck

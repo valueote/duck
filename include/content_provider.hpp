@@ -1,4 +1,5 @@
 #pragma once
+#include "file_manager.hpp"
 #include <filesystem>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -13,9 +14,11 @@ namespace fs = std::filesystem;
 
 class ContentProvider {
 private:
+  FileManager &file_manager_;
   ftxui::Element deleted_entries(const int &selected);
-  ftxui::Element visible_entries(const std::vector<ftxui::Element> &all_entries,
-                                 const int &selected);
+  static ftxui::Element
+  visible_entries(const std::vector<ftxui::Element> &all_entries,
+                  const int &selected);
   ftxui::Element left_pane(const std::vector<ftxui::Element> &all_entries,
                            const int &selected);
   ftxui::Element right_pane(const ftxui::Element &entries_preview,
@@ -23,7 +26,7 @@ private:
                             const int &selected);
 
 public:
-  ContentProvider() = default;
+  ContentProvider(FileManager &file_manager);
 
   ftxui::Component deletion_dialog(const int &selected,
                                    std::function<void()> yes,
@@ -36,7 +39,5 @@ public:
   ftxui::Component layout(const std::vector<ftxui::Element> &all_entries,
                           const ftxui::Element &entries_preview,
                           const std::string &text_preview, const int &selected);
-  static std::vector<ftxui::Element>
-  entries_to_elements(const std::vector<fs::directory_entry> &entries);
 };
 } // namespace duck

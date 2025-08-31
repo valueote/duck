@@ -1,6 +1,7 @@
 #include "content_provider.hpp"
 #include "colorscheme.hpp"
 #include "file_manager.hpp"
+#include "input_handler.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -14,6 +15,9 @@
 #include <utility>
 
 namespace duck {
+
+ContentProvider::ContentProvider(FileManager &file_manager)
+    : file_manager_{file_manager} {};
 
 ftxui::Element
 ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
@@ -53,7 +57,7 @@ ContentProvider::left_pane(const std::vector<ftxui::Element> &all_entries,
   auto [width, _] = ftxui::Terminal::Size();
   if (all_entries.empty()) {
     return window(
-               ftxui::text(" " + FileManager::current_path().string() + " ") |
+               ftxui::text(" " + file_manager_.current_path().string() + " ") |
                    ftxui::bold |
                    ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
                ftxui::vbox({ftxui::text("[Empty directory]")})) |
@@ -61,7 +65,7 @@ ContentProvider::left_pane(const std::vector<ftxui::Element> &all_entries,
   }
 
   auto pane =
-      window(ftxui::text(" " + FileManager::current_path().string() + " ") |
+      window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
                  ftxui::bold |
                  ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
              visible_entries(all_entries, selected)) |
@@ -78,7 +82,8 @@ ContentProvider::right_pane(const ftxui::Element &entries_preview,
   auto pane =
       window(ftxui::text(" Content Preview ") | ftxui::bold,
              [&, this] {
-               const auto selected_path = FileManager::selected_entry(selected);
+               const auto selected_path =
+                   file_manager_.selected_entry(selected);
                if (not selected_path) {
                  return ftxui::text("No item selected");
                }
@@ -107,17 +112,17 @@ ContentProvider::layout(const std::vector<ftxui::Element> &all_entries,
 }
 
 ftxui::Element ContentProvider::deleted_entries(const int &selected) {
-  if (!FileManager::marked_entries().empty()) {
+  if (!file_manager_.marked_entries().empty()) {
     std::vector<ftxui::Element> lines =
-        FileManager::marked_entries() |
+        file_manager_.marked_entries() |
         std::views::transform([this](const fs::directory_entry &entry) {
-          return ftxui::text(FileManager::entry_name_with_icon(entry));
+          return ftxui::text(entry_name_with_icon(entry));
         }) |
         std::ranges::to<std::vector>();
     return ftxui::vbox({lines});
   }
 
-  auto selected_path = FileManager::selected_entry(selected);
+  auto selected_path = file_manager_.selected_entry(selected);
   if (!selected_path.has_value()) {
     return ftxui::text("[ERROR] No file selected for deletion.");
   }
@@ -226,34 +231,6 @@ ftxui::Component ContentProvider::notification(std::string &content) {
     return ftxui::window(ftxui::text("notification"), ftxui::text(content)) |
            ftxui::flex | ftxui::clear_under;
   });
-}
-
-std::vector<ftxui::Element> ContentProvider::entries_to_elements(
-    const std::vector<fs::directory_entry> &entries) {
-  if (entries.empty()) {
-    return {};
-  }
-  return entries | std::views::transform([](const fs::directory_entry &entry) {
-           auto filename =
-               ftxui::text(FileManager::entry_name_with_icon(entry));
-           auto marker = ftxui::text("  ");
-           if (FileManager::is_marked(entry)) {
-             marker = ftxui::text("█ ");
-             if (FileManager::yanking()) {
-               marker |= ftxui::color(ftxui::Color::Blue);
-             } else if (FileManager::cutting()) {
-               marker |= ftxui::color(ftxui::Color::Red);
-             }
-           }
-           auto elmt = ftxui::hbox({marker, filename});
-           if (entry.is_directory()) {
-             elmt |= ftxui::color(ColorScheme::dir());
-           } else {
-             elmt |= ftxui::color(ColorScheme::file());
-           }
-           return elmt;
-         }) |
-         std::ranges::to<std::vector>();
 }
 
 } // namespace duck

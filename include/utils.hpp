@@ -1,3 +1,5 @@
+#pragma once
+#include <algorithm>
 #include <filesystem>
 #include <list>
 #include <mutex>
@@ -64,5 +66,40 @@ struct Direcotry {
   std::vector<fs::directory_entry> entries_;
   std::vector<fs::directory_entry> hidden_entries_;
 };
+
+inline std::string entry_name_with_icon(const fs::directory_entry &entry) {
+  if (entry.path().empty()) {
+    return "[Invalid Entry]";
+  }
+
+  static const std::unordered_map<std::string, std::string> extension_icons{
+      {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
+      {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
+      {".jpg", "\uf4e5"}, {".jpeg", "\uf4e5"}, {".png", "\uf4e5"},
+      {".gif", "\ue60d"}, {".pdf", "\ue67d"},  {".zip", "\ue6aa"},
+      {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
+      {".log", "\uf4ed"}, {".csv", "\ueefc"},
+  };
+
+  if (!fs::exists(entry) || entry.path().empty()) {
+    return "";
+  }
+
+  const auto filename = entry.path().filename().string();
+  if (fs::is_directory(entry)) {
+    return std::format("\uf4d3 {}", filename);
+  }
+
+  auto ext = entry.path().extension().string();
+  std::ranges::transform(ext, ext.begin(), [](char character) {
+    return static_cast<char>(std::tolower(character));
+  });
+
+  auto icon_it = extension_icons.find(ext);
+  const std::string &icon =
+      icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
+
+  return std::format("{} {}", icon, filename);
+}
 
 } // namespace duck

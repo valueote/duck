@@ -1,7 +1,6 @@
 #pragma once
 #include "utils.hpp"
 #include <exec/task.hpp>
-#include <expected>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/node.hpp>
@@ -30,11 +29,8 @@ private:
   bool show_hidden_;
   std::shared_mutex file_manager_mutex_;
 
-  FileManager();
-
-  static FileManager &instance();
-
-  void load_directory_entries(const fs::path &path, bool use_cache);
+  static bool entries_sorter(const fs::directory_entry &first,
+                             const fs::directory_entry &second);
 
   static bool delete_entry(const fs::directory_entry &entry);
 
@@ -43,47 +39,42 @@ private:
 
   static void yank_entries(const std::vector<fs::directory_entry> &entries,
                            const fs::path &current_path);
-  static void rename_entries(const std::vector<fs::directory_entry> &entries,
-                             const fs::path &current_path);
-
-  static bool entries_sorter(const fs::directory_entry &first,
-                             const fs::directory_entry &second);
-
-  void remove_entry_from_cache();
-  void add_entry_to_the_cache();
-  void rename_entry_in_the_cache();
+  static void cut_entries(const std::vector<fs::directory_entry> &entries,
+                          const fs::path &current_path);
+  void load_directory_entries(const fs::path &path, bool use_cache);
 
 public:
-  static const fs::path &current_path();
-  static const fs::path &cur_parent_path();
-  static const fs::path &previous_path();
-  static std::vector<fs::directory_entry> curdir_entries();
-  static std::vector<fs::directory_entry>
-  get_entries(const fs::path &target_path, bool show_hidden);
-  static std::vector<fs::directory_entry> preview_entries();
-  static std::set<fs::directory_entry> marked_entries();
-  static int previous_path_index();
-  static bool yanking();
-  static bool cutting();
-  static std::optional<fs::directory_entry> selected_entry(const int &selected);
-  static void start_yanking(int selected);
-  static void start_cutting(int selected);
-  static void yank_or_cut(int selected);
-  static bool is_marked(const fs::directory_entry &entry);
-  static void toggle_mark_on_selected(int selected);
-  static void clear_marked_entries();
-  static void toggle_hidden_entries();
-  static bool delete_selected_entry(int selected);
-  static void rename_selected_entry(int selected, const std::string &new_name);
-  static bool delete_marked_entries();
-  static void create_new_entry(const std::string &name);
-  static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
-  static void update_current_path(const fs::path &new_path);
+  FileManager();
 
-  static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static std::vector<fs::directory_entry>
+  const fs::path &current_path();
+  const fs::path &cur_parent_path();
+  const fs::path &previous_path();
+  std::vector<fs::directory_entry> curdir_entries();
+  std::vector<fs::directory_entry> get_entries(const fs::path &target_path,
+                                               bool show_hidden);
+  std::vector<fs::directory_entry> preview_entries();
+  std::set<fs::directory_entry> marked_entries();
+  int previous_path_index();
+  bool yanking();
+  bool cutting();
+  std::optional<fs::directory_entry> selected_entry(const int &selected);
+  void start_yanking(int selected);
+  void start_cutting(int selected);
+  void yank_or_cut(int selected);
+  bool is_marked(const fs::directory_entry &entry);
+  void toggle_mark_on_selected(int selected);
+  void clear_marked_entries();
+  void toggle_hidden_entries();
+  bool delete_selected_entry(int selected);
+  void rename_selected_entry(int selected, const std::string &new_name);
+  bool delete_marked_entries();
+  void create_new_entry(const std::string &name);
+  std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
+  void update_current_path(const fs::path &new_path);
+
+  std::vector<fs::directory_entry>
   directory_preview(const std::pair<int, int> &selected_and_size);
-  static std::string text_preview(int selected, std::pair<int, int> size);
+  std::string text_preview(int selected, std::pair<int, int> size);
 };
 
 } // namespace duck

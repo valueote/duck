@@ -18,7 +18,7 @@ class Ui {
 private:
   std::shared_mutex ui_lock_;
   std::string text_preview_;
-  ContentProvider content_provider_;
+  ContentProvider &content_provider_;
   std::vector<ftxui::Element> curdir_entries_;
   ftxui::Element entries_preview_;
 
@@ -48,7 +48,7 @@ private:
   int active_pane_;
 
 public:
-  Ui();
+  Ui(ContentProvider &content_provider);
   void
   set_main_layout(std::function<bool(const ftxui::Event &)> navigation_handler,
                   std::function<bool(const ftxui::Event &)> operation_handler);
@@ -86,7 +86,7 @@ public:
 
   void render();
   void exit();
-  [[nodiscard]] int global_selected() const;
+  [[nodiscard]] int selected() const;
   bool show_hidden();
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);
