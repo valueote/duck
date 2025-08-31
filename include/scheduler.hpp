@@ -8,21 +8,11 @@ namespace duck {
 
 class Scheduler {
 private:
-  exec::static_thread_pool io_pool_;
-  exec::static_thread_pool cpu_pool_;
-  exec::static_thread_pool priority_pool_;
-
-  Scheduler();
-
-  static Scheduler &instance();
+  static inline exec::static_thread_pool io_pool_{1};
+  static inline exec::static_thread_pool cpu_pool_{1};
+  static inline exec::static_thread_pool priority_pool_{1};
 
 public:
-  ~Scheduler() = default;
-  Scheduler(const Scheduler &) = delete;
-  Scheduler &operator=(const Scheduler &) = delete;
-  Scheduler(Scheduler &&) = delete;
-  Scheduler &operator=(Scheduler &&) = delete;
-
   static exec::static_thread_pool::scheduler io_scheduler();
 
   static exec::static_thread_pool::scheduler cpu_scheduler();
