@@ -1,4 +1,5 @@
 #pragma once
+#include "app_state.hpp"
 #include "content_provider.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -16,11 +17,8 @@ namespace duck {
 
 class Ui {
 private:
-  std::shared_mutex ui_lock_;
-  std::string text_preview_;
-  ContentProvider &content_provider_;
+  ContentProvider content_provider_;
   std::vector<ftxui::Element> curdir_entries_;
-  ftxui::Element entries_preview_;
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component tui_;
@@ -36,7 +34,6 @@ private:
   int cursor_positon_;
 
   std::stack<int> previous_selected_;
-  int selected_;
 
   enum class pane : int8_t {
     MAIN = 0,
@@ -48,11 +45,12 @@ private:
   int active_pane_;
 
 public:
-  Ui(ContentProvider &content_provider);
-  void
-  set_main_layout(std::function<bool(const ftxui::Event &)> navigation_handler,
-                  std::function<bool(const ftxui::Event &)> operation_handler);
-  void set_deletion_dialog(std::function<bool(const ftxui::Event &)> handler);
+  Ui();
+  void set_main_layout(const AppState &state,
+                     std::function<bool(const ftxui::Event &)> navigation_handler,
+                     std::function<bool(const ftxui::Event &)> operation_handler);
+  void set_deletion_dialog(const AppState &state,
+                         std::function<bool(const ftxui::Event &)> handler);
 
   void set_rename_dialog(std::function<bool(const ftxui::Event &)> handler);
 
@@ -60,25 +58,21 @@ public:
 
   void finalize_tui();
 
-  void move_selected_up(int max);
-  void move_selected_down(int max);
   void toggle_deletion_dialog();
   void toggle_rename_dialog();
   void toggle_creation_dialog();
   void toggle_notification();
 
-  void enter_direcotry(std::vector<ftxui::Element> curdir_entries);
-  void leave_direcotry(std::vector<ftxui::Element> curdir_entries,
+  void enter_direcotry(AppState &state,
+                       std::vector<ftxui::Element> curdir_entries);
+  void leave_direcotry(AppState &state,
+                       std::vector<ftxui::Element> curdir_entries,
                        int previous_path_index);
-  void update_entries_preview(ftxui::Element new_entries);
-  void update_curdir_entries(std::vector<ftxui::Element> new_entries);
+  void update_curdir_entries(AppState &state,
+                             std::vector<ftxui::Element> new_entries);
   void update_rename_input(std::string str);
   void update_notification(std::string str);
 
-  std::vector<ftxui::Element> curdir_entries();
-  ftxui::Element entries_preview();
-  void update_text_preview(std::string new_text_preview);
-  std::string text_preview();
   std::string &rename_input();
   std::string &new_entry_input();
   std::string notification_content();
@@ -86,8 +80,6 @@ public:
 
   void render();
   void exit();
-  [[nodiscard]] int selected() const;
-  bool show_hidden();
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);
 };

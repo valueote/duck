@@ -1,7 +1,7 @@
 #include "content_provider.hpp"
+#include "app_state.hpp"
 #include "colorscheme.hpp"
 #include "file_manager.hpp"
-#include "input_handler.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -15,9 +15,6 @@
 #include <utility>
 
 namespace duck {
-
-ContentProvider::ContentProvider(FileManager &file_manager)
-    : file_manager_{file_manager} {};
 
 ftxui::Element
 ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
@@ -52,69 +49,63 @@ ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
 }
 
 ftxui::Element
-ContentProvider::left_pane(const std::vector<ftxui::Element> &all_entries,
-                           const int &selected) {
+ContentProvider::left_pane(const AppState &state,
+                           const std::vector<ftxui::Element> &all_entries) {
   auto [width, _] = ftxui::Terminal::Size();
   if (all_entries.empty()) {
-    return window(
-               ftxui::text(" " + file_manager_.current_path().string() + " ") |
-                   ftxui::bold |
-                   ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-               ftxui::vbox({ftxui::text("[Empty directory]")})) |
+    return window(ftxui::text(" " + state.current_path.string() + " ") |
+                      ftxui::bold |
+                      ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
+                  ftxui::vbox({ftxui::text("[Empty directory]")})) |
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   }
 
-  auto pane =
-      window(ftxui::text(" " + file_manager_.current_path().string() + " ") |
-                 ftxui::bold |
-                 ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             visible_entries(all_entries, selected)) |
-      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  auto pane = window(ftxui::text(" " + state.current_path.string() + " ") |
+                         ftxui::bold |
+                         ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
+                     visible_entries(all_entries, state.selected)) |
+              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
 
   return pane;
 }
 
-ftxui::Element
-ContentProvider::right_pane(const ftxui::Element &entries_preview,
-                            const std::string &text_preview,
-                            const int &selected) {
+ftxui::Element ContentProvider::right_pane(const AppState &state) {
   auto [width, _] = ftxui::Terminal::Size();
-  auto pane =
-      window(ftxui::text(" Content Preview ") | ftxui::bold,
-             [&, this] {
-               const auto selected_path =
-                   file_manager_.selected_entry(selected);
-               if (not selected_path) {
-                 return ftxui::text("No item selected");
-               }
+  auto pane = window(ftxui::text(" Content Preview ") | ftxui::bold,
+                     [&, this] {
+                       auto selected_path = FileManagerService::selected_entry(
+                           const_cast<AppState &>(state));
+                       if (not selected_path) {
+                         return ftxui::text("No item selected");
+                       }
 
-               if (fs::is_directory(selected_path.value())) {
-                 return entries_preview | ftxui::color(ColorScheme::text());
-               }
+                       if (fs::is_directory(selected_path.value())) {
+                         return state.entries_preview |
+                                ftxui::color(ColorScheme::text());
+                       }
 
-               return ftxui::paragraph(text_preview) |
-                      ftxui::color(ColorScheme::text());
-             }()) |
-      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+                       return ftxui::paragraph(state.text_preview) |
+                              ftxui::color(ColorScheme::text());
+                     }()) |
+              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   return pane;
 }
 
 ftxui::Component
-ContentProvider::layout(const std::vector<ftxui::Element> &all_entries,
-                        const ftxui::Element &entries_preview,
-                        const std::string &text_preview, const int &selected) {
+ContentProvider::layout(const AppState &state,
+                        const std::vector<ftxui::Element> &all_entries) {
   auto dummy = ftxui::Button({});
   auto render = ftxui::Renderer(dummy, [&, this]() {
-    return ftxui::hbox(left_pane(all_entries, selected), ftxui::separator(),
-                       right_pane(entries_preview, text_preview, selected));
+    return ftxui::hbox(left_pane(state, all_entries), ftxui::separator(),
+                       right_pane(state));
   });
   return render;
 }
 
-ftxui::Element ContentProvider::deleted_entries(const int &selected) {
-  if (!file_manager_.marked_entries().empty()) {
+ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
+  if (!state.marked_entries.empty()) {
     std::vector<ftxui::Element> lines =
-        file_manager_.marked_entries() |
+        state.marked_entries |
         std::views::transform([this](const fs::directory_entry &entry) {
           return ftxui::text(entry_name_with_icon(entry));
         }) |
@@ -122,7 +113,8 @@ ftxui::Element ContentProvider::deleted_entries(const int &selected) {
     return ftxui::vbox({lines});
   }
 
-  auto selected_path = file_manager_.selected_entry(selected);
+  auto selected_path =
+      FileManagerService::selected_entry(const_cast<AppState &>(state));
   if (!selected_path.has_value()) {
     return ftxui::text("[ERROR] No file selected for deletion.");
   }
@@ -132,11 +124,9 @@ ftxui::Element ContentProvider::deleted_entries(const int &selected) {
   });
 }
 
-ftxui::Component ContentProvider::deletion_dialog(const int &selected,
+ftxui::Component ContentProvider::deletion_dialog(const AppState &state,
                                                   std::function<void()> yes,
-                                                  std::function<void()> no
-
-) {
+                                                  std::function<void()> no) {
   ftxui::ButtonOption button_option;
   button_option.transform = [](const ftxui::EntryState &state) {
     auto style = state.active ? ftxui::bold : ftxui::nothing;
@@ -149,17 +139,17 @@ ftxui::Component ContentProvider::deletion_dialog(const int &selected,
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
   auto dialog_renderer = ftxui::Renderer(button_container, [&, this] {
     auto [width, height] = ftxui::Terminal::Size();
-    auto dialog_content = ftxui::vbox(
-        {deleted_entries(selected) | ftxui::color(ftxui::Color::White),
-         ftxui::filler(), ftxui::separator(),
-         ftxui::hbox({
-             ftxui::filler(),
-             yes_button->Render(),
-             ftxui::separatorEmpty() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3),
-             no_button->Render(),
-             ftxui::filler(),
-         })});
+    auto dialog_content =
+        ftxui::vbox({deleted_entries(state) | ftxui::color(ftxui::Color::White),
+                     ftxui::filler(), ftxui::separator(),
+                     ftxui::hbox({
+                         ftxui::filler(),
+                         yes_button->Render(),
+                         ftxui::separatorEmpty() |
+                             ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 3),
+                         no_button->Render(),
+                         ftxui::filler(),
+                     })});
 
     return ftxui::window(
                ftxui::vbox(
@@ -187,7 +177,7 @@ ftxui::Component ContentProvider::rename_dialog(int &cursor_position,
     return state.element;
   };
 
-  auto input = ftxui::Input(rename_input, option);
+  auto input = ftxui::Input(&rename_input, "", option);
   auto renderer = ftxui::Renderer(input, [this, input] {
     const auto [width, height] = ftxui::Terminal::Size();
     auto dialog = ftxui::window(ftxui::text("Rename"), input->Render()) |
@@ -211,7 +201,7 @@ ContentProvider::creation_dialog(int &cursor_position,
     return state.element;
   };
 
-  auto input = ftxui::Input(new_entry_input, option);
+  auto input = ftxui::Input(&new_entry_input, "", option);
   auto renderer = ftxui::Renderer(input, [this, input] {
     const auto [width, _] = ftxui::Terminal::Size();
     auto dialog = ftxui::window(ftxui::text("Create"), input->Render()) |
@@ -234,4 +224,3 @@ ftxui::Component ContentProvider::notification(std::string &content) {
 }
 
 } // namespace duck
-//

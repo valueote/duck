@@ -30,6 +30,7 @@ struct FmgrEvent {
     Rename,
     StartYanking,
     StartCutting,
+    ClearMarks,
     Paste,
   } type_;
 };
@@ -41,6 +42,12 @@ struct RenderEvent {
     EnterDirectory,
     LeaveDirectory,
     UpdatePreview,
+    ShowDeletionDialog,
+    HideDeletionDialog,
+    ShowCreationDialog,
+    HideCreationDialog,
+    ShowRenameDialog,
+    HideRenameDialog,
     ShowNotification,
     HideNotification,
     ClearMarks,
