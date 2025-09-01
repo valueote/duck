@@ -1,6 +1,7 @@
 #include "ui.hpp"
 #include "app_state.hpp"
 #include "ftxui/dom/elements.hpp"
+#include "input_handler.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -14,40 +15,36 @@
 
 namespace duck {
 
-Ui::Ui()
-    : cursor_positon_{0}, active_pane_{0},
+Ui::Ui(InputHandler &input_handler)
+    : input_handler_{input_handler}, cursor_positon_{0}, active_pane_{0},
       curdir_entries_{ftxui::emptyElement()},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
   notification_ = content_provider_.notification(notification_content_);
 }
 
-void Ui::set_main_layout(
-    const AppState &state,
-    std::function<bool(const ftxui::Event &)> navigation_handler,
-    std::function<bool(const ftxui::Event &)> operation_handler) {
+void Ui::set_main_layout(const AppState &state) {
   main_layout_ = content_provider_.layout(state, curdir_entries_) |
-                 ftxui::CatchEvent(navigation_handler) |
-                 ftxui::CatchEvent(operation_handler);
+                 ftxui::CatchEvent(input_handler_.navigation_handler()) |
+                 ftxui::CatchEvent(input_handler_.operation_handler());
 }
 
-void Ui::set_deletion_dialog(
-    const AppState &state, std::function<bool(const ftxui::Event &)> handler) {
-  deletion_dialog_ = content_provider_.deletion_dialog(
-                         state, []() {}, []() {}) |
-                     ftxui::CatchEvent(handler);
+void Ui::set_deletion_dialog(const AppState &state) {
+  deletion_dialog_ =
+      content_provider_.deletion_dialog(
+          state, []() {}, []() {}) |
+      ftxui::CatchEvent(input_handler_.deletion_dialog_handler());
 }
 
-void Ui::set_rename_dialog(std::function<bool(const ftxui::Event &)> handler) {
+void Ui::set_rename_dialog() {
   rename_dialog_ =
       content_provider_.rename_dialog(cursor_positon_, rename_input_) |
-      ftxui::CatchEvent(handler);
+      ftxui::CatchEvent(input_handler_.rename_dialog_handler());
 }
 
-void Ui::set_creation_dialog(
-    std::function<bool(const ftxui::Event &)> handler) {
+void Ui::set_creation_dialog() {
   creation_dialog_ =
       content_provider_.creation_dialog(cursor_positon_, rename_input_) |
-      ftxui::CatchEvent(handler);
+      ftxui::CatchEvent(input_handler_.creation_dialog_handler());
 }
 
 void Ui::finalize_tui() {

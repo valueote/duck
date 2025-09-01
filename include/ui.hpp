@@ -1,6 +1,7 @@
 #pragma once
 #include "app_state.hpp"
 #include "content_provider.hpp"
+#include "input_handler.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -8,7 +9,6 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
-#include <shared_mutex>
 #include <stack>
 #include <string>
 #include <vector>
@@ -18,6 +18,7 @@ namespace duck {
 class Ui {
 private:
   ContentProvider content_provider_;
+  InputHandler &input_handler_;
   std::vector<ftxui::Element> curdir_entries_;
 
   ftxui::ScreenInteractive screen_;
@@ -45,16 +46,13 @@ private:
   int active_pane_;
 
 public:
-  Ui();
-  void set_main_layout(const AppState &state,
-                     std::function<bool(const ftxui::Event &)> navigation_handler,
-                     std::function<bool(const ftxui::Event &)> operation_handler);
-  void set_deletion_dialog(const AppState &state,
-                         std::function<bool(const ftxui::Event &)> handler);
+  Ui(InputHandler &input_handler);
+  void set_main_layout(const AppState &state);
+  void set_deletion_dialog(const AppState &state);
 
-  void set_rename_dialog(std::function<bool(const ftxui::Event &)> handler);
+  void set_rename_dialog();
 
-  void set_creation_dialog(std::function<bool(const ftxui::Event &)> handler);
+  void set_creation_dialog();
 
   void finalize_tui();
 
