@@ -6,20 +6,6 @@ namespace duck {
 
 // 定义应用事件枚举
 
-struct Operation {
-  enum class Type : std::uint8_t {
-    OpenFile,
-    ToggleMark,
-    Deletion,
-    Creation,
-    Rename,
-    StartYanking,
-    StartCutting,
-    Paste,
-    ToggleHidden,
-  } type_;
-};
-
 struct FmgrEvent {
   enum class Type : std::uint8_t {
     OpenFile,
@@ -30,7 +16,6 @@ struct FmgrEvent {
     Rename,
     StartYanking,
     StartCutting,
-    ClearMarks,
     Paste,
   } type_;
 };
@@ -42,14 +27,14 @@ struct RenderEvent {
     EnterDirectory,
     LeaveDirectory,
     UpdatePreview,
-    ShowDeletionDialog,
-    HideDeletionDialog,
-    ShowCreationDialog,
-    HideCreationDialog,
-    ShowRenameDialog,
-    HideRenameDialog,
     ShowNotification,
     HideNotification,
+    ShowDeletionDialog,
+    HideDeletionDialog,
+    ShowRenameDialog,
+    HideRenameDialog,
+    ShowCreationDialog,
+    HideCreationDialog,
     ClearMarks,
     RefreshMenu,
     ReloadMenu,

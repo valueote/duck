@@ -20,8 +20,10 @@ App::App(EventBus &event_bus, Ui &ui) : event_bus_{event_bus}, ui_{ui} {
 }
 
 void App::run() {
+  refresh_menu_async();
+  update_preview_async();
   event_processing_thread_ = std::jthread([this] { process_events(); });
-  ui_.render();
+  ui_.render(state_);
 }
 
 void App::stop() {
@@ -122,7 +124,7 @@ void App::handle_render_event(const RenderEvent &event) {
     ui_.exit();
     break;
   }
-  ui_.post_task([this] { ui_.render(); });
+  ui_.post_task([this] { ui_.render(state_); });
 }
 
 stdexec::sender auto App::update_directory_preview_async() {
@@ -137,7 +139,8 @@ stdexec::sender auto App::update_directory_preview_async() {
          stdexec::then([this](const auto pair) {
            FileManagerService::directory_preview(state_, pair);
          }) |
-         stdexec::then([this]() { ui_.post_task([this]() { ui_.render(); }); });
+         stdexec::then(
+             [this]() { ui_.post_task([this]() { ui_.render(state_); }); });
 }
 
 stdexec::sender auto App::update_text_preview_async() {
@@ -152,7 +155,7 @@ stdexec::sender auto App::update_text_preview_async() {
          stdexec::then([this](std::string preview) {
            ui_.post_task([this, prev = std::move(preview)]() {
              state_.text_preview = prev;
-             ui_.render();
+             ui_.render(state_);
            });
          });
 }
@@ -435,4 +438,3 @@ App::entries_to_elements(const std::vector<fs::directory_entry> &entries) {
 }
 
 } // namespace duck
-#include "stdexec/stop_token.hpp"

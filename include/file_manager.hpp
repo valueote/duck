@@ -1,12 +1,9 @@
 #pragma once
 #include "app_state.hpp"
-#include "utils.hpp"
 #include <exec/task.hpp>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/node.hpp>
-#include <set>
-#include <shared_mutex>
 #include <stdexec/execution.hpp>
 #include <vector>
 
@@ -33,9 +30,8 @@ public:
   static void init(AppState &state);
 
   static std::vector<fs::directory_entry> curdir_entries(AppState &state);
-  static std::vector<fs::directory_entry> get_entries(AppState &state,
-                                                      const fs::path &target_path,
-                                                      bool show_hidden);
+  static std::vector<fs::directory_entry>
+  get_entries(AppState &state, const fs::path &target_path, bool show_hidden);
   static int previous_path_index(AppState &state);
   static std::optional<fs::directory_entry> selected_entry(AppState &state);
   static void start_yanking(AppState &state);
@@ -46,15 +42,16 @@ public:
   static void clear_marked_entries(AppState &state);
   static void toggle_hidden_entries(AppState &state);
   static bool delete_selected_entry(AppState &state);
-  static void rename_selected_entry(AppState &state, const std::string &new_name);
+  static void rename_selected_entry(AppState &state,
+                                    const std::string &new_name);
   static bool delete_marked_entries(AppState &state);
   static void create_new_entry(AppState &state, const std::string &name);
   static std::vector<fs::directory_entry> update_curdir_entries(AppState &state,
                                                                 bool use_cache);
   static void update_current_path(AppState &state, const fs::path &new_path);
 
-  static void
-  directory_preview(AppState &state, const std::pair<int, int> &selected_and_size);
+  static void directory_preview(AppState &state,
+                                const std::pair<int, int> &selected_and_size);
   static std::string text_preview(AppState &state, std::pair<int, int> size);
 };
 

@@ -42,7 +42,7 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
     }
 
     if (event == ftxui::Event::Escape) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::ClearMarks});
+      event_bus_.push_event(RenderEvent{RenderEvent::Type::ClearMarks});
       return true;
     }
 

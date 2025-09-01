@@ -31,7 +31,7 @@ private:
   std::string new_entry_input_;
 
   ftxui::Component rename_dialog_;
-  std::string rename_input_;
+  std::string input_content_;
   int cursor_positon_;
 
   std::stack<int> previous_selected_;
@@ -76,7 +76,7 @@ public:
   std::string notification_content();
   int &rename_cursor_positon();
 
-  void render();
+  void render(const AppState &state);
   void exit();
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);

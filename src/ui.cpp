@@ -37,13 +37,13 @@ void Ui::set_deletion_dialog(const AppState &state) {
 
 void Ui::set_rename_dialog() {
   rename_dialog_ =
-      content_provider_.rename_dialog(cursor_positon_, rename_input_) |
+      content_provider_.rename_dialog(cursor_positon_, input_content_) |
       ftxui::CatchEvent(input_handler_.rename_dialog_handler());
 }
 
 void Ui::set_creation_dialog() {
   creation_dialog_ =
-      content_provider_.creation_dialog(cursor_positon_, rename_input_) |
+      content_provider_.creation_dialog(cursor_positon_, input_content_) |
       ftxui::CatchEvent(input_handler_.creation_dialog_handler());
 }
 
@@ -176,15 +176,15 @@ void Ui::update_curdir_entries(AppState &state,
 }
 
 void Ui::update_rename_input(std::string str) {
-  rename_input_ = std::move(str);
-  cursor_positon_ = static_cast<int>(rename_input_.size());
+  input_content_ = std::move(str);
+  cursor_positon_ = static_cast<int>(input_content_.size());
 }
 
 void Ui::update_notification(std::string str) {
   notification_content_ = std::move(str);
 }
 
-std::string &Ui::rename_input() { return rename_input_; }
+std::string &Ui::rename_input() { return input_content_; }
 
 std::string &Ui::new_entry_input() { return new_entry_input_; }
 
@@ -192,7 +192,14 @@ std::string Ui::notification_content() { return notification_content_; }
 
 int &Ui ::rename_cursor_positon() { return cursor_positon_; }
 
-void Ui::render() { screen_.Loop(tui_); }
+void Ui::render(const AppState &state) { 
+    set_main_layout(state);
+    set_deletion_dialog(state);
+    set_rename_dialog();
+    set_creation_dialog();
+    finalize_tui();
+    screen_.Loop(tui_); 
+}
 
 void Ui::exit() { screen_.Exit(); }
 
