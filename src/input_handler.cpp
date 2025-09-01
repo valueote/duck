@@ -23,10 +23,10 @@ namespace duck {
 using std::exit;
 using std::move;
 
-InputHandler::InputHandler(Ui &ui, FileManager &file_manager)
-    : ui_{ui}, file_manager_{file_manager} {}
+InputHandler::InputHandler(EventBus &event_bus) : event_bus_{event_bus} {}
 
-std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
+std::function<bool(const ftxui::Event &)>
+InputHandler::navigation_handler_legacy() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Character('j') ||
         event == ftxui::Event::ArrowDown) {
@@ -75,7 +75,55 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
   };
 }
 
-std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
+std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
+  return [this](const ftxui::Event &event) {
+    if (event == ftxui::Event::Character('j')) {
+      // ui_.move_selected_down(
+      //     static_cast<int>(file_manager_.curdir_entries().size()));
+      // update_preview_async();
+      //
+
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('k')) {
+      // ui_.move_selected_up(
+      //     static_cast<int>(file_manager_.curdir_entries().size()));
+      // update_preview_async();
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('l')) {
+      enter_direcotry();
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('h')) {
+      leave_direcotry();
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('q')) {
+      ui_.exit();
+      return true;
+    }
+
+    if (event == ftxui::Event::Escape) {
+      // auto selected = ui_.selected();
+      // auto task =
+      //     stdexec::schedule(Scheduler::io_scheduler()) |
+      //     stdexec::then([this]() { file_manager_.clear_marked_entries(); }) |
+      //     stdexec::then([this]() { refresh_menu_async(); });
+      //
+      scope_.spawn(task);
+      return true;
+    }
+
+    return false;
+  };
+}
+
+std::function<bool(ftxui::Event)> InputHandler::operation_handler_legacy() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Return) {
       open_file();
@@ -182,7 +230,7 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
 }
 
 std::function<bool(const ftxui::Event &)>
-InputHandler::deletion_dialog_handler() {
+InputHandler::deletion_dialog_handler_legacy() {
   return [this](const ftxui::Event &event) {
     auto selected = ui_.selected();
     if (event == ftxui::Event::Character('y')) {
@@ -241,7 +289,7 @@ InputHandler::deletion_dialog_handler() {
 }
 
 std::function<bool(const ftxui::Event &)>
-InputHandler::rename_dialog_handler() {
+InputHandler::rename_dialog_handler_legacy() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Escape) {
       ui_.toggle_rename_dialog();
@@ -276,7 +324,7 @@ InputHandler::rename_dialog_handler() {
 }
 
 std::function<bool(const ftxui::Event &)>
-InputHandler::creation_dialog_handler() {
+InputHandler::creation_dialog_handler_legacy() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Escape) {
       ui_.toggle_creation_dialog();
