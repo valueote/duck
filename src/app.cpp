@@ -24,7 +24,7 @@ void App::start_processing() {
       if (event_opt) {
         auto event = event_opt.value();
         std::visit(EventVisitor{[](const FmgrEvent &event) {},
-                                [](const UiEvent &event) {}},
+                                [](const RenderEvent &event) {}},
                    event);
       }
     }

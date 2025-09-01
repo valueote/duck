@@ -1,7 +1,5 @@
 #pragma once
 #include "event_bus.hpp"
-#include "file_manager.hpp"
-#include "ui.hpp"
 #include <exec/async_scope.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -12,8 +10,6 @@ namespace duck {
 class InputHandler {
 private:
   EventBus &event_bus_;
-  FileManager file_manager_;
-  Ui ui_;
   exec::async_scope scope_;
   std::optional<stdexec::inplace_stop_source> stop_source_;
   void open_file();
@@ -24,12 +20,6 @@ private:
 
 public:
   InputHandler(EventBus &event_bus);
-  std::function<bool(const ftxui::Event &)> navigation_handler_legacy();
-  std::function<bool(ftxui::Event)> operation_handler_legacy();
-  std::function<bool(const ftxui::Event &)> deletion_dialog_handler_legacy();
-  std::function<bool(const ftxui::Event &)> rename_dialog_handler_legacy();
-  std::function<bool(const ftxui::Event &)> creation_dialog_handler_legacy();
-
   std::function<bool(const ftxui::Event &)> navigation_handler();
   std::function<bool(ftxui::Event)> operation_handler();
   std::function<bool(const ftxui::Event &)> deletion_dialog_handler();

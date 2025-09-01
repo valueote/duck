@@ -1,4 +1,5 @@
 #include "input_handler.hpp"
+#include "app_event.hpp"
 #include "colorscheme.hpp"
 #include "file_manager.hpp"
 #include "scheduler.hpp"
@@ -24,56 +25,6 @@ using std::exit;
 using std::move;
 
 InputHandler::InputHandler(EventBus &event_bus) : event_bus_{event_bus} {}
-
-std::function<bool(const ftxui::Event &)>
-InputHandler::navigation_handler_legacy() {
-  return [this](const ftxui::Event &event) {
-    if (event == ftxui::Event::Character('j') ||
-        event == ftxui::Event::ArrowDown) {
-      ui_.move_selected_down(
-          static_cast<int>(file_manager_.curdir_entries().size()));
-      update_preview_async();
-
-      return true;
-    }
-
-    if (event == ftxui::Event::Character('k') ||
-        event == ftxui::Event::ArrowUp) {
-      ui_.move_selected_up(
-          static_cast<int>(file_manager_.curdir_entries().size()));
-      update_preview_async();
-      return true;
-    }
-
-    if (event == ftxui::Event::Character('l')) {
-      enter_direcotry();
-      return true;
-    }
-
-    if (event == ftxui::Event::Character('h')) {
-      leave_direcotry();
-      return true;
-    }
-
-    if (event == ftxui::Event::Character('q')) {
-      ui_.exit();
-      return true;
-    }
-
-    if (event == ftxui::Event::Escape) {
-      auto selected = ui_.selected();
-      auto task =
-          stdexec::schedule(Scheduler::io_scheduler()) |
-          stdexec::then([this]() { file_manager_.clear_marked_entries(); }) |
-          stdexec::then([this]() { refresh_menu_async(); });
-
-      scope_.spawn(task);
-      return true;
-    }
-
-    return false;
-  };
-}
 
 std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
   return [this](const ftxui::Event &event) {
@@ -402,30 +353,23 @@ InputHandler::update_text_preview_async(const int &selected) {
 
 // Just read the curdir_entries and update the menu entries
 void InputHandler::refresh_menu_async() {
-  auto token = get_token();
-  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([this, token]() {
-                if (token.stop_requested()) {
-                }
-                return file_manager_.curdir_entries();
-              }) |
-              stdexec::then([this](const auto &entries) {
-                return entries_to_elements(entries);
-              }) |
-              stdexec::then([this](std::vector<ftxui::Element> elements) {
-                ui_.post_task([this, elmt = std::move(elements)]() {
-                  ui_.update_curdir_entries(elmt);
-                });
-              });
+  auto task =
+      stdexec::schedule(Scheduler::io_scheduler()) |
+      stdexec::then([this]() { return file_manager_.curdir_entries(); }) |
+      stdexec::then([this](const auto &entries) {
+        return entries_to_elements(entries);
+      }) |
+      stdexec::then([this](std::vector<ftxui::Element> elements) {
+        ui_.post_task([this, elmt = std::move(elements)]() {
+          ui_.update_curdir_entries(elmt);
+        });
+      });
   scope_.spawn(task);
 }
 
 void InputHandler::reload_menu_async() {
-  auto token = get_token();
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([this, token]() {
-                if (token.stop_requested()) {
-                }
+              stdexec::then([this]() {
                 return file_manager_.update_curdir_entries(false);
               }) |
               stdexec::then([this](const auto &entries) {

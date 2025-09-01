@@ -24,17 +24,17 @@ struct FmgrEvent {
   enum class Type : std::uint8_t {
     OpenFile,
     ToggleMark,
+    ToggleHidden,
     Deletion,
     Creation,
     Rename,
     StartYanking,
     StartCutting,
     Paste,
-    ToggleHidden,
   } type_;
 };
 
-struct UiEvent {
+struct RenderEvent {
   enum class Type : std::uint8_t {
     MoveSelectionDown,
     MoveSelectionUp,
@@ -47,11 +47,10 @@ struct UiEvent {
     RefreshMenu,
     ReloadMenu,
     Quit,
-
-  };
+  } type_;
 };
 
-using AppEvent = std::variant<FmgrEvent, UiEvent>;
+using AppEvent = std::variant<FmgrEvent, RenderEvent>;
 
 template <typename... Ts> struct EventVisitor : Ts... {
   using Ts::operator()...;
