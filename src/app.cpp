@@ -9,7 +9,6 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/terminal.hpp>
 #include <print>
-#include <ranges>
 #include <string>
 #include <wait.h>
 
@@ -17,8 +16,6 @@ namespace fs = std::filesystem;
 namespace duck {
 App::App(EventBus &event_bus, Ui &ui) : event_bus_{event_bus}, ui_{ui} {
   FileManagerService::init(state_);
-  ui_.update_curdir_entries(
-      entries_to_elements(state_.current_direcotry.entries_));
 }
 
 void App::run() {
@@ -160,9 +157,7 @@ stdexec::sender auto App::update_text_preview_async() {
 
 void App::refresh_menu_async() {
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([this]() {
-                return entries_to_elements(state_.current_direcotry.entries_);
-              }) |
+              stdexec::then([this]() { return state_.entries_to_elements(); }) |
               stdexec::then([this](std::vector<ftxui::Element> elements) {
                 ui_.update_curdir_entries(std::move(elements));
               });
@@ -175,7 +170,7 @@ void App::reload_menu_async() {
                 return FileManagerService::update_curdir_entries(state_, false);
               }) |
               stdexec::then([this](const auto &entries) {
-                return entries_to_elements(entries);
+                return state_.entries_to_elements();
               }) |
               stdexec::then([this](std::vector<ftxui::Element> elements) {
                 ui_.post_task([this, elmt = std::move(elements)]() {
@@ -216,7 +211,7 @@ void App::enter_directory() {
           return FileManagerService::update_curdir_entries(state_, true);
         }) |
         stdexec::then([this](const auto &entries) {
-          return entries_to_elements(entries);
+          return state_.entries_to_elements();
         }) |
         stdexec::then([this](std::vector<ftxui::Element> elements) {
           ui_.post_task([this, elem = std::move(elements)]() {
@@ -231,7 +226,7 @@ void App::enter_directory() {
 void App::leave_directory() {
   auto task =
       stdexec::schedule(Scheduler::io_scheduler()) |
-      stdexec::then([this]() { return state_.current_path.parent_path(); }) |
+      stdexec::then([this]() { return state_.current_path_.parent_path(); }) |
       stdexec::then([this](const fs::path &path) {
         FileManagerService::update_current_path(state_, path);
       }) |
@@ -239,7 +234,7 @@ void App::leave_directory() {
         return FileManagerService::update_curdir_entries(state_, true);
       }) |
       stdexec::then([this](const auto &entries) {
-        return entries_to_elements(entries);
+        return state_.entries_to_elements();
       }) |
       stdexec::then([this](std::vector<ftxui::Element> entries) {
         return std::make_pair(std::move(entries),
@@ -257,7 +252,7 @@ void App::leave_directory() {
 }
 
 void App::confirm_deletion() {
-  if (not state_.selected_entries.empty()) {
+  if (not state_.selected_entries_.empty()) {
     auto task =
         stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
           return FileManagerService::delete_marked_entries(state_);
@@ -266,7 +261,7 @@ void App::confirm_deletion() {
           return FileManagerService::update_curdir_entries(state_, !success);
         }) |
         stdexec::then([this](const auto &entries) {
-          return entries_to_elements(entries);
+          return state_.entries_to_elements();
         }) |
         stdexec::then([this](std::vector<ftxui::Element> element) {
           ui_.post_task([this, elem = std::move(element)]() {
@@ -284,7 +279,7 @@ void App::confirm_deletion() {
           return FileManagerService::update_curdir_entries(state_, !success);
         }) |
         stdexec::then([this](const auto &entries) {
-          return entries_to_elements(entries);
+          return state_.entries_to_elements();
         }) |
         stdexec::then([this](std::vector<ftxui::Element> element) {
           ui_.post_task([this, elem = std::move(element)]() {
@@ -306,7 +301,7 @@ void App::confirm_creation() {
                 return FileManagerService::update_curdir_entries(state_, false);
               }) |
               stdexec::then([this](const auto &entries) {
-                return entries_to_elements(entries);
+                return state_.entries_to_elements();
               }) |
               stdexec::then([this](std::vector<ftxui::Element> element) {
                 ui_.post_task([this, elem = std::move(element)]() {
@@ -328,7 +323,7 @@ void App::confirm_rename() {
         return FileManagerService::update_curdir_entries(state_, false);
       }) |
       stdexec::then([this](const auto &entries) {
-        return entries_to_elements(entries);
+        return state_.entries_to_elements();
       }) |
       stdexec::then([this](std::vector<ftxui::Element> element) {
         ui_.post_task([this, elem = std::move(element)]() {
@@ -398,36 +393,6 @@ void App::open_file() {
   } catch (...) {
     std::println(stderr, "[ERROR]: Unknown exception in open_file");
   }
-}
-
-std::vector<ftxui::Element>
-App::entries_to_elements(const std::vector<fs::directory_entry> &entries) {
-  if (entries.empty()) {
-    return {};
-  }
-  return entries |
-         std::views::transform([this](const fs::directory_entry &entry) {
-           auto filename = ftxui::text(entry_name_with_icon(entry));
-           auto marker = ftxui::text("  ");
-           if (FileManagerService::is_marked(state_, entry)) {
-             marker = ftxui::text("█ ");
-             if (state_.is_yanking) {
-               marker = ftxui::text("█ ") | ftxui::color(ftxui::Color::Blue);
-             } else if (state_.is_cutting) {
-               marker = ftxui::text("█ ") | ftxui::color(ftxui::Color::Red);
-             } else {
-               marker = ftxui::text("█ ");
-             }
-           }
-           auto elmt = ftxui::hbox({marker, filename});
-           if (entry.is_directory()) {
-             elmt |= ftxui::color(ColorScheme::dir());
-           } else {
-             elmt |= ftxui::color(ColorScheme::file());
-           }
-           return elmt;
-         }) |
-         std::ranges::to<std::vector>();
 }
 
 } // namespace duck

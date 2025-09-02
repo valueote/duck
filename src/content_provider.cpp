@@ -19,6 +19,10 @@ namespace duck {
 ftxui::Element
 ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
                                  const int &selected) {
+  if (all_entries.size() == 0) {
+    return ftxui::text("[Empty folder]");
+  }
+
   auto [width, _] = ftxui::Terminal::Size();
   std::vector<ftxui::Element> visible_entries;
   int selected_in_view = 0;
@@ -48,23 +52,23 @@ ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
   return ftxui::vbox(std::move(visible_entries));
 }
 
-ftxui::Element
-ContentProvider::left_pane(const AppState &state,
-                           const std::vector<ftxui::Element> &all_entries) {
+ftxui::Element ContentProvider::left_pane(const AppState &state) {
   auto [width, _] = ftxui::Terminal::Size();
-  if (all_entries.empty()) {
-    return window(ftxui::text(" " + state.current_path.string() + " ") |
+  const auto &entries = state.current_direcotry_.entries_;
+  if (entries.empty()) {
+    return window(ftxui::text(" " + state.current_path_.string() + " ") |
                       ftxui::bold |
                       ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
                   ftxui::vbox({ftxui::text("[Empty directory]")})) |
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   }
 
-  auto pane = window(ftxui::text(" " + state.current_path.string() + " ") |
-                         ftxui::bold |
-                         ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-                     visible_entries(all_entries, state.index)) |
-              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  auto pane =
+      window(ftxui::text(" " + state.current_path_.string() + " ") |
+                 ftxui::bold |
+                 ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
+             visible_entries(state.entries_to_elements(), state.index)) |
+      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
 
   return pane;
 }
@@ -91,21 +95,18 @@ ftxui::Element ContentProvider::right_pane(const AppState &state) {
   return pane;
 }
 
-ftxui::Component
-ContentProvider::layout(const AppState &state,
-                        const std::vector<ftxui::Element> &all_entries) {
+ftxui::Component ContentProvider::layout(const AppState &state) {
   auto dummy = ftxui::Button({});
   auto render = ftxui::Renderer(dummy, [&, this]() {
-    return ftxui::hbox(left_pane(state, all_entries), ftxui::separator(),
-                       right_pane(state));
+    return ftxui::hbox(left_pane(state), ftxui::separator(), right_pane(state));
   });
   return render;
 }
 
 ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
-  if (!state.selected_entries.empty()) {
+  if (!state.selected_entries_.empty()) {
     std::vector<ftxui::Element> lines =
-        state.selected_entries |
+        state.selected_entries_ |
         std::views::transform([this](const fs::directory_entry &entry) {
           return ftxui::text(entry_name_with_icon(entry));
         }) |

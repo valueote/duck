@@ -39,9 +39,6 @@ public:
   void run();
 
   void stop();
-
-  std::vector<ftxui::Element> entries_to_elements(
-      const std::vector<std::filesystem::directory_entry> &entries);
 };
 
 } // namespace duck

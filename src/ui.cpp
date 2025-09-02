@@ -30,7 +30,7 @@ Ui::Ui(InputHandler &input_handler)
 }
 
 void Ui::set_main_layout(const AppState &state) {
-  main_layout_ = content_provider_.layout(state, curdir_entries_) |
+  main_layout_ = content_provider_.layout(state) |
                  ftxui::CatchEvent(input_handler_.navigation_handler()) |
                  ftxui::CatchEvent(input_handler_.operation_handler());
 }

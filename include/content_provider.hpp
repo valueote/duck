@@ -1,7 +1,5 @@
 #pragma once
 #include "app_state.hpp"
-#include "file_manager.hpp"
-#include <filesystem>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
@@ -19,8 +17,7 @@ private:
   static ftxui::Element
   visible_entries(const std::vector<ftxui::Element> &all_entries,
                   const int &selected);
-  ftxui::Element left_pane(const AppState &state,
-                           const std::vector<ftxui::Element> &all_entries);
+  ftxui::Element left_pane(const AppState &state);
   ftxui::Element right_pane(const AppState &state);
 
 public:
@@ -34,7 +31,6 @@ public:
   ftxui::Component creation_dialog(int &cursor_position,
                                    std::string &new_entry_input);
   ftxui::Component notification(std::string &content);
-  ftxui::Component layout(const AppState &state,
-                          const std::vector<ftxui::Element> &all_entries);
+  ftxui::Component layout(const AppState &state);
 };
 } // namespace duck
