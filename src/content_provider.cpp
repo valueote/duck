@@ -1,7 +1,6 @@
 #include "content_provider.hpp"
 #include "app_state.hpp"
 #include "colorscheme.hpp"
-#include "file_manager.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -75,23 +74,22 @@ ftxui::Element ContentProvider::left_pane(const AppState &state) {
 
 ftxui::Element ContentProvider::right_pane(const AppState &state) {
   auto [width, _] = ftxui::Terminal::Size();
-  auto pane = window(ftxui::text(" Content Preview ") | ftxui::bold,
-                     [&, this] {
-                       auto selected_path = FileManagerService::selected_entry(
-                           const_cast<AppState &>(state));
-                       if (not selected_path) {
-                         return ftxui::text("No item selected");
-                       }
+  auto pane =
+      window(
+          ftxui::text(" Content Preview ") | ftxui::bold,
+          [&, this] {
+            if (state.current_direcotry_.empty()) {
+              ftxui::text("[No item selected]");
+            }
 
-                       if (fs::is_directory(selected_path.value())) {
-                         return state.entries_preview |
-                                ftxui::color(ColorScheme::text());
-                       }
+            if (state.current_direcotry_.entries_[state.index].is_directory()) {
+              return state.entries_preview | ftxui::color(ColorScheme::text());
+            }
 
-                       return ftxui::paragraph(state.text_preview) |
-                              ftxui::color(ColorScheme::text());
-                     }()) |
-              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+            return ftxui::paragraph(state.text_preview) |
+                   ftxui::color(ColorScheme::text());
+          }()) |
+      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   return pane;
 }
 
@@ -114,14 +112,10 @@ ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
     return ftxui::vbox({lines});
   }
 
-  auto selected_path =
-      FileManagerService::selected_entry(const_cast<AppState &>(state));
-  if (!selected_path.has_value()) {
-    return ftxui::text("[ERROR] No file selected for deletion.");
-  }
+  auto selected_path = state.current_direcotry_.entries_[state.index].path();
 
   return ftxui::vbox({
-      ftxui::text(std::format("{}", selected_path->path().string())),
+      ftxui::text(std::format("{}", selected_path.string())),
   });
 }
 
