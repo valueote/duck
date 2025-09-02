@@ -4,8 +4,6 @@
 
 namespace duck {
 
-// 定义应用事件枚举
-
 struct FmgrEvent {
   enum class Type : std::uint8_t {
     OpenFile,
@@ -27,14 +25,10 @@ struct RenderEvent {
     EnterDirectory,
     LeaveDirectory,
     UpdatePreview,
-    ShowNotification,
-    HideNotification,
-    ShowDeletionDialog,
-    HideDeletionDialog,
-    ShowRenameDialog,
-    HideRenameDialog,
-    ShowCreationDialog,
-    HideCreationDialog,
+    ToggleNotification,
+    ToggleDeletionDialog,
+    ToggleRenameDialog,
+    ToggleCreationDialog,
     ClearMarks,
     RefreshMenu,
     ReloadMenu,

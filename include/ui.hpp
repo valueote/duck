@@ -28,13 +28,11 @@ private:
   ftxui::Component creation_dialog_;
   ftxui::Component notification_;
   std::string notification_content_;
-  std::string new_entry_input_;
-
   ftxui::Component rename_dialog_;
   std::string input_content_;
   int cursor_positon_;
 
-  std::stack<int> previous_selected_;
+  std::stack<int> index_selected_;
 
   enum class pane : int8_t {
     MAIN = 0,
@@ -50,10 +48,6 @@ public:
   void set_main_layout(const AppState &state);
   void set_deletion_dialog(const AppState &state);
 
-  void set_rename_dialog();
-
-  void set_creation_dialog();
-
   void finalize_tui();
 
   void toggle_deletion_dialog();
@@ -66,15 +60,13 @@ public:
   void leave_direcotry(AppState &state,
                        std::vector<ftxui::Element> curdir_entries,
                        int previous_path_index);
-  void update_curdir_entries(AppState &state,
-                             std::vector<ftxui::Element> new_entries);
+  void update_curdir_entries(std::vector<ftxui::Element> new_entries);
   void update_rename_input(std::string str);
   void update_notification(std::string str);
 
-  std::string &rename_input();
-  std::string &new_entry_input();
+  std::string &input_content();
   std::string notification_content();
-  int &rename_cursor_positon();
+  int &cursor_positon();
 
   void render(const AppState &state);
   void exit();

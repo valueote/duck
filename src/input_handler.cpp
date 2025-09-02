@@ -63,12 +63,14 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
     }
 
     if (event == ftxui::Event::Character('d')) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::ShowDeletionDialog});
+      event_bus_.push_event(
+          RenderEvent{RenderEvent::Type::ToggleDeletionDialog});
       return true;
     }
 
     if (event == ftxui::Event::Character('a')) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::ShowCreationDialog});
+      event_bus_.push_event(
+          RenderEvent{RenderEvent::Type::ToggleCreationDialog});
       return true;
     }
 
@@ -83,7 +85,7 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
     }
 
     if (event == ftxui::Event::Character('r')) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::ShowRenameDialog});
+      event_bus_.push_event(RenderEvent{RenderEvent::Type::ToggleRenameDialog});
       return true;
     }
 
@@ -98,7 +100,7 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
     }
 
     if (event == ftxui::Event::Character('n')) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::ShowNotification});
+      event_bus_.push_event(RenderEvent{RenderEvent::Type::ToggleNotification});
       return true;
     }
 
@@ -116,7 +118,8 @@ InputHandler::deletion_dialog_handler() {
 
     if (event == ftxui::Event::Character('n') ||
         event == ftxui::Event::Escape) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::HideDeletionDialog});
+      event_bus_.push_event(
+          RenderEvent{RenderEvent::Type::ToggleDeletionDialog});
       return true;
     }
 
@@ -128,7 +131,8 @@ std::function<bool(const ftxui::Event &)>
 InputHandler::rename_dialog_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Escape) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::HideRenameDialog});
+      event_bus_.push_event(
+          RenderEvent{RenderEvent::Type::ToggleDeletionDialog});
       return true;
     }
 
@@ -144,7 +148,8 @@ std::function<bool(const ftxui::Event &)>
 InputHandler::creation_dialog_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Escape) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::HideCreationDialog});
+      event_bus_.push_event(
+          RenderEvent{RenderEvent::Type::ToggleCreationDialog});
       return true;
     }
 

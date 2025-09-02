@@ -14,7 +14,7 @@ private:
   EventBus &event_bus_;
   Ui &ui_;
   std::jthread event_processing_thread_;
-  bool running_ = true;
+  bool running_ = false;
 
   void process_events();
   void handle_fmgr_event(const FmgrEvent &event);

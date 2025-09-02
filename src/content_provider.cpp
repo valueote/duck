@@ -63,7 +63,7 @@ ContentProvider::left_pane(const AppState &state,
   auto pane = window(ftxui::text(" " + state.current_path.string() + " ") |
                          ftxui::bold |
                          ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-                     visible_entries(all_entries, state.selected)) |
+                     visible_entries(all_entries, state.index)) |
               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
 
   return pane;
@@ -103,9 +103,9 @@ ContentProvider::layout(const AppState &state,
 }
 
 ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
-  if (!state.marked_entries.empty()) {
+  if (!state.selected_entries.empty()) {
     std::vector<ftxui::Element> lines =
-        state.marked_entries |
+        state.selected_entries |
         std::views::transform([this](const fs::directory_entry &entry) {
           return ftxui::text(entry_name_with_icon(entry));
         }) |

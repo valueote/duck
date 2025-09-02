@@ -17,11 +17,12 @@ namespace fs = std::filesystem;
 namespace duck {
 App::App(EventBus &event_bus, Ui &ui) : event_bus_{event_bus}, ui_{ui} {
   FileManagerService::init(state_);
+  ui_.update_curdir_entries(
+      entries_to_elements(state_.current_direcotry.entries_));
 }
 
 void App::run() {
-  refresh_menu_async();
-  update_preview_async();
+  running_ = true;
   event_processing_thread_ = std::jthread([this] { process_events(); });
   ui_.render(state_);
 }
@@ -85,14 +86,14 @@ void App::handle_render_event(const RenderEvent &event) {
   case RenderEvent::Type::MoveSelectionDown: {
     auto entries = FileManagerService::curdir_entries(state_);
     if (!entries.empty()) {
-      state_.selected = (state_.selected + 1) % entries.size();
+      state_.index = (state_.index + 1) % entries.size();
     }
     break;
   }
   case RenderEvent::Type::MoveSelectionUp: {
     auto entries = FileManagerService::curdir_entries(state_);
     if (!entries.empty()) {
-      state_.selected = (state_.selected + entries.size() - 1) % entries.size();
+      state_.index = (state_.index + entries.size() - 1) % entries.size();
     }
     break;
   }
@@ -105,10 +106,7 @@ void App::handle_render_event(const RenderEvent &event) {
   case RenderEvent::Type::UpdatePreview:
     update_preview_async();
     break;
-  case RenderEvent::Type::ShowNotification:
-    ui_.toggle_notification();
-    break;
-  case RenderEvent::Type::HideNotification:
+  case RenderEvent::Type::ToggleNotification:
     ui_.toggle_notification();
     break;
   case RenderEvent::Type::ClearMarks:
@@ -134,7 +132,7 @@ stdexec::sender auto App::update_directory_preview_async() {
                [this] { state_.entries_preview = ftxui::text("Loading..."); });
          }) |
          stdexec::then([this, height]() {
-           return std::make_pair(state_.selected, height);
+           return std::make_pair(state_.index, height);
          }) |
          stdexec::then([this](const auto pair) {
            FileManagerService::directory_preview(state_, pair);
@@ -163,15 +161,10 @@ stdexec::sender auto App::update_text_preview_async() {
 void App::refresh_menu_async() {
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
               stdexec::then([this]() {
-                return FileManagerService::curdir_entries(state_);
-              }) |
-              stdexec::then([this](const auto &entries) {
-                return entries_to_elements(entries);
+                return entries_to_elements(state_.current_direcotry.entries_);
               }) |
               stdexec::then([this](std::vector<ftxui::Element> elements) {
-                ui_.post_task([this, elmt = std::move(elements)]() {
-                  ui_.update_curdir_entries(state_, elmt);
-                });
+                ui_.update_curdir_entries(std::move(elements));
               });
   stdexec::sync_wait(task);
 }
@@ -186,7 +179,7 @@ void App::reload_menu_async() {
               }) |
               stdexec::then([this](std::vector<ftxui::Element> elements) {
                 ui_.post_task([this, elmt = std::move(elements)]() {
-                  ui_.update_curdir_entries(state_, elmt);
+                  ui_.update_curdir_entries(elmt);
                 });
               });
   stdexec::sync_wait(task);
@@ -238,7 +231,7 @@ void App::enter_directory() {
 void App::leave_directory() {
   auto task =
       stdexec::schedule(Scheduler::io_scheduler()) |
-      stdexec::then([this]() { return state_.parent_path; }) |
+      stdexec::then([this]() { return state_.current_path.parent_path(); }) |
       stdexec::then([this](const fs::path &path) {
         FileManagerService::update_current_path(state_, path);
       }) |
@@ -264,7 +257,7 @@ void App::leave_directory() {
 }
 
 void App::confirm_deletion() {
-  if (not state_.marked_entries.empty()) {
+  if (not state_.selected_entries.empty()) {
     auto task =
         stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
           return FileManagerService::delete_marked_entries(state_);
@@ -277,7 +270,7 @@ void App::confirm_deletion() {
         }) |
         stdexec::then([this](std::vector<ftxui::Element> element) {
           ui_.post_task([this, elem = std::move(element)]() {
-            ui_.update_curdir_entries(state_, elem);
+            ui_.update_curdir_entries(elem);
             ui_.toggle_deletion_dialog();
           });
         });
@@ -295,7 +288,7 @@ void App::confirm_deletion() {
         }) |
         stdexec::then([this](std::vector<ftxui::Element> element) {
           ui_.post_task([this, elem = std::move(element)]() {
-            ui_.update_curdir_entries(state_, elem);
+            ui_.update_curdir_entries(elem);
             ui_.toggle_deletion_dialog();
           });
         });
@@ -304,7 +297,7 @@ void App::confirm_deletion() {
 }
 
 void App::confirm_creation() {
-  auto filename = ui_.new_entry_input();
+  auto filename = ui_.input_content();
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
               stdexec::then([this, filename]() {
                 FileManagerService::create_new_entry(state_, filename);
@@ -317,7 +310,7 @@ void App::confirm_creation() {
               }) |
               stdexec::then([this](std::vector<ftxui::Element> element) {
                 ui_.post_task([this, elem = std::move(element)]() {
-                  ui_.update_curdir_entries(state_, elem);
+                  ui_.update_curdir_entries(elem);
                   ui_.toggle_creation_dialog();
                 });
               });
@@ -325,7 +318,7 @@ void App::confirm_creation() {
 }
 
 void App::confirm_rename() {
-  auto str = ui_.rename_input();
+  auto str = ui_.input_content();
   auto rename_task =
       stdexec::schedule(Scheduler::io_scheduler()) |
       stdexec::then([this, str]() {
@@ -339,7 +332,7 @@ void App::confirm_rename() {
       }) |
       stdexec::then([this](std::vector<ftxui::Element> element) {
         ui_.post_task([this, elem = std::move(element)]() {
-          ui_.update_curdir_entries(state_, elem);
+          ui_.update_curdir_entries(elem);
           ui_.toggle_rename_dialog();
         });
       });

@@ -1,5 +1,6 @@
 #include "file_manager.hpp"
 #include "app_state.hpp"
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <ftxui/dom/elements.hpp>
@@ -18,9 +19,8 @@ constexpr size_t files_reserve = 256;
 
 void FileManagerService::init(AppState &state) {
   state.current_path = fs::current_path();
-  state.parent_path = state.current_path.parent_path();
-  load_directory_entries(state, state.current_path, true);
 
+  load_directory_entries(state, state.current_path, true);
   state.cache.get(state.current_path)
       .and_then([&state](const auto &direcotry) -> std::optional<Direcotry> {
         if (const auto &entries = direcotry.entries_; !entries.empty()) {
@@ -28,8 +28,6 @@ void FileManagerService::init(AppState &state) {
         }
         return std::nullopt;
       });
-
-  state.clipboard_entries.reserve(clipboard_reserve);
 }
 
 void FileManagerService::load_directory_entries(AppState &state,
@@ -105,11 +103,11 @@ FileManagerService::selected_entry(AppState &state) {
     return std::nullopt;
   }
 
-  if (state.selected < 0 || state.selected >= entries.size()) {
+  if (state.index < 0 || state.index >= entries.size()) {
     return std::nullopt;
   }
 
-  return entries[state.selected];
+  return entries[state.index];
 }
 
 std::vector<fs::directory_entry>
@@ -122,31 +120,29 @@ void FileManagerService::update_current_path(AppState &state,
                                              const fs::path &new_path) {
   state.previous_path = state.current_path;
   state.current_path = new_path;
-  state.parent_path = state.current_path.parent_path();
 }
 
 void FileManagerService::toggle_mark_on_selected(AppState &state) {
   auto entries = curdir_entries(state);
 
-  if (entries.empty() || state.selected < 0 ||
-      state.selected >= entries.size()) {
+  if (entries.empty() || state.index < 0 || state.index >= entries.size()) {
     return;
   }
 
   if (std::ranges::find_if(
-          state.marked_entries,
+          state.selected_entries,
           [&state, &entries](const fs::directory_entry &entry) {
-            return entry.path() == entries[state.selected].path().parent_path();
-          }) != state.marked_entries.end()) {
+            return entry.path() == entries[state.index].path().parent_path();
+          }) != state.selected_entries.end()) {
     return;
   }
 
   if (auto iter =
-          std::ranges::find(state.marked_entries, entries[state.selected]);
-      iter != state.marked_entries.end()) {
-    state.marked_entries.erase(iter);
+          std::ranges::find(state.selected_entries, entries[state.index]);
+      iter != state.selected_entries.end()) {
+    state.selected_entries.erase(iter);
   } else {
-    state.marked_entries.insert(entries[state.selected]);
+    state.selected_entries.insert(entries[state.index]);
   }
 }
 
@@ -158,9 +154,9 @@ void FileManagerService::start_yanking(AppState &state) {
   state.is_yanking = true;
   state.is_cutting = false;
 
-  if (state.marked_entries.empty()) {
+  if (state.selected_entries.empty()) {
     selected_entry(state).transform([&state](const auto &entry) {
-      state.marked_entries.insert(entry);
+      state.selected_entries.insert(entry);
       return entry;
     });
   }
@@ -169,9 +165,9 @@ void FileManagerService::start_yanking(AppState &state) {
 void FileManagerService::start_cutting(AppState &state) {
   state.is_cutting = true;
   state.is_yanking = false;
-  if (state.marked_entries.empty()) {
+  if (state.selected_entries.empty()) {
     selected_entry(state).transform([&state](const auto &entry) {
-      state.marked_entries.insert(entry);
+      state.selected_entries.insert(entry);
       return entry;
     });
   }
@@ -183,16 +179,16 @@ void FileManagerService::yank_or_cut(AppState &state) {
   }
   std::vector<fs::directory_entry> entries;
 
-  if (state.marked_entries.empty()) {
+  if (state.selected_entries.empty()) {
     selected_entry(state).transform([&entries](const auto &entry) {
       entries.push_back(entry);
       return entry;
     });
   } else {
     entries = std::move(std::vector<fs::directory_entry>{
-        state.marked_entries.begin(), state.marked_entries.end()});
+        state.selected_entries.begin(), state.selected_entries.end()});
   }
-  state.marked_entries.clear();
+  state.selected_entries.clear();
 
   if (state.is_cutting) {
     cut_entries(state);
@@ -203,7 +199,7 @@ void FileManagerService::yank_or_cut(AppState &state) {
 
 bool FileManagerService::is_marked(AppState &state,
                                    const fs::directory_entry &entry) {
-  return state.marked_entries.contains(entry);
+  return state.selected_entries.contains(entry);
 }
 
 bool FileManagerService::delete_selected_entry(AppState &state) {
@@ -228,16 +224,16 @@ void FileManagerService::rename_selected_entry(AppState &state,
 }
 
 bool FileManagerService::delete_marked_entries(AppState &state) {
-  if (state.marked_entries.empty()) {
+  if (state.selected_entries.empty()) {
     std::println(stderr, "[ERROR] try to delete empty file");
     return false;
   }
 
-  for (const auto &entry : state.marked_entries) {
+  for (const auto &entry : state.selected_entries) {
     FileManagerService::delete_entry(entry);
   }
 
-  state.marked_entries.clear();
+  state.selected_entries.clear();
   return true;
 }
 
@@ -261,7 +257,7 @@ void FileManagerService::clear_marked_entries(AppState &state) {
     state.is_yanking = false;
     state.is_cutting = false;
   } else {
-    state.marked_entries.clear();
+    state.selected_entries.clear();
   }
 }
 
@@ -352,14 +348,14 @@ bool FileManagerService::delete_entry(const fs::directory_entry &entry) {
 }
 
 void FileManagerService::yank_entries(AppState &state) {
-  for (const auto &entry : state.marked_entries) {
+  for (const auto &entry : state.selected_entries) {
     fs::copy(entry.path(), get_dest_path(entry, state.current_path),
              fs::copy_options::recursive);
   }
 }
 
 void FileManagerService::cut_entries(AppState &state) {
-  for (const auto &entry : state.marked_entries) {
+  for (const auto &entry : state.selected_entries) {
     fs::rename(entry.path(), get_dest_path(entry, state.current_path));
   }
 }
