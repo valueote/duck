@@ -36,9 +36,6 @@ private:
   void confirm_rename();
   void open_file();
 
-  stdexec::sender auto update_directory_preview_async();
-  stdexec::sender auto update_text_preview_async();
-
 public:
   App(EventBus &event_bus, Ui &ui, FileManager &file_manager);
 

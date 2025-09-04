@@ -1,7 +1,6 @@
 #include "app.hpp"
 #include "app_event.hpp"
 #include "file_manager.hpp"
-#include "scheduler.hpp"
 #include <cstring>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
@@ -56,7 +55,7 @@ void App::handle_directory_loaded(const DirectoryLoaded &event) {
   state_.cache_.insert(event.directory.path_, event.directory);
   state_.current_directory_ = event.directory;
   state_.current_path_ = event.directory.path_;
-  state_.index_ = 0; // Reset index for new directory
+  state_.index_ = 0;
   refresh_menu();
 }
 
@@ -156,9 +155,9 @@ void App::move_index_down() {
   if (!state_.current_directory_.entries_.empty()) {
     state_.index_ =
         (state_.index_ + 1) % state_.current_directory_.entries_.size();
+    refresh_menu();
+    update_preview();
   }
-  refresh_menu();
-  update_preview();
 }
 
 void App::move_index_up() {
@@ -166,43 +165,9 @@ void App::move_index_up() {
     state_.index_ =
         (state_.index_ + state_.current_directory_.entries_.size() - 1) %
         state_.current_directory_.entries_.size();
+    refresh_menu();
+    update_preview();
   }
-  refresh_menu();
-}
-
-stdexec::sender auto App::update_directory_preview_async() {
-  const auto [width, height] = ftxui::Terminal::Size();
-  return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
-           // ui_.post_task(
-           //     [this] { state_.entries_preview = ftxui::text("Loading...");
-           //     });
-         }) |
-         stdexec::then([this, height]() {
-           return std::make_pair(state_.index_, height);
-         }) |
-         stdexec::then([this](const auto pair) {
-           // FileManager::directory_preview(state_, pair);
-         }) |
-         stdexec::then(
-             [this]() { ui_.post_task([this]() { ui_.render(state_); }); });
-}
-
-stdexec::sender auto App::update_text_preview_async() {
-  auto [width, height] = ftxui::Terminal::Size();
-  return stdexec::schedule(Scheduler::io_scheduler()) | stdexec::then([this]() {
-           // ui_.post_task([this]() { state_.text_preview = "Loading..."; });
-         }) |
-         stdexec::then([this, width, height]() {
-           // return FileManager::text_preview(state_,
-           // std::make_pair(width, height));
-           return "";
-         }) |
-         stdexec::then([this](std::string preview) {
-           ui_.post_task([this, prev = std::move(preview)]() {
-             // state_.text_preview = prev;
-             ui_.render(state_);
-           });
-         });
 }
 
 void App::refresh_menu() {
@@ -214,16 +179,7 @@ void App::reload_menu() {
   event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
 }
 
-void App::update_preview() {
-  // const auto selected_path = state_.index_entry();
-  // if (selected_path) {
-  //   if (fs::is_directory(selected_path.value())) {
-  //     stdexec::sync_wait(update_directory_preview_async());
-  //   } else {
-  //     stdexec::sync_wait(update_text_preview_async());
-  //   }
-  // }
-}
+void App::update_preview() {}
 
 void App::enter_directory() {
   state_.index_entry().transform([this](const auto &entry) {
