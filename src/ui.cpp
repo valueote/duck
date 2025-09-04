@@ -11,15 +11,15 @@
 #include <string>
 #include <unistd.h>
 #include <utility>
-#include <vector>
 
 namespace duck {
 
 Ui::Ui(InputHandler &input_handler)
     : input_handler_{input_handler}, cursor_positon_{0}, active_pane_{0},
-      curdir_entries_{ftxui::text("test")},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
+
   notification_ = content_provider_.notification(notification_content_);
+
   rename_dialog_ =
       content_provider_.rename_dialog(cursor_positon_, input_content_) |
       ftxui::CatchEvent(input_handler_.rename_dialog_handler());
@@ -27,13 +27,13 @@ Ui::Ui(InputHandler &input_handler)
   creation_dialog_ =
       content_provider_.creation_dialog(cursor_positon_, input_content_) |
       ftxui::CatchEvent(input_handler_.creation_dialog_handler());
-}
 
-void Ui::set_main_layout(const AppState &state) {
-  main_layout_ = content_provider_.layout(state) |
+  main_layout_ = content_provider_.layout(info_, preview_) |
                  ftxui::CatchEvent(input_handler_.navigation_handler()) |
                  ftxui::CatchEvent(input_handler_.operation_handler());
 }
+
+void update_whole_state(const AppState &state) {}
 
 void Ui::set_deletion_dialog(const AppState &state) {
   deletion_dialog_ =
@@ -142,32 +142,7 @@ void Ui::toggle_notification() {
   }
 }
 
-void Ui::enter_direcotry(AppState &state,
-                         std::vector<ftxui::Element> curdir_entries) {
-  if (index_selected_.empty()) {
-    state.index = 0;
-  } else {
-    state.index = index_selected_.top();
-    index_selected_.pop();
-    if (state.index >= curdir_entries_.size()) {
-      state.index = 0;
-    }
-  }
-  update_curdir_entries(std::move(curdir_entries));
-}
-
-void Ui::leave_direcotry(AppState &state,
-                         std::vector<ftxui::Element> curdir_entries,
-                         int previous_path_index) {
-  index_selected_.push(state.index);
-  state.index = previous_path_index;
-  update_curdir_entries(std::move(curdir_entries));
-}
-
-void Ui::update_curdir_entries(std::vector<ftxui::Element> new_entries) {
-  curdir_entries_ = std::move(new_entries);
-  screen_.PostEvent(ftxui::Event::Custom);
-}
+void Ui::update_curdir_entries() { screen_.PostEvent(ftxui::Event::Custom); }
 
 void Ui::update_rename_input(std::string str) {
   input_content_ = std::move(str);
@@ -175,18 +150,19 @@ void Ui::update_rename_input(std::string str) {
 }
 
 void Ui::update_notification(std::string str) {
-  notification_content_ = std::move(str);
+  screen_.Post([this, str]() { notification_content_ = str; });
 }
 
 std::string &Ui::input_content() { return input_content_; }
 
-std::string Ui::notification_content() { return notification_content_; }
-
 int &Ui ::cursor_positon() { return cursor_positon_; }
 
 void Ui::render(const AppState &state) {
-  set_main_layout(state);
   set_deletion_dialog(state);
+  info_ = {state.current_direcotry_.path_.string(), state.index,
+           state.current_direcotry_elements()};
+  preview_ = std::string("hello");
+
   finalize_tui();
   screen_.Loop(tui_);
 }

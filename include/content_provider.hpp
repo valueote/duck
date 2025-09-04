@@ -1,4 +1,5 @@
 #pragma once
+#include "app_event.hpp"
 #include "app_state.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -16,9 +17,9 @@ private:
   ftxui::Element deleted_entries(const AppState &state);
   static ftxui::Element
   visible_entries(const std::vector<ftxui::Element> &all_entries,
-                  const int &selected);
-  ftxui::Element left_pane(const AppState &state);
-  ftxui::Element right_pane(const AppState &state);
+                  const int &index);
+  ftxui::Element left_pane(const MenuInfo &info);
+  ftxui::Element right_pane(const EntryPreview &preview);
 
 public:
   ContentProvider() = default;
@@ -31,6 +32,6 @@ public:
   ftxui::Component creation_dialog(int &cursor_position,
                                    std::string &new_entry_input);
   ftxui::Component notification(std::string &content);
-  ftxui::Component layout(const AppState &state);
+  ftxui::Component layout(const MenuInfo &info, const EntryPreview &preview);
 };
 } // namespace duck

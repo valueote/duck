@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include <ftxui/dom/elements.hpp>
+#include <string>
 #include <variant>
 
 namespace duck {
@@ -37,11 +39,13 @@ struct RenderEvent {
 };
 
 using AppEvent = std::variant<FmgrEvent, RenderEvent>;
+using EntryPreview = std::variant<std::string, ftxui::Element, std::monostate>;
+using MenuInfo = std::tuple<std::string, int, std::vector<ftxui::Element>>;
 
-template <typename... Ts> struct EventVisitor : Ts... {
+template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;
 };
-template <typename... Ts> EventVisitor(Ts...) -> EventVisitor<Ts...>;
+template <typename... Ts> Visitor(Ts...) -> Visitor<Ts...>;
 
 // 事件数据结构体
 } // namespace duck

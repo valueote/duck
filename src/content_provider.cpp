@@ -1,4 +1,5 @@
 #include "content_provider.hpp"
+#include "app_event.hpp"
 #include "app_state.hpp"
 #include "colorscheme.hpp"
 #include <ftxui/component/component.hpp>
@@ -12,24 +13,25 @@
 #include <ranges>
 #include <string>
 #include <utility>
+#include <variant>
 
 namespace duck {
 
 ftxui::Element
 ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
-                                 const int &selected) {
+                                 const int &index) {
   if (all_entries.size() == 0) {
     return ftxui::text("[Empty folder]");
   }
 
   auto [width, _] = ftxui::Terminal::Size();
   std::vector<ftxui::Element> visible_entries;
-  int selected_in_view = 0;
+  int view_index = 0;
   // delete the border and margin space
   const int viewport_size = ftxui::Terminal::Size().dimy - 2;
 
   if (all_entries.size() > viewport_size) {
-    int start_index = selected - (viewport_size / 4 * 3);
+    int start_index = index - (viewport_size / 4 * 3);
     start_index = std::max(0, start_index);
 
     if (start_index + viewport_size > all_entries.size()) {
@@ -37,66 +39,67 @@ ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
     }
 
     int end_index = start_index + viewport_size;
-    selected_in_view = selected - start_index;
+    view_index = index - start_index;
 
     visible_entries.assign(
         std::make_move_iterator(all_entries.begin() + start_index),
         std::make_move_iterator(all_entries.begin() + end_index));
   } else {
     visible_entries = all_entries;
-    selected_in_view = selected;
+    view_index = index;
   }
-  visible_entries[selected_in_view] |= ftxui::color(ftxui::Color::Black) |
-                                       ftxui::bgcolor(ColorScheme::selected());
+  visible_entries[view_index] |= ftxui::color(ftxui::Color::Black) |
+                                 ftxui::bgcolor(ColorScheme::selected());
   return ftxui::vbox(std::move(visible_entries));
 }
 
-ftxui::Element ContentProvider::left_pane(const AppState &state) {
+ftxui::Element ContentProvider::left_pane(const MenuInfo &info) {
   auto [width, _] = ftxui::Terminal::Size();
-  const auto &entries = state.current_direcotry_.entries_;
+  const auto &[path, index, entries] = info;
   if (entries.empty()) {
-    return window(ftxui::text(" " + state.current_path_.string() + " ") |
-                      ftxui::bold |
+    return window(ftxui::text(" " + path + " ") | ftxui::bold |
                       ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
                   ftxui::vbox({ftxui::text("[Empty directory]")})) |
            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   }
 
-  auto pane =
-      window(ftxui::text(" " + state.current_path_.string() + " ") |
-                 ftxui::bold |
-                 ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
-             visible_entries(state.entries_to_elements(), state.index)) |
-      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  auto pane = window(ftxui::text(" " + path + " ") | ftxui::bold |
+                         ftxui::size(ftxui::WIDTH, ftxui::LESS_THAN, width / 2),
+                     visible_entries(entries, index)) |
+              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
 
   return pane;
 }
 
-ftxui::Element ContentProvider::right_pane(const AppState &state) {
+ftxui::Element ContentProvider::right_pane(const EntryPreview &preview) {
   auto [width, _] = ftxui::Terminal::Size();
-  auto pane =
-      window(
-          ftxui::text(" Content Preview ") | ftxui::bold,
-          [&, this] {
-            if (state.current_direcotry_.empty()) {
-              ftxui::text("[No item selected]");
-            }
 
-            if (state.current_direcotry_.entries_[state.index].is_directory()) {
-              return state.entries_preview | ftxui::color(ColorScheme::text());
-            }
-
-            return ftxui::paragraph(state.text_preview) |
-                   ftxui::color(ColorScheme::text());
-          }()) |
-      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
+  auto pane = window(ftxui::text(" Content Preview ") | ftxui::bold,
+                     [&, this] {
+                       return std::visit(
+                           Visitor{[this](const std::string &text) {
+                                     return ftxui::paragraph(text) |
+                                            ftxui::color(ColorScheme::text());
+                                   },
+                                   [this](const ftxui::Element &elements) {
+                                     return elements |
+                                            ftxui::color(ColorScheme::text());
+                                   },
+                                   [](const std::monostate &state) {
+                                     return ftxui::text("No time selected");
+                                   }},
+                           preview);
+                     }()) |
+              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width / 2);
   return pane;
 }
 
-ftxui::Component ContentProvider::layout(const AppState &state) {
+ftxui::Component ContentProvider::layout(const MenuInfo &info,
+                                         const EntryPreview &preview) {
   auto dummy = ftxui::Button({});
   auto render = ftxui::Renderer(dummy, [&, this]() {
-    return ftxui::hbox(left_pane(state), ftxui::separator(), right_pane(state));
+    return ftxui::hbox(left_pane(info), ftxui::separator(),
+                       right_pane(preview));
   });
   return render;
 }
@@ -164,7 +167,6 @@ ftxui::Component ContentProvider::deletion_dialog(const AppState &state,
 
 ftxui::Component ContentProvider::rename_dialog(int &cursor_position,
                                                 std::string &rename_input) {
-
   ftxui::InputOption option = ftxui::InputOption::Default();
   option.cursor_position = cursor_position;
   option.transform = [this](ftxui::InputState state) -> ftxui::Element {

@@ -65,6 +65,8 @@ struct Direcotry {
   fs::path path_;
   std::vector<fs::directory_entry> entries_;
   std::vector<fs::directory_entry> hidden_entries_;
+
+  // FIX::
   bool empty() const { return entries_.empty() && hidden_entries_.empty(); }
 };
 

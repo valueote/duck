@@ -38,7 +38,7 @@ void FileManagerService::load_directory_entries(AppState &state,
     return;
   }
 
-  Direcotry direcotry;
+  Direcotry direcotry{.path_ = path};
 
   if (auto cache = state.cache.get(path); cache.has_value() && use_cache) {
     direcotry = cache.value();
@@ -269,7 +269,7 @@ void FileManagerService::directory_preview(
   auto selected_entry_opt = selected_entry(state);
   if (!selected_entry_opt.has_value() ||
       !fs::is_directory(selected_entry_opt.value())) {
-    state.entries_preview = ftxui::text("");
+    // state.entries_preview = ftxui::text("");
     return;
   }
 
@@ -277,10 +277,10 @@ void FileManagerService::directory_preview(
   load_directory_entries(state, target_path, true);
   auto entries = get_entries(state, target_path, state.show_hidden_);
 
-  state.entries_preview = ftxui::vbox(entries | std::views::take(preview_size) |
-                                      std::views::transform([](const auto &e) {
-                                        return ftxui::text(e.path().string());
-                                      }));
+  ftxui::vbox(entries | std::views::take(preview_size) |
+              std::views::transform([](const auto &e) {
+                return ftxui::text(e.path().string());
+              }));
 }
 
 std::string FileManagerService::text_preview(AppState &state,

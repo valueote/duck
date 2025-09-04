@@ -1,4 +1,5 @@
 #pragma once
+#include "app_event.hpp"
 #include "colorscheme.hpp"
 #include "utils.hpp"
 #include <filesystem>
@@ -6,6 +7,7 @@
 #include <ftxui/dom/node.hpp>
 #include <ranges>
 #include <set>
+#include <variant>
 
 namespace duck {
 namespace fs = std::filesystem;
@@ -26,15 +28,13 @@ struct AppState {
   int index = 0;
 
   // UI state
-  std::string text_preview = "Debug";
-  ftxui::Element entries_preview = ftxui::text("Debug");
 
   // Cache
   Lru<fs::path, Direcotry> cache;
 
   AppState() : cache(lru_cache_size) {}
 
-  std::vector<ftxui::Element> entries_to_elements() const {
+  std::vector<ftxui::Element> current_direcotry_elements() const {
     if (current_direcotry_.entries_.empty()) {
       return {};
     }
@@ -61,6 +61,12 @@ struct AppState {
              return elmt;
            }) |
            std::ranges::to<std::vector>();
+  }
+
+  EntryPreview current_preview() const {
+    if (current_direcotry_.empty()) {
+      return std::monostate();
+    }
   }
 };
 
