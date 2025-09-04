@@ -74,16 +74,6 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
       return true;
     }
 
-    if (event == ftxui::Event::Character('y')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::StartYanking});
-      return true;
-    }
-
-    if (event == ftxui::Event::Character('x')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::StartCutting});
-      return true;
-    }
-
     if (event == ftxui::Event::Character('r')) {
       event_bus_.push_event(RenderEvent{RenderEvent::Type::ToggleRenameDialog});
       return true;

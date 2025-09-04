@@ -112,19 +112,20 @@ ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
           return ftxui::text(entry_name_with_icon(entry));
         }) |
         std::ranges::to<std::vector>();
-    return ftxui::vbox({lines});
+    return ftxui::vbox(lines);
   }
 
-  auto selected_path = state.current_direcotry_.entries_[state.index].path();
+  auto selected_path = state.current_directory_.entries_[state.index_].path();
 
   return ftxui::vbox({
       ftxui::text(std::format("{}", selected_path.string())),
   });
 }
 
-ftxui::Component ContentProvider::deletion_dialog(const AppState &state,
-                                                  std::function<void()> yes,
-                                                  std::function<void()> no) {
+ftxui::Component
+ContentProvider::deletion_dialog(const ftxui::Element &deleted_entries,
+                                 std::function<void()> yes,
+                                 std::function<void()> no) {
   ftxui::ButtonOption button_option;
   button_option.transform = [](const ftxui::EntryState &state) {
     auto style = state.active ? ftxui::bold : ftxui::nothing;
@@ -138,7 +139,7 @@ ftxui::Component ContentProvider::deletion_dialog(const AppState &state,
   auto dialog_renderer = ftxui::Renderer(button_container, [&, this] {
     auto [width, height] = ftxui::Terminal::Size();
     auto dialog_content =
-        ftxui::vbox({deleted_entries(state) | ftxui::color(ftxui::Color::White),
+        ftxui::vbox({deleted_entries | ftxui::color(ftxui::Color::White),
                      ftxui::filler(), ftxui::separator(),
                      ftxui::hbox({
                          ftxui::filler(),

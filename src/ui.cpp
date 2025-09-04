@@ -20,8 +20,6 @@ Ui::Ui(InputHandler &input_handler)
     : input_handler_{input_handler}, cursor_positon_{0}, active_pane_{0},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
 
-  notification_ = content_provider_.notification(notification_content_);
-
   rename_dialog_ =
       content_provider_.rename_dialog(cursor_positon_, input_content_) |
       ftxui::CatchEvent(input_handler_.rename_dialog_handler());
@@ -29,6 +27,13 @@ Ui::Ui(InputHandler &input_handler)
   creation_dialog_ =
       content_provider_.creation_dialog(cursor_positon_, input_content_) |
       ftxui::CatchEvent(input_handler_.creation_dialog_handler());
+
+  deletion_dialog_ =
+      content_provider_.deletion_dialog(
+          ftxui::text("Not implemented yet..."), []() {}, []() {}) |
+      ftxui::CatchEvent(input_handler_.deletion_dialog_handler());
+
+  notification_ = content_provider_.notification(notification_content_);
 
   main_layout_ = content_provider_.layout(info_, preview_) |
                  ftxui::CatchEvent(input_handler_.navigation_handler()) |
@@ -46,14 +51,7 @@ void Ui::update_preview(EntryPreview new_preview) {
   screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void update_whole_state(const AppState &state) {}
-
-void Ui::set_deletion_dialog(const AppState &state) {
-  deletion_dialog_ =
-      content_provider_.deletion_dialog(
-          state, []() {}, []() {}) |
-      ftxui::CatchEvent(input_handler_.deletion_dialog_handler());
-}
+void Ui::update_whole_state(const AppState &state) {}
 
 void Ui::finalize_tui() {
   auto components_tab = ftxui::Container::Tab(
@@ -171,9 +169,8 @@ std::string &Ui::input_content() { return input_content_; }
 int &Ui ::cursor_positon() { return cursor_positon_; }
 
 void Ui::render(const AppState &state) {
-  set_deletion_dialog(state);
-  info_ = {state.current_direcotry_.path_.string(), state.index,
-           state.current_direcotry_elements()};
+  info_ = {state.current_directory_.path_.string(), (int)state.index_,
+           state.current_directory_elements()};
   preview_ = std::string("hello");
 
   finalize_tui();

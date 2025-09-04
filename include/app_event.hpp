@@ -1,10 +1,15 @@
 #pragma once
+#include "utils.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <ftxui/dom/elements.hpp>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace duck {
+
+namespace fs = std::filesystem;
 
 struct FmgrEvent {
   enum class Type : std::uint8_t {
@@ -14,10 +19,18 @@ struct FmgrEvent {
     Deletion,
     Creation,
     Rename,
-    StartYanking,
-    StartCutting,
     Paste,
+    LoadDirectory,
+    Refresh,
+    Reload,
   } type_;
+  fs::path path;
+  fs::path path_to;
+  std::vector<fs::path> paths;
+  bool use_cache = true;
+  bool is_directory = false;
+  bool is_cutting = false;
+  std::string new_name;
 };
 
 struct RenderEvent {
@@ -38,7 +51,11 @@ struct RenderEvent {
   } type_;
 };
 
-using AppEvent = std::variant<FmgrEvent, RenderEvent>;
+struct DirectoryLoaded {
+  Directory directory;
+};
+
+using AppEvent = std::variant<FmgrEvent, RenderEvent, DirectoryLoaded>;
 using EntryPreview = std::variant<std::string, ftxui::Element, std::monostate>;
 using MenuInfo = std::tuple<std::string, int, std::vector<ftxui::Element>>;
 

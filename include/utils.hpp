@@ -12,6 +12,14 @@ namespace duck {
 
 namespace fs = std::filesystem;
 
+struct Directory {
+  fs::path path_;
+  std::vector<fs::directory_entry> entries_;
+  std::vector<fs::directory_entry> hidden_entries_;
+
+  bool empty() const { return entries_.empty() && hidden_entries_.empty(); }
+};
+
 template <typename Key, typename Value> class Lru {
 private:
   size_t capacity_;
@@ -61,15 +69,6 @@ public:
   }
 };
 
-struct Direcotry {
-  fs::path path_;
-  std::vector<fs::directory_entry> entries_;
-  std::vector<fs::directory_entry> hidden_entries_;
-
-  // FIX::
-  bool empty() const { return entries_.empty() && hidden_entries_.empty(); }
-};
-
 inline std::string entry_name_with_icon(const fs::directory_entry &entry) {
   if (entry.path().empty()) {
     return "[Invalid Entry]";
@@ -103,6 +102,16 @@ inline std::string entry_name_with_icon(const fs::directory_entry &entry) {
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
 
   return std::format("{} {}", icon, filename);
+}
+
+inline bool entries_sorter(const fs::directory_entry &first,
+                           const fs::directory_entry &second) {
+  if (first.is_directory() != second.is_directory()) {
+    return static_cast<int>(first.is_directory()) >
+           static_cast<int>(second.is_directory());
+  }
+
+  return first.path().filename() < second.path().filename();
 }
 
 } // namespace duck

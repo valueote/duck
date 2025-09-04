@@ -18,27 +18,27 @@ struct AppState {
   fs::path current_path_;
   fs::path previous_path_;
 
-  Direcotry current_direcotry_;
+  Directory current_directory_;
   std::set<fs::directory_entry> selected_entries_;
 
   bool is_yanking_ = false;
   bool is_cutting_ = false;
   bool show_hidden_ = false;
 
-  size_t index = 0;
+  size_t index_ = 0;
 
   // UI state
 
   // Cache
-  Lru<fs::path, Direcotry> cache;
+  Lru<fs::path, Directory> cache_;
 
-  AppState() : cache(lru_cache_size) {}
+  AppState() : cache_(lru_cache_size) {}
 
-  std::vector<ftxui::Element> current_direcotry_elements() const {
-    if (current_direcotry_.entries_.empty()) {
+  std::vector<ftxui::Element> current_directory_elements() const {
+    if (current_directory_.entries_.empty()) {
       return {};
     }
-    return current_direcotry_.entries_ |
+    return current_directory_.entries_ |
            std::views::transform([this](const fs::directory_entry &entry) {
              auto filename = ftxui::text(entry_name_with_icon(entry));
              auto marker = ftxui::text("  ");
@@ -63,11 +63,21 @@ struct AppState {
            std::ranges::to<std::vector>();
   }
 
-  EntryPreview current_preview() const {
-    if (current_direcotry_.empty()) {
-      return std::monostate();
-    }
+  std::optional<fs::directory_entry> index_entry() {
+    return cache_.get(current_path_)
+        .transform(
+            [this](const auto &directory) -> std::vector<fs::directory_entry> {
+              auto entries = directory.entries_;
+              if (show_hidden_) {
+                entries.reserve(entries.size() +
+                                directory.hidden_entries_.size());
+                std::ranges::copy(directory.hidden_entries_,
+                                  std::back_inserter(entries));
+                std::ranges::sort(entries, entries_sorter);
+              }
+              return entries;
+            })
+        .transform([this](const auto &entries) { return entries[index_]; });
   }
 };
-
 } // namespace duck

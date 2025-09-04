@@ -20,6 +20,7 @@ private:
   MenuInfo info_;
   EntryPreview preview_;
   ContentProvider content_provider_;
+  ftxui::Element selected_entries_;
   InputHandler &input_handler_;
 
   ftxui::ScreenInteractive screen_;
@@ -49,7 +50,6 @@ private:
 public:
   Ui(InputHandler &input_handler);
   void update_whole_state(const AppState &state);
-  void set_deletion_dialog(const AppState &state);
 
   void toggle_deletion_dialog();
   void toggle_rename_dialog();
