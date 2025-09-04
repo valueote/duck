@@ -25,7 +25,7 @@ struct AppState {
   bool is_cutting_ = false;
   bool show_hidden_ = false;
 
-  int index = 0;
+  size_t index = 0;
 
   // UI state
 

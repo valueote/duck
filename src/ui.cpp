@@ -1,10 +1,12 @@
 #include "ui.hpp"
+#include "app_event.hpp"
 #include "app_state.hpp"
 #include "ftxui/dom/elements.hpp"
 #include "input_handler.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
@@ -31,6 +33,17 @@ Ui::Ui(InputHandler &input_handler)
   main_layout_ = content_provider_.layout(info_, preview_) |
                  ftxui::CatchEvent(input_handler_.navigation_handler()) |
                  ftxui::CatchEvent(input_handler_.operation_handler());
+}
+
+void Ui::update_info(MenuInfo new_info) {
+  screen_.Post([this, info = std::move(new_info)]() { info_ = info; });
+  screen_.PostEvent(ftxui::Event::Custom);
+};
+
+void Ui::update_preview(EntryPreview new_preview) {
+  screen_.Post(
+      [this, preview = std::move(new_preview)]() { preview_ = preview; });
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
 void update_whole_state(const AppState &state) {}

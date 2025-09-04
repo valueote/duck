@@ -80,17 +80,18 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
 void App::handle_render_event(const RenderEvent &event) {
   switch (event.type_) {
   case RenderEvent::Type::MoveSelectionDown: {
-    auto entries = FileManagerService::curdir_entries(state_);
-    if (!entries.empty()) {
-      state_.index = (state_.index + 1) % entries.size();
-    }
+    state_.index =
+        (state_.index + 1) % state_.current_direcotry_.entries_.size();
+    ui_.update_info({state_.current_path_.string(), state_.index,
+                     state_.current_direcotry_elements()});
     break;
   }
   case RenderEvent::Type::MoveSelectionUp: {
-    auto entries = FileManagerService::curdir_entries(state_);
-    if (!entries.empty()) {
-      state_.index = (state_.index + entries.size() - 1) % entries.size();
-    }
+    state_.index =
+        (state_.index + state_.current_direcotry_.entries_.size() - 1) %
+        state_.current_direcotry_.entries_.size();
+    ui_.update_info({state_.current_path_.string(), state_.index,
+                     state_.current_direcotry_elements()});
     break;
   }
   case RenderEvent::Type::EnterDirectory:
