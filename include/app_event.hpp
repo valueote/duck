@@ -12,7 +12,7 @@ namespace duck {
 namespace fs = std::filesystem;
 
 using EntryPreview = std::variant<std::string, ftxui::Element, std::monostate>;
-using MenuInfo = std::tuple<std::string, int, std::vector<ftxui::Element>>;
+using MenuInfo = std::tuple<std::string, size_t, std::vector<ftxui::Element>>;
 
 struct FmgrEvent {
   enum class Type : std::uint8_t {

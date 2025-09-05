@@ -3,6 +3,7 @@
 #include "app_state.hpp"
 #include "ftxui/dom/elements.hpp"
 #include "input_handler.hpp"
+#include <cstddef>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -38,12 +39,16 @@ Ui::Ui(InputHandler &input_handler)
   main_layout_ = content_provider_.layout(info_, preview_) |
                  ftxui::CatchEvent(input_handler_.navigation_handler()) |
                  ftxui::CatchEvent(input_handler_.operation_handler());
+
+  finalize_tui();
 }
 
 void Ui::update_info(MenuInfo new_info) {
   screen_.Post([this, info = std::move(new_info)]() { info_ = info; });
   screen_.PostEvent(ftxui::Event::Custom);
 };
+
+void Ui::update_index(size_t index) {}
 
 void Ui::update_preview(EntryPreview new_preview) {
   screen_.Post(
@@ -169,11 +174,9 @@ std::string &Ui::input_content() { return input_content_; }
 int &Ui ::cursor_positon() { return cursor_positon_; }
 
 void Ui::render(AppState &state) {
-  info_ = {state.current_directory_.path_.string(), (int)state.index_,
+  info_ = {state.current_directory_.path_.string(), state.index_,
            state.current_directory_elements()};
-  preview_ = std::string("hello");
-
-  finalize_tui();
+  preview_ = std::string("Loading");
   screen_.Loop(tui_);
 }
 

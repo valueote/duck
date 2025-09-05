@@ -57,6 +57,7 @@ public:
   void toggle_notification();
 
   void update_info(MenuInfo new_info);
+  void update_index(size_t index);
   void update_preview(EntryPreview new_preview);
   void update_curdir_entries();
   void update_rename_input(std::string str);

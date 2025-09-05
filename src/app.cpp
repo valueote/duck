@@ -65,6 +65,8 @@ void App::update_current_direcotry(const fs::path &path) {
   state_.current_directory_ = directory;
   state_.current_path_ = directory.path_;
   state_.index_ = 0;
+  refresh_menu();
+  update_preview();
 }
 
 void App::handle_fmgr_event(const FmgrEvent &event) {
@@ -164,6 +166,7 @@ void App::move_index_down() {
   if (!state_.current_directory_.entries_.empty()) {
     state_.index_ =
         (state_.index_ + 1) % state_.current_directory_.entries_.size();
+    refresh_menu();
     update_preview();
   }
 }
@@ -173,6 +176,7 @@ void App::move_index_up() {
     state_.index_ =
         (state_.index_ + state_.current_directory_.entries_.size() - 1) %
         state_.current_directory_.entries_.size();
+    refresh_menu();
     update_preview();
   }
 }
@@ -208,27 +212,18 @@ void App::update_preview() {
 }
 
 void App::enter_directory() {
-
   state_.index_entry().transform([this](const auto &entry) {
     if (entry.is_directory()) {
-      if (auto cached = state_.cache_.get(entry.path()); cached) {
-        handle_directory_loaded(DirecotryLoaded{cached.value()});
-      } else {
-        event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::LoadDirectory,
-                                        .path = entry.path()});
-      }
+      file_manager_.async_update_current_directory(entry.path());
     }
     return entry;
   });
 }
 
 void App::leave_directory() {
-  auto parent_path = state_.current_path_.parent_path();
-  if (auto cached = state_.cache_.get(parent_path); cached) {
-    handle_directory_loaded(DirecotryLoaded{cached.value()});
-  } else {
-    event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::LoadDirectory,
-                                    .path = parent_path});
+  if (state_.current_path_ != state_.current_path_.root_path()) {
+    auto parent_path = state_.current_path_.parent_path();
+    file_manager_.async_update_current_directory(parent_path);
   }
 }
 
