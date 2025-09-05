@@ -2,12 +2,15 @@
 #include "app_event.hpp"
 #include "colorscheme.hpp"
 #include "utils.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
+#include <iterator>
 #include <ranges>
 #include <set>
 #include <variant>
+#include <vector>
 
 namespace duck {
 namespace fs = std::filesystem;
@@ -33,12 +36,18 @@ struct AppState {
   Lru<fs::path, Directory> cache_;
 
   AppState() : cache_(lru_cache_size) {}
+  std::vector<ftxui::Element>
 
-  std::vector<ftxui::Element> current_directory_elements() const {
-    if (current_directory_.entries_.empty()) {
-      return {};
+  directory_to_elements(Directory &directory) const {
+    if (show_hidden_ && not directory.hidden_entries_.empty()) {
+      std::ranges::move(directory.hidden_entries_,
+                        std::back_inserter(directory.entries_));
+    };
+    if (directory.entries_.empty()) {
+      return {ftxui::text("Empty folder")};
     }
-    return current_directory_.entries_ |
+
+    return directory.entries_ |
            std::views::transform([this](const fs::directory_entry &entry) {
              auto filename = ftxui::text(entry_name_with_icon(entry));
              auto marker = ftxui::text("  ");
@@ -61,6 +70,10 @@ struct AppState {
              return elmt;
            }) |
            std::ranges::to<std::vector>();
+  };
+
+  std::vector<ftxui::Element> current_directory_elements() {
+    return directory_to_elements(current_directory_);
   }
 
   std::optional<fs::directory_entry> index_entry() {

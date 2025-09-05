@@ -1,13 +1,16 @@
 #include "app.hpp"
 #include "app_event.hpp"
 #include "file_manager.hpp"
+#include "utils.hpp"
 #include <cstring>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
+#include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/terminal.hpp>
 #include <optional>
 #include <print>
+#include <stdexec/execution.hpp>
 #include <string>
 #include <wait.h>
 
@@ -19,10 +22,10 @@ App::App(EventBus &event_bus, Ui &ui, FileManager &file_manager)
 void App::run() {
   running_ = true;
   event_processing_thread_ = std::jthread([this] { process_events(); });
-  event_bus_.push_event(FmgrEvent{
-      .type_ = FmgrEvent::Type::LoadDirectory,
-      .path = fs::current_path(),
-  });
+  state_.current_path_ = fs::current_path();
+  state_.current_directory_ = FileManager::load_directory(state_.current_path_);
+  state_.cache_.insert(state_.current_path_, state_.current_directory_);
+  update_preview();
   ui_.render(state_);
 }
 
@@ -38,29 +41,38 @@ void App::process_events() {
     auto event_opt = event_bus_.pop_event();
     if (event_opt) {
       auto event = event_opt.value();
-      std::visit(
-          Visitor{
-              [this](const FmgrEvent &event) { handle_fmgr_event(event); },
-              [this](const RenderEvent &event) { handle_render_event(event); },
-              [this](const DirectoryLoaded &event) {
-                handle_directory_loaded(event);
-              },
-          },
-          event);
+      std::visit(Visitor{[this](FmgrEvent &event) { handle_fmgr_event(event); },
+                         [this](const RenderEvent &event) {
+                           handle_render_event(event);
+                         },
+                         [this](const DirecotryLoaded &event) {
+                           handle_directory_loaded(event);
+                         },
+                         [this](const PreviewUpdated &event) {
+                           ui_.update_preview(event.preview_);
+                         }},
+                 event);
     }
   }
 }
 
-void App::handle_directory_loaded(const DirectoryLoaded &event) {
-  state_.cache_.insert(event.directory.path_, event.directory);
-  state_.current_directory_ = event.directory;
-  state_.current_path_ = event.directory.path_;
+void App::handle_directory_loaded(const DirecotryLoaded &event) {
+  state_.cache_.insert(event.directory_.path_, event.directory_);
+}
+
+void App::update_current_direcotry(const fs::path &path) {
+  auto directory = state_.cache_.get(path).value();
+  state_.current_directory_ = directory;
+  state_.current_path_ = directory.path_;
   state_.index_ = 0;
-  refresh_menu();
 }
 
 void App::handle_fmgr_event(const FmgrEvent &event) {
   switch (event.type_) {
+  case FmgrEvent::Type::UpdateCurrentDirectory: {
+    update_current_direcotry(event.path);
+    break;
+  }
   case FmgrEvent::Type::ToggleMark: {
     auto entry = state_.index_entry();
     if (entry) {
@@ -128,9 +140,6 @@ void App::handle_render_event(const RenderEvent &event) {
   case RenderEvent::Type::LeaveDirectory:
     leave_directory();
     break;
-  case RenderEvent::Type::UpdatePreview:
-    update_preview();
-    break;
   case RenderEvent::Type::ToggleNotification:
     ui_.toggle_notification();
     break;
@@ -155,7 +164,6 @@ void App::move_index_down() {
   if (!state_.current_directory_.entries_.empty()) {
     state_.index_ =
         (state_.index_ + 1) % state_.current_directory_.entries_.size();
-    refresh_menu();
     update_preview();
   }
 }
@@ -165,7 +173,6 @@ void App::move_index_up() {
     state_.index_ =
         (state_.index_ + state_.current_directory_.entries_.size() - 1) %
         state_.current_directory_.entries_.size();
-    refresh_menu();
     update_preview();
   }
 }
@@ -179,13 +186,33 @@ void App::reload_menu() {
   event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
 }
 
-void App::update_preview() {}
+void App::update_preview() {
+  auto entry_opt = state_.index_entry();
+  if (!entry_opt) {
+    ui_.update_preview("[No item selected]");
+    return;
+  }
+
+  const auto &entry = entry_opt.value();
+
+  if (not entry.exists()) {
+    ui_.update_preview("[File does not exists]");
+    return;
+  }
+
+  if (auto dir = state_.cache_.get(entry.path()); dir) {
+    ui_.update_preview(ftxui::vbox(state_.directory_to_elements(dir.value())));
+  } else {
+    file_manager_.async_update_preview(entry);
+  }
+}
 
 void App::enter_directory() {
+
   state_.index_entry().transform([this](const auto &entry) {
     if (entry.is_directory()) {
       if (auto cached = state_.cache_.get(entry.path()); cached) {
-        handle_directory_loaded(DirectoryLoaded{cached.value()});
+        handle_directory_loaded(DirecotryLoaded{cached.value()});
       } else {
         event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::LoadDirectory,
                                         .path = entry.path()});
@@ -198,7 +225,7 @@ void App::enter_directory() {
 void App::leave_directory() {
   auto parent_path = state_.current_path_.parent_path();
   if (auto cached = state_.cache_.get(parent_path); cached) {
-    handle_directory_loaded(DirectoryLoaded{cached.value()});
+    handle_directory_loaded(DirecotryLoaded{cached.value()});
   } else {
     event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::LoadDirectory,
                                     .path = parent_path});

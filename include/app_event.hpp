@@ -11,8 +11,12 @@ namespace duck {
 
 namespace fs = std::filesystem;
 
+using EntryPreview = std::variant<std::string, ftxui::Element, std::monostate>;
+using MenuInfo = std::tuple<std::string, int, std::vector<ftxui::Element>>;
+
 struct FmgrEvent {
   enum class Type : std::uint8_t {
+    UpdateCurrentDirectory,
     OpenFile,
     ToggleMark,
     ToggleHidden,
@@ -27,7 +31,6 @@ struct FmgrEvent {
   fs::path path;
   fs::path path_to;
   std::vector<fs::path> paths;
-  bool use_cache = true;
   bool is_directory = false;
   bool is_cutting = false;
   std::string new_name;
@@ -39,7 +42,6 @@ struct RenderEvent {
     MoveSelectionUp,
     EnterDirectory,
     LeaveDirectory,
-    UpdatePreview,
     ToggleNotification,
     ToggleDeletionDialog,
     ToggleRenameDialog,
@@ -51,18 +53,20 @@ struct RenderEvent {
   } type_;
 };
 
-struct DirectoryLoaded {
-  Directory directory;
+struct PreviewUpdated {
+  EntryPreview preview_;
 };
 
-using AppEvent = std::variant<FmgrEvent, RenderEvent, DirectoryLoaded>;
-using EntryPreview = std::variant<std::string, ftxui::Element, std::monostate>;
-using MenuInfo = std::tuple<std::string, int, std::vector<ftxui::Element>>;
+struct DirecotryLoaded {
+  Directory directory_;
+};
+
+using AppEvent =
+    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, PreviewUpdated>;
 
 template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;
 };
 template <typename... Ts> Visitor(Ts...) -> Visitor<Ts...>;
 
-// 事件数据结构体
 } // namespace duck

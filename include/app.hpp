@@ -22,8 +22,9 @@ private:
   void process_events();
   void handle_fmgr_event(const FmgrEvent &event);
   void handle_render_event(const RenderEvent &event);
-  void handle_directory_loaded(const DirectoryLoaded &event);
+  void handle_directory_loaded(const DirecotryLoaded &event);
 
+  void update_current_direcotry(const fs::path &path);
   void move_index_down();
   void move_index_up();
   void update_preview();

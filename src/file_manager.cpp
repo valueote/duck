@@ -1,10 +1,12 @@
 #include "file_manager.hpp"
 #include "app_event.hpp"
 #include "scheduler.hpp"
+#include "stdexec/__detail/__execution_fwd.hpp"
 #include "utils.hpp"
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <ftxui/dom/elements.hpp>
 
 namespace duck {
 
@@ -17,7 +19,7 @@ FileManager::FileManager(EventBus &event_bus) : event_bus_(event_bus) {}
 void FileManager::handle_event(const FmgrEvent &event) {
   switch (event.type_) {
   case FmgrEvent::Type::LoadDirectory:
-    async_load_directory(event.path, event.use_cache);
+    async_load_directory(event.path);
     break;
   case FmgrEvent::Type::Deletion:
     async_delete_entries(event.paths);
@@ -36,33 +38,80 @@ void FileManager::handle_event(const FmgrEvent &event) {
   }
 }
 
-void FileManager::async_load_directory(const fs::path &path, bool use_cache) {
+Directory FileManager::load_directory(const fs::path &path) {
+  Directory directory{.path_ = path};
+  directory.entries_.reserve(dirs_reserve);
+  directory.hidden_entries_.reserve(dirs_reserve);
+
+  for (auto entry : fs::directory_iterator(
+           path, fs::directory_options::skip_permission_denied)) {
+    if (entry.path().empty()) {
+      continue;
+    }
+    if (entry.path().filename().native()[0] == '.') {
+      directory.hidden_entries_.push_back(std::move(entry));
+    } else {
+      directory.entries_.push_back(std::move(entry));
+    }
+  }
+
+  std::ranges::sort(directory.entries_, entries_sorter);
+  std::ranges::sort(directory.hidden_entries_, entries_sorter);
+  return directory;
+}
+
+void FileManager::async_load_directory(const fs::path &path) {
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([path]() {
-                Directory directory{.path_ = path};
-                directory.entries_.reserve(dirs_reserve);
-                directory.hidden_entries_.reserve(dirs_reserve);
-
-                for (auto entry : fs::directory_iterator(
-                         path, fs::directory_options::skip_permission_denied)) {
-                  if (entry.path().empty()) {
-                    continue;
-                  }
-                  if (entry.path().filename().native()[0] == '.') {
-                    directory.hidden_entries_.push_back(std::move(entry));
-                  } else {
-                    directory.entries_.push_back(std::move(entry));
-                  }
-                }
-
-                std::ranges::sort(directory.entries_, entries_sorter);
-                std::ranges::sort(directory.hidden_entries_, entries_sorter);
-                return directory;
-              }) |
+              stdexec::then([path]() { return load_directory(path); }) |
               stdexec::then([this](const Directory &directory) {
-                event_bus_.push_event(DirectoryLoaded{directory});
+                event_bus_.push_event(DirecotryLoaded{directory});
               });
   stdexec::start_detached(std::move(task));
+}
+
+void FileManager::async_update_preview(const fs::directory_entry &entry) {
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then([this, entry]() -> EntryPreview {
+                if (entry.is_directory()) {
+                  event_bus_.push_event(DirecotryLoaded{load_directory(entry)});
+                  return ftxui::text("Debug");
+                }
+                std::ifstream file(entry.path());
+                if (!file.is_open()) {
+                  return "[Permission denied]";
+                }
+
+                std::string content;
+                std::string line;
+                for (int i = 0; i < 100 && std::getline(file, line); ++i) {
+                  if (line.size() > 50) {
+                    line = line.substr(0, 50) + "...";
+                  }
+                  content += line + '\n';
+                }
+
+                if (file.eof() && content.empty() && line.empty()) {
+                  return "[Empty file]";
+                }
+                return content;
+              }) |
+              stdexec::then([this](const EntryPreview &preview) {
+                event_bus_.push_event(PreviewUpdated{preview});
+              });
+  scope_.spawn(task);
+}
+
+void FileManager::async_update_current_directory(const fs::path &path) {
+  auto task =
+      stdexec::schedule(Scheduler::io_scheduler()) |
+      stdexec::then([this, path]() {
+        event_bus_.push_event(DirecotryLoaded{load_directory(path)});
+      }) |
+      stdexec::then([this, path]() {
+        event_bus_.push_event(FmgrEvent{
+            .type_ = FmgrEvent::Type::UpdateCurrentDirectory, .path = path});
+      });
+  scope_.spawn(task);
 }
 
 void FileManager::async_delete_entries(const std::vector<fs::path> &paths) {

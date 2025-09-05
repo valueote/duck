@@ -168,7 +168,7 @@ std::string &Ui::input_content() { return input_content_; }
 
 int &Ui ::cursor_positon() { return cursor_positon_; }
 
-void Ui::render(const AppState &state) {
+void Ui::render(AppState &state) {
   info_ = {state.current_directory_.path_.string(), (int)state.index_,
            state.current_directory_elements()};
   preview_ = std::string("hello");
