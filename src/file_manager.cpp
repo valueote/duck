@@ -70,38 +70,43 @@ void FileManager::async_load_directory(const fs::path &path) {
   stdexec::start_detached(std::move(task));
 }
 
-void FileManager::async_update_preview(const fs::directory_entry &entry) {
-  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([this, entry]() -> std::optional<EntryPreview> {
-                if (entry.is_directory()) {
-                  event_bus_.push_event(DirecotryLoaded{load_directory(entry)});
-                  event_bus_.push_event(DirectoryPreviewRequested{entry});
-                  return std::nullopt;
-                }
-                std::ifstream file(entry.path());
-                if (!file.is_open()) {
-                  return "[Permission denied]";
-                }
+void FileManager::async_update_preview(const fs::directory_entry &entry,
+                                       const std::pair<int, int> &size) {
+  auto task =
+      stdexec::schedule(Scheduler::io_scheduler()) |
+      stdexec::then([this, entry, size]() -> std::optional<EntryPreview> {
+        if (entry.is_directory()) {
+          event_bus_.push_event(DirecotryLoaded{load_directory(entry)});
+          event_bus_.push_event(DirectoryPreviewRequested{entry});
+          return std::nullopt;
+        }
 
-                std::string content;
-                std::string line;
-                for (int i = 0; i < 100 && std::getline(file, line); ++i) {
-                  if (line.size() > 50) {
-                    line = line.substr(0, 50) + "...";
-                  }
-                  content += line + '\n';
-                }
+        std::ifstream file(entry.path());
+        if (!file.is_open()) {
+          return "[Permission denied]";
+        }
 
-                if (file.eof() && content.empty() && line.empty()) {
-                  return "[Empty file]";
-                }
-                return content;
-              }) |
-              stdexec::then([this](const std::optional<EntryPreview> &preview) {
-                if (preview) {
-                  event_bus_.push_event(PreviewUpdated{preview.value()});
-                }
-              });
+        auto [width, height] = size;
+        std::string content;
+        std::string line;
+        for (int i = 0; i < height && std::getline(file, line); ++i) {
+          if (line.size() > width) {
+            line = line.substr(0, width) + "...";
+          }
+          content += line + '\n';
+        }
+
+        if (file.eof() && content.empty() && line.empty()) {
+          return "[Empty file]";
+        }
+
+        return content;
+      }) |
+      stdexec::then([this](const std::optional<EntryPreview> &preview) {
+        if (preview) {
+          event_bus_.push_event(PreviewUpdated{preview.value()});
+        }
+      });
   scope_.spawn(task);
 }
 

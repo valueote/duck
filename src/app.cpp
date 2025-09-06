@@ -86,6 +86,7 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
       } else {
         state_.selected_entries_.insert(entry.value());
       }
+      move_index_down();
     }
     refresh_menu();
     break;
@@ -214,13 +215,24 @@ void App::update_preview() {
     return;
   }
 
-  file_manager_.async_update_preview(entry);
+  if (auto directory = state_.cache_.get(entry.path()); directory.has_value()) {
+    ui_.update_preview(
+        ftxui::vbox(state_.directory_to_elements(directory.value())));
+    return;
+  }
+  auto [width, height] = ftxui::Terminal::Size();
+  ui_.update_preview("Loading...");
+  file_manager_.async_update_preview(entry, {width / 2, height - 4});
 }
 
 void App::enter_directory() {
   state_.index_entry().transform([this](const auto &entry) {
     if (entry.is_directory()) {
-      file_manager_.async_update_current_directory(entry.path());
+      if (state_.cache_.get(entry.path())) {
+        update_current_direcotry(entry.path());
+      } else {
+        file_manager_.async_update_current_directory(entry.path());
+      }
     }
     return entry;
   });
@@ -229,7 +241,11 @@ void App::enter_directory() {
 void App::leave_directory() {
   if (state_.current_path_ != state_.current_path_.root_path()) {
     auto parent_path = state_.current_path_.parent_path();
-    file_manager_.async_update_current_directory(parent_path);
+    if (state_.cache_.get(parent_path)) {
+      update_current_direcotry(parent_path);
+    } else {
+      file_manager_.async_update_current_directory(parent_path);
+    }
   }
 }
 

@@ -9,7 +9,6 @@
 #include <iterator>
 #include <ranges>
 #include <set>
-#include <variant>
 #include <vector>
 
 namespace duck {
