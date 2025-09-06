@@ -38,10 +38,6 @@ struct AppState {
   std::vector<ftxui::Element>
 
   directory_to_elements(Directory directory) const {
-    if (show_hidden_ && not directory.hidden_entries_.empty()) {
-      std::ranges::move(directory.hidden_entries_,
-                        std::back_inserter(directory.entries_));
-    };
     if (directory.entries_.empty()) {
       return {ftxui::text("Empty folder")};
     }

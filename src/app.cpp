@@ -63,22 +63,13 @@ void App::handle_directory_loaded(const DirecotryLoaded &event) {
   state_.cache_.insert(event.directory_.path_, event.directory_);
 }
 
-void App::update_current_direcotry(const fs::path &path) {
-  auto directory = state_.cache_.get(path).value();
-  state_.current_directory_ = directory;
-  state_.current_path_ = directory.path_;
-  state_.index_ = 0;
-  refresh_menu();
-  update_preview();
-}
-
 void App::handle_fmgr_event(const FmgrEvent &event) {
   switch (event.type_) {
   case FmgrEvent::Type::UpdateCurrentDirectory: {
     update_current_direcotry(event.path);
     break;
   }
-  case FmgrEvent::Type::ToggleMark: {
+  case FmgrEvent::Type::ToggleSelection: {
     auto entry = state_.index_entry();
     if (entry) {
       if (state_.selected_entries_.contains(entry.value())) {
@@ -132,11 +123,11 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
 
 void App::handle_render_event(const RenderEvent &event) {
   switch (event.type_) {
-  case RenderEvent::Type::MoveSelectionDown: {
+  case RenderEvent::Type::MoveIndexDown: {
     move_index_down();
     break;
   }
-  case RenderEvent::Type::MoveSelectionUp: {
+  case RenderEvent::Type::MoveIndexUp: {
     move_index_up();
     break;
   }
@@ -166,6 +157,22 @@ void App::handle_render_event(const RenderEvent &event) {
   }
 }
 
+void App::handle_directory_preview_requested(
+    const DirectoryPreviewRequested &event) {
+  if (auto dir = state_.cache_.get(event.entry_.path()); dir) {
+    ui_.update_preview(ftxui::vbox(state_.directory_to_elements(dir.value())));
+  }
+}
+
+void App::update_current_direcotry(const fs::path &path) {
+  auto directory = state_.cache_.get(path).value();
+  state_.current_directory_ = directory;
+  state_.current_path_ = directory.path_;
+  state_.index_ = 0;
+  refresh_menu();
+  update_preview();
+}
+
 void App::move_index_down() {
   if (!state_.current_directory_.entries_.empty()) {
     state_.index_ =
@@ -192,13 +199,6 @@ void App::refresh_menu() {
 
 void App::reload_menu() {
   event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
-}
-
-void App::handle_directory_preview_requested(
-    const DirectoryPreviewRequested &event) {
-  if (auto dir = state_.cache_.get(event.entry_.path()); dir) {
-    ui_.update_preview(ftxui::vbox(state_.directory_to_elements(dir.value())));
-  }
 }
 
 void App::update_preview() {

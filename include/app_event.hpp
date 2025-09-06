@@ -18,7 +18,7 @@ struct FmgrEvent {
   enum class Type : std::uint8_t {
     UpdateCurrentDirectory,
     OpenFile,
-    ToggleMark,
+    ToggleSelection,
     ToggleHidden,
     Deletion,
     Creation,
@@ -38,8 +38,8 @@ struct FmgrEvent {
 
 struct RenderEvent {
   enum class Type : std::uint8_t {
-    MoveSelectionDown,
-    MoveSelectionUp,
+    MoveIndexDown,
+    MoveIndexUp,
     EnterDirectory,
     LeaveDirectory,
     ToggleNotification,
@@ -65,8 +65,8 @@ struct DirectoryPreviewRequested {
   fs::directory_entry entry_;
 };
 
-using AppEvent =
-    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, PreviewUpdated, DirectoryPreviewRequested>;
+using AppEvent = std::variant<FmgrEvent, RenderEvent, DirecotryLoaded,
+                              PreviewUpdated, DirectoryPreviewRequested>;
 
 template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;

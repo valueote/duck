@@ -17,12 +17,12 @@ InputHandler::InputHandler(EventBus &event_bus) : event_bus_{event_bus} {}
 std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Character('j')) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::MoveSelectionDown});
+      event_bus_.push_event(RenderEvent{RenderEvent::Type::MoveIndexDown});
       return true;
     }
 
     if (event == ftxui::Event::Character('k')) {
-      event_bus_.push_event(RenderEvent{RenderEvent::Type::MoveSelectionUp});
+      event_bus_.push_event(RenderEvent{RenderEvent::Type::MoveIndexUp});
       return true;
     }
 
@@ -58,7 +58,7 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
     }
 
     if (event == ftxui::Event::Character(' ')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::ToggleMark});
+      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::ToggleSelection});
       return true;
     }
 
