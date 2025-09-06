@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ftxui/dom/elements.hpp>
+#include <string>
 
 namespace duck {
 
@@ -71,10 +72,11 @@ void FileManager::async_load_directory(const fs::path &path) {
 
 void FileManager::async_update_preview(const fs::directory_entry &entry) {
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([this, entry]() -> EntryPreview {
+              stdexec::then([this, entry]() -> std::optional<EntryPreview> {
                 if (entry.is_directory()) {
                   event_bus_.push_event(DirecotryLoaded{load_directory(entry)});
-                  return ftxui::text("Debug");
+                  event_bus_.push_event(DirectoryPreviewRequested{entry});
+                  return std::nullopt;
                 }
                 std::ifstream file(entry.path());
                 if (!file.is_open()) {
@@ -95,8 +97,10 @@ void FileManager::async_update_preview(const fs::directory_entry &entry) {
                 }
                 return content;
               }) |
-              stdexec::then([this](const EntryPreview &preview) {
-                event_bus_.push_event(PreviewUpdated{preview});
+              stdexec::then([this](const std::optional<EntryPreview> &preview) {
+                if (preview) {
+                  event_bus_.push_event(PreviewUpdated{preview.value()});
+                }
               });
   scope_.spawn(task);
 }

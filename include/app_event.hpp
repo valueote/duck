@@ -61,8 +61,12 @@ struct DirecotryLoaded {
   Directory directory_;
 };
 
+struct DirectoryPreviewRequested {
+  fs::directory_entry entry_;
+};
+
 using AppEvent =
-    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, PreviewUpdated>;
+    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, PreviewUpdated, DirectoryPreviewRequested>;
 
 template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;

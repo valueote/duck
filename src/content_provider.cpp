@@ -19,26 +19,28 @@ namespace duck {
 
 ftxui::Element
 ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
-                                 const int &index) {
-  if (all_entries.size() == 0) {
+                                 const size_t &index) {
+  if (all_entries.empty()) {
     return ftxui::text("[Empty folder]");
   }
 
   auto [width, _] = ftxui::Terminal::Size();
   std::vector<ftxui::Element> visible_entries;
-  int view_index = 0;
+  size_t view_index = 0;
   // delete the border and margin space
-  const int viewport_size = ftxui::Terminal::Size().dimy - 2;
+  const size_t viewport_size = ftxui::Terminal::Size().dimy - 2;
 
   if (all_entries.size() > viewport_size) {
-    int start_index = index - (viewport_size / 4 * 3);
-    start_index = std::max(0, start_index);
-
-    if (start_index + viewport_size > all_entries.size()) {
-      start_index = static_cast<int>(all_entries.size()) - viewport_size;
+    size_t start_index = 0;
+    if (index > viewport_size * 3 / 4) {
+      start_index = index - viewport_size * 3 / 4;
     }
 
-    int end_index = start_index + viewport_size;
+    if (start_index + viewport_size > all_entries.size()) {
+      start_index = all_entries.size() - viewport_size;
+    }
+
+    size_t end_index = start_index + viewport_size;
     view_index = index - start_index;
 
     visible_entries.assign(
@@ -48,8 +50,10 @@ ContentProvider::visible_entries(const std::vector<ftxui::Element> &all_entries,
     visible_entries = all_entries;
     view_index = index;
   }
-  visible_entries[view_index] |= ftxui::color(ftxui::Color::Black) |
+  if (view_index < visible_entries.size()) {
+    visible_entries[view_index] |= ftxui::color(ftxui::Color::Black) |
                                  ftxui::bgcolor(ColorScheme::selected());
+  }
   return ftxui::vbox(std::move(visible_entries));
 }
 

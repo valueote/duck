@@ -48,15 +48,18 @@ void Ui::update_info(MenuInfo new_info) {
   screen_.PostEvent(ftxui::Event::Custom);
 };
 
-void Ui::update_index(size_t index) {}
+void Ui::update_whole_state(const AppState &state) {}
+
+void Ui::update_index(size_t index) {
+  screen_.Post([this, index]() { std::get<1>(info_) = index; });
+  screen_.PostEvent(ftxui::Event::Custom);
+}
 
 void Ui::update_preview(EntryPreview new_preview) {
   screen_.Post(
       [this, preview = std::move(new_preview)]() { preview_ = preview; });
   screen_.PostEvent(ftxui::Event::Custom);
 }
-
-void Ui::update_whole_state(const AppState &state) {}
 
 void Ui::finalize_tui() {
   auto components_tab = ftxui::Container::Tab(
@@ -176,7 +179,7 @@ int &Ui ::cursor_positon() { return cursor_positon_; }
 void Ui::render(AppState &state) {
   info_ = {state.current_directory_.path_.string(), state.index_,
            state.current_directory_elements()};
-  preview_ = std::string("Loading");
+  preview_ = ftxui::text("Loading");
   screen_.Loop(tui_);
 }
 

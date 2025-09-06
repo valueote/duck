@@ -38,7 +38,7 @@ struct AppState {
   AppState() : cache_(lru_cache_size) {}
   std::vector<ftxui::Element>
 
-  directory_to_elements(Directory &directory) const {
+  directory_to_elements(Directory directory) const {
     if (show_hidden_ && not directory.hidden_entries_.empty()) {
       std::ranges::move(directory.hidden_entries_,
                         std::back_inserter(directory.entries_));

@@ -17,7 +17,7 @@ private:
   ftxui::Element deleted_entries(const AppState &state);
   static ftxui::Element
   visible_entries(const std::vector<ftxui::Element> &all_entries,
-                  const int &index);
+                  const size_t &index);
   ftxui::Element left_pane(const MenuInfo &info);
   ftxui::Element right_pane(const EntryPreview &preview);
 

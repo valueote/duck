@@ -1,11 +1,11 @@
 #include "app.hpp"
 #include "app_event.hpp"
 #include "file_manager.hpp"
+#include "ftxui/dom/elements.hpp"
 #include "utils.hpp"
 #include <cstring>
 #include <filesystem>
 #include <ftxui/component/component.hpp>
-#include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/terminal.hpp>
 #include <optional>
@@ -50,6 +50,9 @@ void App::process_events() {
                          },
                          [this](const PreviewUpdated &event) {
                            ui_.update_preview(event.preview_);
+                         },
+                         [this](const DirectoryPreviewRequested &event) {
+                           handle_directory_preview_requested(event);
                          }},
                  event);
     }
@@ -166,7 +169,7 @@ void App::move_index_down() {
   if (!state_.current_directory_.entries_.empty()) {
     state_.index_ =
         (state_.index_ + 1) % state_.current_directory_.entries_.size();
-    refresh_menu();
+    ui_.update_index(state_.index_);
     update_preview();
   }
 }
@@ -176,18 +179,25 @@ void App::move_index_up() {
     state_.index_ =
         (state_.index_ + state_.current_directory_.entries_.size() - 1) %
         state_.current_directory_.entries_.size();
-    refresh_menu();
+    ui_.update_index(state_.index_);
     update_preview();
   }
 }
 
 void App::refresh_menu() {
-  ui_.update_info({state_.current_path_.string(), (int)state_.index_,
+  ui_.update_info({state_.current_path_.string(), state_.index_,
                    state_.current_directory_elements()});
 }
 
 void App::reload_menu() {
   event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
+}
+
+void App::handle_directory_preview_requested(
+    const DirectoryPreviewRequested &event) {
+  if (auto dir = state_.cache_.get(event.entry_.path()); dir) {
+    ui_.update_preview(ftxui::vbox(state_.directory_to_elements(dir.value())));
+  }
 }
 
 void App::update_preview() {
@@ -204,11 +214,7 @@ void App::update_preview() {
     return;
   }
 
-  if (auto dir = state_.cache_.get(entry.path()); dir) {
-    ui_.update_preview(ftxui::vbox(state_.directory_to_elements(dir.value())));
-  } else {
-    file_manager_.async_update_preview(entry);
-  }
+  file_manager_.async_update_preview(entry);
 }
 
 void App::enter_directory() {
