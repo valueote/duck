@@ -49,7 +49,7 @@ void App::process_events() {
                            handle_directory_loaded(event);
                          },
                          [this](const PreviewUpdated &event) {
-                           ui_.update_preview(event.preview_);
+                           ui_.async_update_preview(event.preview_);
                          },
                          [this](const DirectoryPreviewRequested &event) {
                            handle_directory_preview_requested(event);
@@ -90,7 +90,11 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     open_file();
     break;
   case FmgrEvent::Type::Deletion:
-    confirm_deletion();
+    if (event.paths.empty()) {
+      confirm_deletion();
+    } else {
+      file_manager_.handle_event(event);
+    }
     break;
   case FmgrEvent::Type::Creation:
     confirm_creation();
@@ -137,6 +141,17 @@ void App::handle_render_event(const RenderEvent &event) {
   case RenderEvent::Type::LeaveDirectory:
     leave_directory();
     break;
+  case RenderEvent::Type::ToggleDeletionDialog:
+    ui_.toggle_deletion_dialog();
+    ui_.async_update_selected(ftxui::vbox(state_.entries_to_elements(
+        {state_.selected_entries_.begin(), state_.selected_entries_.end()})));
+    break;
+  case RenderEvent::Type::ToggleCreationDialog:
+    ui_.toggle_creation_dialog();
+    break;
+  case RenderEvent::Type::ToggleRenameDialog:
+    ui_.toggle_rename_dialog();
+    break;
   case RenderEvent::Type::ToggleNotification:
     ui_.toggle_notification();
     break;
@@ -160,7 +175,7 @@ void App::handle_render_event(const RenderEvent &event) {
 void App::handle_directory_preview_requested(
     const DirectoryPreviewRequested &event) {
   if (auto entries = state_.get_entries(event.path_); not entries.empty()) {
-    ui_.update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
+    ui_.async_update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
   }
 }
 
@@ -177,7 +192,7 @@ void App::move_index_down() {
   auto entries_size = state_.get_entries_size(state_.current_path_);
   if (entries_size > 0) {
     state_.index_ = (state_.index_ + 1) % entries_size;
-    ui_.update_index(state_.index_);
+    ui_.async_update_index(state_.index_);
     update_preview();
   }
 }
@@ -186,14 +201,14 @@ void App::move_index_up() {
   auto entries_size = state_.get_entries_size(state_.current_path_);
   if (entries_size > 0) {
     state_.index_ = (state_.index_ + entries_size - 1) % entries_size;
-    ui_.update_index(state_.index_);
+    ui_.async_update_index(state_.index_);
     update_preview();
   }
 }
 
 void App::refresh_menu() {
-  ui_.update_info({state_.current_path_.string(), state_.index_,
-                   state_.current_directory_elements()});
+  ui_.async_update_info({state_.current_path_.string(), state_.index_,
+                         state_.current_directory_elements()});
 }
 
 void App::reload_menu() {
@@ -203,24 +218,24 @@ void App::reload_menu() {
 void App::update_preview() {
   auto entry_opt = state_.indexed_entry();
   if (!entry_opt) {
-    ui_.update_preview("[No item selected]");
+    ui_.async_update_preview("[No item selected]");
     return;
   }
 
   const auto &entry = entry_opt.value();
 
   if (not entry.exists()) {
-    ui_.update_preview("[File does not exists]");
+    ui_.async_update_preview("[File does not exists]");
     return;
   }
 
   if (auto entries = state_.get_entries(entry.path()); not entries.empty()) {
-    ui_.update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
+    ui_.async_update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
     return;
   }
 
   auto [width, height] = ftxui::Terminal::Size();
-  ui_.update_preview("Loading...");
+  ui_.async_update_preview("Loading...");
   file_manager_.async_update_preview(entry, {width / 2, height - 4});
 }
 

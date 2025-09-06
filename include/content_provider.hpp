@@ -24,7 +24,7 @@ private:
 public:
   ContentProvider() = default;
 
-  ftxui::Component deletion_dialog(const ftxui::Element &deleted_entries,
+  ftxui::Component deletion_dialog(std::function<ftxui::Element()> get_deleted_entries,
 
                                    std::function<void()> yes,
                                    std::function<void()> no);

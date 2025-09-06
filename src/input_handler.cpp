@@ -53,12 +53,13 @@ std::function<bool(const ftxui::Event &)> InputHandler::navigation_handler() {
 std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Return) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::OpenFile});
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::OpenFile});
       return true;
     }
 
     if (event == ftxui::Event::Character(' ')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::ToggleSelection});
+      event_bus_.push_event(
+          FmgrEvent{.type_ = FmgrEvent::Type::ToggleSelection});
       return true;
     }
 
@@ -80,12 +81,12 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
     }
 
     if (event == ftxui::Event::Character('p')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::Paste});
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Paste});
       return true;
     }
 
     if (event == ftxui::Event::Character('.')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::ToggleHidden});
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::ToggleHidden});
       return true;
     }
 
@@ -102,7 +103,7 @@ std::function<bool(const ftxui::Event &)>
 InputHandler::deletion_dialog_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Character('y')) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::Deletion});
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Deletion});
       return true;
     }
 
@@ -127,7 +128,7 @@ InputHandler::rename_dialog_handler() {
     }
 
     if (event == ftxui::Event::Return) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::Rename});
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Rename});
       return true;
     }
     return false;
@@ -144,7 +145,7 @@ InputHandler::creation_dialog_handler() {
     }
 
     if (event == ftxui::Event::Return) {
-      event_bus_.push_event(FmgrEvent{FmgrEvent::Type::Creation});
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Creation});
       return true;
     }
     return false;

@@ -16,10 +16,13 @@
 #include <utility>
 
 namespace duck {
+using std::string;
 
 Ui::Ui(InputHandler &input_handler)
     : input_handler_{input_handler}, cursor_positon_{0}, active_pane_{0},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
+
+  selected_entries_ = ftxui::text("");
 
   rename_dialog_ =
       content_provider_.rename_dialog(cursor_positon_, input_content_) |
@@ -31,7 +34,9 @@ Ui::Ui(InputHandler &input_handler)
 
   deletion_dialog_ =
       content_provider_.deletion_dialog(
-          ftxui::text("Not implemented yet..."), []() {}, []() {}) |
+          [this]() { return selected_entries_; },
+          [this]() { screen_.PostEvent(ftxui::Event::Character('y')); },
+          [this]() { screen_.PostEvent(ftxui::Event::Character('n')); }) |
       ftxui::CatchEvent(input_handler_.deletion_dialog_handler());
 
   notification_ = content_provider_.notification(notification_content_);
@@ -43,20 +48,26 @@ Ui::Ui(InputHandler &input_handler)
   finalize_tui();
 }
 
-void Ui::update_info(MenuInfo new_info) {
+void Ui::async_update_info(MenuInfo new_info) {
   screen_.Post([this, info = std::move(new_info)]() { info_ = info; });
   screen_.PostEvent(ftxui::Event::Custom);
 };
 
 void Ui::update_whole_state(const AppState &state) {}
 
-void Ui::update_index(size_t index) {
+void Ui::async_update_index(size_t index) {
   screen_.Post([this, index]() { std::get<1>(info_) = index; });
   screen_.PostEvent(ftxui::Event::Custom);
-  ;
 }
 
-void Ui::update_preview(EntryPreview new_preview) {
+void Ui::async_update_selected(ftxui::Element selected_entries) {
+  screen_.Post([this, entries = std::move(selected_entries)]() {
+    selected_entries_ = entries;
+  });
+  screen_.PostEvent(ftxui::Event::Custom);
+}
+
+void Ui::async_update_preview(EntryPreview new_preview) {
   screen_.Post(
       [this, preview = std::move(new_preview)]() { preview_ = preview; });
   screen_.PostEvent(ftxui::Event::Custom);
@@ -125,13 +136,15 @@ void Ui::finalize_tui() {
 }
 
 void Ui::toggle_deletion_dialog() {
-  if (active_pane_ == static_cast<int>(pane::DELETION)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-    main_layout_->TakeFocus();
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::DELETION);
-    deletion_dialog_->TakeFocus();
-  }
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::DELETION)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+      // main_layout_->TakeFocus();
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::DELETION);
+      // deletion_dialog_->TakeFocus();
+    }
+  });
 }
 
 void Ui::toggle_rename_dialog() {
@@ -162,15 +175,15 @@ void Ui::toggle_notification() {
   }
 }
 
-void Ui::update_curdir_entries() { screen_.PostEvent(ftxui::Event::Custom); }
-
-void Ui::update_rename_input(std::string str) {
-  input_content_ = std::move(str);
-  cursor_positon_ = static_cast<int>(input_content_.size());
+void Ui::update_rename_input(string input) {
+  screen_.Post([input, this]() {
+    input_content_ = input;
+    cursor_positon_ = static_cast<int>(input_content_.size());
+  });
 }
 
-void Ui::update_notification(std::string str) {
-  screen_.Post([this, str]() { notification_content_ = str; });
+void Ui::update_notification(std::string input) {
+  screen_.Post([this, input]() { notification_content_ = input; });
 }
 
 std::string &Ui::input_content() { return input_content_; }
@@ -181,6 +194,7 @@ void Ui::render(AppState &state) {
   info_ = {state.current_directory_.path_.string(), state.index_,
            state.current_directory_elements()};
   preview_ = ftxui::text("Loading");
+  selected_entries_ = ftxui::text("Nothing");
   screen_.Loop(tui_);
 }
 
