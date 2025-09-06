@@ -45,11 +45,9 @@ struct AppState {
              if (selected_entries_.contains(entry)) {
                marker = ftxui::text("█ ");
                if (is_yanking_) {
-                 marker = ftxui::text("█ ") | ftxui::color(ftxui::Color::Blue);
+                 marker = marker | ftxui::color(ftxui::Color::Blue);
                } else if (is_cutting_) {
-                 marker = ftxui::text("█ ") | ftxui::color(ftxui::Color::Red);
-               } else {
-                 marker = ftxui::text("█ ");
+                 marker = marker | ftxui::color(ftxui::Color::Red);
                }
              }
              auto elmt = ftxui::hbox({marker, filename});
@@ -63,26 +61,29 @@ struct AppState {
            std::ranges::to<std::vector>();
   }
 
-  std::vector<ftxui::Element>
-  directory_to_elements(const Directory &directory) const {
-    if (directory.entries_.empty()) {
-      return {ftxui::text("Empty folder")};
-    }
-
-    return entries_to_elements(directory.entries_);
-  };
-
   std::vector<ftxui::Element> current_directory_elements() {
-    auto entries = get_current_entries();
+    auto entries = get_entries(current_path_);
     if (entries.empty()) {
-      return {ftxui::text("Empty folder")};
+      return {ftxui::text("[Empty folder]")};
     }
 
     return entries_to_elements(entries);
   }
 
-  std::vector<fs::directory_entry> get_current_entries() {
-    auto directory_opt = cache_.get(current_path_);
+  size_t get_entries_size(const fs::path &path) {
+    auto directory_opt = cache_.get(path);
+    if (!directory_opt) {
+      return 0;
+    }
+    const auto &directory = directory_opt.value();
+    if (show_hidden_) {
+      return directory.entries_.size() + directory.hidden_entries_.size();
+    }
+    return directory.entries_.size();
+  }
+
+  std::vector<fs::directory_entry> get_entries(const fs::path &path) {
+    auto directory_opt = cache_.get(path);
     if (!directory_opt) {
       return {};
     }
@@ -96,8 +97,8 @@ struct AppState {
     return entries;
   }
 
-  std::optional<fs::directory_entry> index_entry() {
-    auto entries = get_current_entries();
+  std::optional<fs::directory_entry> indexed_entry() {
+    auto entries = get_entries(current_path_);
     if (index_ < entries.size()) {
       return entries[index_];
     }
@@ -105,13 +106,13 @@ struct AppState {
   }
 
   void toggle_hidden() {
-    auto entry_opt = index_entry();
+    auto entry_opt = indexed_entry();
 
     show_hidden_ = !show_hidden_;
 
     if (entry_opt.has_value()) {
       const auto &current_entry = entry_opt.value();
-      auto entries = get_current_entries();
+      auto entries = get_entries(current_path_);
       auto it = std::ranges::find(
           entries, current_entry.path(),
           [](const fs::directory_entry &e) { return e.path(); });

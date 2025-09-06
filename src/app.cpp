@@ -70,7 +70,7 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     break;
   }
   case FmgrEvent::Type::ToggleSelection: {
-    auto entry = state_.index_entry();
+    auto entry = state_.indexed_entry();
     if (entry) {
       if (state_.selected_entries_.contains(entry.value())) {
         state_.selected_entries_.erase(entry.value());
@@ -159,8 +159,8 @@ void App::handle_render_event(const RenderEvent &event) {
 
 void App::handle_directory_preview_requested(
     const DirectoryPreviewRequested &event) {
-  if (auto dir = state_.cache_.get(event.entry_.path()); dir) {
-    ui_.update_preview(ftxui::vbox(state_.directory_to_elements(dir.value())));
+  if (auto entries = state_.get_entries(event.path_); not entries.empty()) {
+    ui_.update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
   }
 }
 
@@ -174,7 +174,7 @@ void App::update_current_direcotry(const fs::path &path) {
 }
 
 void App::move_index_down() {
-  auto entries_size = state_.get_current_entries().size();
+  auto entries_size = state_.get_entries_size(state_.current_path_);
   if (entries_size > 0) {
     state_.index_ = (state_.index_ + 1) % entries_size;
     ui_.update_index(state_.index_);
@@ -183,7 +183,7 @@ void App::move_index_down() {
 }
 
 void App::move_index_up() {
-  auto entries_size = state_.get_current_entries().size();
+  auto entries_size = state_.get_entries_size(state_.current_path_);
   if (entries_size > 0) {
     state_.index_ = (state_.index_ + entries_size - 1) % entries_size;
     ui_.update_index(state_.index_);
@@ -201,7 +201,7 @@ void App::reload_menu() {
 }
 
 void App::update_preview() {
-  auto entry_opt = state_.index_entry();
+  auto entry_opt = state_.indexed_entry();
   if (!entry_opt) {
     ui_.update_preview("[No item selected]");
     return;
@@ -214,18 +214,18 @@ void App::update_preview() {
     return;
   }
 
-  if (auto directory = state_.cache_.get(entry.path()); directory.has_value()) {
-    ui_.update_preview(
-        ftxui::vbox(state_.directory_to_elements(directory.value())));
+  if (auto entries = state_.get_entries(entry.path()); not entries.empty()) {
+    ui_.update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
     return;
   }
+
   auto [width, height] = ftxui::Terminal::Size();
   ui_.update_preview("Loading...");
   file_manager_.async_update_preview(entry, {width / 2, height - 4});
 }
 
 void App::enter_directory() {
-  state_.index_entry().transform([this](const auto &entry) {
+  state_.indexed_entry().transform([this](const auto &entry) {
     if (entry.is_directory()) {
       if (state_.cache_.get(entry.path())) {
         update_current_direcotry(entry.path());
@@ -251,7 +251,7 @@ void App::leave_directory() {
 void App::confirm_deletion() {
   std::vector<fs::path> paths;
   if (state_.selected_entries_.empty()) {
-    if (auto entry = state_.index_entry()) {
+    if (auto entry = state_.indexed_entry()) {
       paths.push_back(entry->path());
     }
   } else {
@@ -274,7 +274,7 @@ void App::confirm_creation() {
 
 void App::confirm_rename() {
   auto new_name = ui_.input_content();
-  state_.index_entry().transform([this, new_name](const auto &entry) {
+  state_.indexed_entry().transform([this, new_name](const auto &entry) {
     event_bus_.push_event(
         FmgrEvent{.type_ = FmgrEvent::Type::Rename,
                   .path = entry.path(),
@@ -290,7 +290,7 @@ void App::open_file() {
       {".md", "zen-browser"}, {".json", "nvim"}, {".gitignore", "nvim "}};
 
   try {
-    auto selected_file_opt = state_.index_entry();
+    auto selected_file_opt = state_.indexed_entry();
     if (!selected_file_opt.has_value()) {
       std::println(stderr, "[ERROR]: No file selected for opening");
       return;

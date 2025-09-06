@@ -53,6 +53,7 @@ void Ui::update_whole_state(const AppState &state) {}
 void Ui::update_index(size_t index) {
   screen_.Post([this, index]() { std::get<1>(info_) = index; });
   screen_.PostEvent(ftxui::Event::Custom);
+  ;
 }
 
 void Ui::update_preview(EntryPreview new_preview) {

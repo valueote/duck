@@ -62,7 +62,7 @@ struct DirecotryLoaded {
 };
 
 struct DirectoryPreviewRequested {
-  fs::directory_entry entry_;
+  fs::path path_;
 };
 
 using AppEvent = std::variant<FmgrEvent, RenderEvent, DirecotryLoaded,
