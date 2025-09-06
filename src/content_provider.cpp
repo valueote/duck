@@ -127,7 +127,7 @@ ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
 }
 
 ftxui::Component
-ContentProvider::deletion_dialog(std::function<ftxui::Element()> get_deleted_entries,
+ContentProvider::deletion_dialog(const ftxui::Element &deleted_entries,
                                  std::function<void()> yes,
                                  std::function<void()> no) {
   ftxui::ButtonOption button_option;
@@ -137,12 +137,12 @@ ContentProvider::deletion_dialog(std::function<ftxui::Element()> get_deleted_ent
   };
 
   auto yes_button = ftxui::Button("[Y]es", std::move(yes), button_option);
-
   auto no_button = ftxui::Button("[N]o", std::move(no), button_option);
   auto button_container = ftxui::Container::Horizontal({yes_button, no_button});
-  auto dialog_renderer = ftxui::Renderer(button_container, [=] {
+
+  auto dialog_renderer = ftxui::Renderer(button_container, [&, yes_button,
+                                                            no_button] {
     auto [width, height] = ftxui::Terminal::Size();
-    auto deleted_entries = get_deleted_entries();
     auto dialog_content =
         ftxui::vbox({deleted_entries | ftxui::color(ftxui::Color::White),
                      ftxui::filler(), ftxui::separator(),

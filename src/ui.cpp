@@ -20,9 +20,8 @@ using std::string;
 
 Ui::Ui(InputHandler &input_handler)
     : input_handler_{input_handler}, cursor_positon_{0}, active_pane_{0},
+      selected_entries_{ftxui::text("")},
       screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
-
-  selected_entries_ = ftxui::text("");
 
   rename_dialog_ =
       content_provider_.rename_dialog(cursor_positon_, input_content_) |
@@ -34,7 +33,7 @@ Ui::Ui(InputHandler &input_handler)
 
   deletion_dialog_ =
       content_provider_.deletion_dialog(
-          [this]() { return selected_entries_; },
+          selected_entries_,
           [this]() { screen_.PostEvent(ftxui::Event::Character('y')); },
           [this]() { screen_.PostEvent(ftxui::Event::Character('n')); }) |
       ftxui::CatchEvent(input_handler_.deletion_dialog_handler());
