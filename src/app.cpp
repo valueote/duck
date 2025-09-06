@@ -83,7 +83,7 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     break;
   }
   case FmgrEvent::Type::ToggleHidden:
-    state_.show_hidden_ = !state_.show_hidden_;
+    state_.toggle_hidden();
     refresh_menu();
     break;
   case FmgrEvent::Type::OpenFile:
@@ -174,19 +174,18 @@ void App::update_current_direcotry(const fs::path &path) {
 }
 
 void App::move_index_down() {
-  if (!state_.current_directory_.entries_.empty()) {
-    state_.index_ =
-        (state_.index_ + 1) % state_.current_directory_.entries_.size();
+  auto entries_size = state_.get_current_entries().size();
+  if (entries_size > 0) {
+    state_.index_ = (state_.index_ + 1) % entries_size;
     ui_.update_index(state_.index_);
     update_preview();
   }
 }
 
 void App::move_index_up() {
-  if (!state_.current_directory_.entries_.empty()) {
-    state_.index_ =
-        (state_.index_ + state_.current_directory_.entries_.size() - 1) %
-        state_.current_directory_.entries_.size();
+  auto entries_size = state_.get_current_entries().size();
+  if (entries_size > 0) {
+    state_.index_ = (state_.index_ + entries_size - 1) % entries_size;
     ui_.update_index(state_.index_);
     update_preview();
   }

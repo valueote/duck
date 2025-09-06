@@ -35,14 +35,10 @@ struct AppState {
   Lru<fs::path, Directory> cache_;
 
   AppState() : cache_(lru_cache_size) {}
+
   std::vector<ftxui::Element>
-
-  directory_to_elements(Directory directory) const {
-    if (directory.entries_.empty()) {
-      return {ftxui::text("Empty folder")};
-    }
-
-    return directory.entries_ |
+  entries_to_elements(const std::vector<fs::directory_entry> &entries) const {
+    return entries |
            std::views::transform([this](const fs::directory_entry &entry) {
              auto filename = ftxui::text(entry_name_with_icon(entry));
              auto marker = ftxui::text("  ");
@@ -65,27 +61,69 @@ struct AppState {
              return elmt;
            }) |
            std::ranges::to<std::vector>();
+  }
+
+  std::vector<ftxui::Element>
+  directory_to_elements(const Directory &directory) const {
+    if (directory.entries_.empty()) {
+      return {ftxui::text("Empty folder")};
+    }
+
+    return entries_to_elements(directory.entries_);
   };
 
   std::vector<ftxui::Element> current_directory_elements() {
-    return directory_to_elements(current_directory_);
+    auto entries = get_current_entries();
+    if (entries.empty()) {
+      return {ftxui::text("Empty folder")};
+    }
+
+    return entries_to_elements(entries);
+  }
+
+  std::vector<fs::directory_entry> get_current_entries() {
+    auto directory_opt = cache_.get(current_path_);
+    if (!directory_opt) {
+      return {};
+    }
+    auto directory = directory_opt.value();
+    auto entries = directory.entries_;
+    if (show_hidden_) {
+      entries.reserve(entries.size() + directory.hidden_entries_.size());
+      std::ranges::copy(directory.hidden_entries_, std::back_inserter(entries));
+      std::ranges::sort(entries, entries_sorter);
+    }
+    return entries;
   }
 
   std::optional<fs::directory_entry> index_entry() {
-    return cache_.get(current_path_)
-        .transform(
-            [this](const auto &directory) -> std::vector<fs::directory_entry> {
-              auto entries = directory.entries_;
-              if (show_hidden_) {
-                entries.reserve(entries.size() +
-                                directory.hidden_entries_.size());
-                std::ranges::copy(directory.hidden_entries_,
-                                  std::back_inserter(entries));
-                std::ranges::sort(entries, entries_sorter);
-              }
-              return entries;
-            })
-        .transform([this](const auto &entries) { return entries[index_]; });
+    auto entries = get_current_entries();
+    if (index_ < entries.size()) {
+      return entries[index_];
+    }
+    return std::nullopt;
+  }
+
+  void toggle_hidden() {
+    auto entry_opt = index_entry();
+
+    show_hidden_ = !show_hidden_;
+
+    if (entry_opt.has_value()) {
+      const auto &current_entry = entry_opt.value();
+      auto entries = get_current_entries();
+      auto it = std::ranges::find(
+          entries, current_entry.path(),
+          [](const fs::directory_entry &e) { return e.path(); });
+
+      if (it != entries.end()) {
+        index_ = std::distance(entries.begin(), it);
+      } else {
+        index_ = 0;
+      }
+    } else {
+      index_ = 0;
+    }
   }
 };
 } // namespace duck
