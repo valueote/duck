@@ -107,12 +107,42 @@ struct AppState {
     return entries;
   }
 
+  std::vector<fs::path> get_selected_entries() {
+    std::vector<fs::path> paths{};
+
+    if (selected_entries_.empty()) {
+      if (auto entry = indexed_entry(); entry.has_value()) {
+        paths.push_back(entry.value().path());
+      }
+    } else {
+      for (const auto &entry : selected_entries_) {
+        paths.push_back(entry.path());
+      }
+    }
+
+    return paths;
+  }
+
   std::optional<fs::directory_entry> indexed_entry() {
     auto entries = get_entries(current_path_);
     if (index_ < entries.size()) {
       return entries[index_];
     }
     return std::nullopt;
+  }
+
+  void move_index_down() {
+    auto entries_size = get_entries_size(current_path_);
+    if (entries_size > 0) {
+      index_ = (index_ + 1) % entries_size;
+    }
+  }
+
+  void move_index_up() {
+    auto entries_size = get_entries_size(current_path_);
+    if (entries_size > 0) {
+      index_ = (index_ + entries_size - 1) % entries_size;
+    }
   }
 
   void toggle_hidden() {

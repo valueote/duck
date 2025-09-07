@@ -191,21 +191,15 @@ void App::update_current_direcotry(const fs::path &path) {
 }
 
 void App::move_index_down() {
-  auto entries_size = state_.get_entries_size(state_.current_path_);
-  if (entries_size > 0) {
-    state_.index_ = (state_.index_ + 1) % entries_size;
-    ui_.async_update_index(state_.index_);
-    update_preview();
-  }
+  state_.move_index_down();
+  ui_.async_update_index(state_.index_);
+  update_preview();
 }
 
 void App::move_index_up() {
-  auto entries_size = state_.get_entries_size(state_.current_path_);
-  if (entries_size > 0) {
-    state_.index_ = (state_.index_ + entries_size - 1) % entries_size;
-    ui_.async_update_index(state_.index_);
-    update_preview();
-  }
+  state_.move_index_up();
+  ui_.async_update_index(state_.index_);
+  update_preview();
 }
 
 void App::refresh_menu() {
@@ -268,16 +262,7 @@ void App::leave_directory() {
 // TODO: Set index after deletion
 
 void App::confirm_deletion() {
-  std::vector<fs::path> paths;
-  if (state_.selected_entries_.empty()) {
-    if (auto entry = state_.indexed_entry()) {
-      paths.push_back(entry->path());
-    }
-  } else {
-    for (const auto &entry : state_.selected_entries_) {
-      paths.push_back(entry.path());
-    }
-  }
+  auto paths = state_.get_selected_entries();
   file_manager_.async_delete_entries(paths);
   state_.remove_entries(paths);
   ui_.async_toggle_deletion_dialog();
