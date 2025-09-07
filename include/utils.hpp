@@ -46,11 +46,11 @@ public:
     return cache_[path];
   }
 
-  void insert(const Key &path, const Value &data) {
+  void insert(Key path, Value data) {
     auto iter = map_.find(path);
     std::unique_lock lock{lru_mutex_};
     if (iter != map_.end()) {
-      cache_[path] = data;
+      cache_[path] = std::move(data);
       touch_without_lock(path);
     } else {
       if (lru_list_.size() == capacity_) {
@@ -64,7 +64,7 @@ public:
 
       lru_list_.push_front(path);
       map_[path] = lru_list_.begin();
-      cache_[path] = data;
+      cache_[path] = std::move(data);
     }
   }
 };

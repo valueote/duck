@@ -138,10 +138,10 @@ void Ui::toggle_deletion_dialog() {
   screen_.Post([this]() {
     if (active_pane_ == static_cast<int>(pane::DELETION)) {
       active_pane_ = static_cast<int>(pane::MAIN);
-      // main_layout_->TakeFocus();
+      main_layout_->TakeFocus();
     } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
       active_pane_ = static_cast<int>(pane::DELETION);
-      // deletion_dialog_->TakeFocus();
+      deletion_dialog_->TakeFocus();
     }
   });
 }

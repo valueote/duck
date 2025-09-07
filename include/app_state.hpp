@@ -126,5 +126,18 @@ struct AppState {
       index_ = 0;
     }
   }
+
+  void remove_entries(const std::vector<fs::path> &paths) {
+    for (const auto &path : paths) {
+      if (auto directory = cache_.get(path.parent_path());
+          directory.has_value()) {
+        auto pred = [path](const auto &entry) { return entry.path() == path; };
+        std::erase_if(directory.value().entries_, pred);
+        std::erase_if(directory.value().hidden_entries_, pred);
+        cache_.insert(std::move(path.parent_path()),
+                      std::move(directory.value()));
+      }
+    }
+  }
 };
 } // namespace duck

@@ -83,7 +83,7 @@ void FileManager::async_update_preview(const fs::directory_entry &entry,
 
         std::ifstream file(entry.path());
         if (!file.is_open()) {
-          return "[Permission denied]";
+          return "[Can't open file]";
         }
 
         auto [width, height] = size;

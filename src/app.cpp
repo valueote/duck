@@ -90,11 +90,7 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     open_file();
     break;
   case FmgrEvent::Type::Deletion:
-    if (event.paths.empty()) {
-      confirm_deletion();
-    } else {
-      file_manager_.handle_event(event);
-    }
+    confirm_deletion();
     break;
   case FmgrEvent::Type::Creation:
     confirm_creation();
@@ -263,6 +259,8 @@ void App::leave_directory() {
   }
 }
 
+// TODO: Set index after deletion
+
 void App::confirm_deletion() {
   std::vector<fs::path> paths;
   if (state_.selected_entries_.empty()) {
@@ -274,9 +272,11 @@ void App::confirm_deletion() {
       paths.push_back(entry.path());
     }
   }
-  event_bus_.push_event(
-      FmgrEvent{.type_ = FmgrEvent::Type::Deletion, .paths = paths});
+  file_manager_.async_delete_entries(paths);
+  state_.remove_entries(paths);
   ui_.toggle_deletion_dialog();
+  refresh_menu();
+  update_preview();
 }
 
 void App::confirm_creation() {
