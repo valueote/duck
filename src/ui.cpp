@@ -134,7 +134,7 @@ void Ui::finalize_tui() {
   });
 }
 
-void Ui::toggle_deletion_dialog() {
+void Ui::async_toggle_deletion_dialog() {
   screen_.Post([this]() {
     if (active_pane_ == static_cast<int>(pane::DELETION)) {
       active_pane_ = static_cast<int>(pane::MAIN);
@@ -146,14 +146,16 @@ void Ui::toggle_deletion_dialog() {
   });
 }
 
-void Ui::toggle_rename_dialog() {
-  if (active_pane_ == static_cast<int>(pane::RENAME)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-    main_layout_->TakeFocus();
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::RENAME);
-    rename_dialog_->TakeFocus();
-  }
+void Ui::async_toggle_rename_dialog() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::RENAME)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+      main_layout_->TakeFocus();
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::RENAME);
+      rename_dialog_->TakeFocus();
+    }
+  });
 }
 
 void Ui::toggle_creation_dialog() {
@@ -175,14 +177,16 @@ void Ui::toggle_notification() {
 }
 
 void Ui::update_rename_input(string input) {
-  screen_.Post([input, this]() {
+  screen_.Post([input = std::move(input), this]() {
     input_content_ = input;
     cursor_positon_ = static_cast<int>(input_content_.size());
   });
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
 void Ui::update_notification(std::string input) {
-  screen_.Post([this, input]() { notification_content_ = input; });
+  screen_.Post(
+      [this, input = std::move(input)]() { notification_content_ = input; });
 }
 
 std::string &Ui::input_content() { return input_content_; }

@@ -22,9 +22,6 @@ void FileManager::handle_event(const FmgrEvent &event) {
   case FmgrEvent::Type::LoadDirectory:
     async_load_directory(event.path);
     break;
-  case FmgrEvent::Type::Deletion:
-    async_delete_entries(event.paths);
-    break;
   case FmgrEvent::Type::Creation:
     async_create_entry(event.path, event.is_directory);
     break;
@@ -163,8 +160,12 @@ void FileManager::async_rename_entry(const fs::path &old_path,
       stdexec::schedule(Scheduler::io_scheduler()) |
       stdexec::then(
           [old_path, new_path]() { fs::rename(old_path, new_path); }) |
-      stdexec::then([this]() {
-        event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
+      stdexec::then([this, old_path, new_path]() {
+        event_bus_.push_event(FmgrEvent{
+            .type_ = FmgrEvent::Type::RenameSuccess,
+            .path = old_path,
+            .path_to = new_path,
+        });
       });
   stdexec::start_detached(std::move(task));
 }

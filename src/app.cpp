@@ -98,6 +98,11 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
   case FmgrEvent::Type::Rename:
     confirm_rename();
     break;
+  case FmgrEvent::Type::RenameSuccess: {
+    state_.rename_entry(event.path, event.path_to);
+    refresh_menu();
+    break;
+  }
   case FmgrEvent::Type::Paste: {
     std::vector<fs::path> paths;
     paths.reserve(state_.selected_entries_.size());
@@ -138,15 +143,16 @@ void App::handle_render_event(const RenderEvent &event) {
     leave_directory();
     break;
   case RenderEvent::Type::ToggleDeletionDialog:
-    ui_.toggle_deletion_dialog();
-    ui_.async_update_selected(ftxui::vbox(state_.entries_to_elements(
-        {state_.selected_entries_.begin(), state_.selected_entries_.end()})));
+    ui_.async_toggle_deletion_dialog();
+    ui_.async_update_selected(ftxui::vbox(state_.selected_entries_elements()));
     break;
   case RenderEvent::Type::ToggleCreationDialog:
     ui_.toggle_creation_dialog();
     break;
   case RenderEvent::Type::ToggleRenameDialog:
-    ui_.toggle_rename_dialog();
+    ui_.async_toggle_rename_dialog();
+    ui_.update_rename_input(
+        state_.indexed_entry().value().path().filename().string());
     break;
   case RenderEvent::Type::ToggleNotification:
     ui_.toggle_notification();
@@ -274,7 +280,7 @@ void App::confirm_deletion() {
   }
   file_manager_.async_delete_entries(paths);
   state_.remove_entries(paths);
-  ui_.toggle_deletion_dialog();
+  ui_.async_toggle_deletion_dialog();
   refresh_menu();
   update_preview();
 }
@@ -289,14 +295,13 @@ void App::confirm_creation() {
 
 void App::confirm_rename() {
   auto new_name = ui_.input_content();
-  state_.indexed_entry().transform([this, new_name](const auto &entry) {
-    event_bus_.push_event(
-        FmgrEvent{.type_ = FmgrEvent::Type::Rename,
-                  .path = entry.path(),
-                  .path_to = state_.current_path_ / new_name});
-    return entry;
-  });
-  ui_.toggle_rename_dialog();
+  if (auto entry = state_.indexed_entry(); entry) {
+    auto old_path = entry.value().path();
+    auto new_path = old_path.parent_path() / new_name;
+
+    file_manager_.async_rename_entry(old_path, new_path);
+    ui_.async_toggle_rename_dialog();
+  }
 }
 
 void App::open_file() {

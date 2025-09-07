@@ -23,6 +23,7 @@ struct FmgrEvent {
     Deletion,
     Creation,
     Rename,
+    RenameSuccess,
     Paste,
     LoadDirectory,
     Refresh,

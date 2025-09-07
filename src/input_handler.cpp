@@ -122,8 +122,7 @@ std::function<bool(const ftxui::Event &)>
 InputHandler::rename_dialog_handler() {
   return [this](const ftxui::Event &event) {
     if (event == ftxui::Event::Escape) {
-      event_bus_.push_event(
-          RenderEvent{RenderEvent::Type::ToggleDeletionDialog});
+      event_bus_.push_event(RenderEvent{RenderEvent::Type::ToggleRenameDialog});
       return true;
     }
 

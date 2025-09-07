@@ -70,6 +70,16 @@ struct AppState {
     return entries_to_elements(entries);
   }
 
+  std::vector<ftxui::Element> selected_entries_elements() const {
+    auto entries = std::vector<fs::directory_entry>{selected_entries_.begin(),
+                                                    selected_entries_.end()};
+    if (entries.empty()) {
+      return {ftxui::text("[Error: Nothing selected]")};
+    }
+
+    return entries_to_elements(entries);
+  }
+
   size_t get_entries_size(const fs::path &path) {
     auto directory_opt = cache_.get(path);
     if (!directory_opt) {
@@ -137,6 +147,25 @@ struct AppState {
         cache_.insert(std::move(path.parent_path()),
                       std::move(directory.value()));
       }
+    }
+  }
+
+  void rename_entry(const fs::path &old_name, const fs::path &new_name) {
+    if (auto directory = cache_.get(old_name.parent_path()); directory) {
+      auto pred = [old_name](const auto &entry) {
+        return entry.path() == old_name;
+      };
+
+      std::erase_if(directory.value().entries_, pred);
+      std::erase_if(directory.value().hidden_entries_, pred);
+      if (new_name.filename().string().starts_with('.')) {
+        directory.value().hidden_entries_.emplace_back(new_name);
+        std::ranges::sort(directory.value().hidden_entries_, entries_sorter);
+      } else {
+        directory.value().entries_.emplace_back(new_name);
+        std::ranges::sort(directory.value().entries_, entries_sorter);
+      }
+      cache_.insert(old_name.parent_path(), directory.value());
     }
   }
 };

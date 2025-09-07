@@ -174,7 +174,7 @@ ContentProvider::deletion_dialog(const ftxui::Element &deleted_entries,
 ftxui::Component ContentProvider::rename_dialog(int &cursor_position,
                                                 std::string &rename_input) {
   ftxui::InputOption option = ftxui::InputOption::Default();
-  option.cursor_position = cursor_position;
+  option.cursor_position = &cursor_position;
   option.transform = [this](ftxui::InputState state) -> ftxui::Element {
     state.element |= color(ColorScheme::text());
     return state.element;

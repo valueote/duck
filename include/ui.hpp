@@ -51,8 +51,8 @@ public:
   Ui(InputHandler &input_handler);
   void update_whole_state(const AppState &state);
 
-  void toggle_deletion_dialog();
-  void toggle_rename_dialog();
+  void async_toggle_deletion_dialog();
+  void async_toggle_rename_dialog();
   void toggle_creation_dialog();
   void toggle_notification();
 
