@@ -70,13 +70,13 @@ struct AppState {
     return entries_to_elements(entries);
   }
 
-  std::vector<ftxui::Element> selected_entries_elements() const {
-    auto entries = std::vector<fs::directory_entry>{selected_entries_.begin(),
-                                                    selected_entries_.end()};
-    if (entries.empty()) {
-      return {ftxui::text("[Error: Nothing selected]")};
+  std::vector<ftxui::Element> selected_entries_elements() {
+    if (selected_entries_.empty()) {
+      return entries_to_elements({indexed_entry().value()});
     }
 
+    auto entries = std::vector<fs::directory_entry>{selected_entries_.begin(),
+                                                    selected_entries_.end()};
     return entries_to_elements(entries);
   }
 
