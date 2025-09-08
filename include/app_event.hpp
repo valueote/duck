@@ -24,10 +24,10 @@ struct FmgrEvent {
     Creation,
     Rename,
     RenameSuccess,
+    CreationSuccess,
     Paste,
     LoadDirectory,
     Refresh,
-    Reload,
   } type_;
   fs::path path;
   fs::path path_to;

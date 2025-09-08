@@ -181,21 +181,38 @@ struct AppState {
   }
 
   void rename_entry(const fs::path &old_name, const fs::path &new_name) {
-    if (auto directory = cache_.get(old_name.parent_path()); directory) {
+    if (auto directory_opt = cache_.get(old_name.parent_path()); directory_opt) {
+      auto directory = directory_opt.value();
       auto pred = [old_name](const auto &entry) {
         return entry.path() == old_name;
       };
 
-      std::erase_if(directory.value().entries_, pred);
-      std::erase_if(directory.value().hidden_entries_, pred);
+      std::erase_if(directory.entries_, pred);
+      std::erase_if(directory.hidden_entries_, pred);
       if (new_name.filename().string().starts_with('.')) {
-        directory.value().hidden_entries_.emplace_back(new_name);
-        std::ranges::sort(directory.value().hidden_entries_, entries_sorter);
+        directory.hidden_entries_.emplace_back(new_name);
+        std::ranges::sort(directory.hidden_entries_, entries_sorter);
       } else {
-        directory.value().entries_.emplace_back(new_name);
-        std::ranges::sort(directory.value().entries_, entries_sorter);
+        directory.entries_.emplace_back(new_name);
+        std::ranges::sort(directory.entries_, entries_sorter);
       }
-      cache_.insert(old_name.parent_path(), directory.value());
+      cache_.insert(old_name.parent_path(), directory);
+    }
+  }
+
+  void create_entry(const fs::path &new_entry) {
+    auto parent_path = new_entry.parent_path();
+    if (auto directory_opt = cache_.get(parent_path);
+        directory_opt.has_value()) {
+      auto directory = directory_opt.value();
+      if (new_entry.filename().string().starts_with('.')) {
+        directory.hidden_entries_.emplace_back(new_entry);
+        std::ranges::sort(directory.hidden_entries_, entries_sorter);
+      } else {
+        directory.entries_.emplace_back(new_entry);
+        std::ranges::sort(directory.entries_, entries_sorter);
+      }
+      cache_.insert(parent_path, directory);
     }
   }
 };

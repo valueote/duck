@@ -3,7 +3,6 @@
 #include "exec/async_scope.hpp"
 #include "utils.hpp"
 #include <filesystem>
-#include <string>
 #include <vector>
 
 namespace duck {
@@ -26,10 +25,7 @@ public:
   void async_rename_entry(const fs::path &old_path, const fs::path &new_path);
   void async_paste_entries(const fs::path &dest,
                            const std::vector<fs::path> &sources, bool is_cut);
-
   FileManager(EventBus &event_bus);
-
-  void handle_event(const FmgrEvent &event);
 };
 
 } // namespace duck

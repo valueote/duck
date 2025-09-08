@@ -150,6 +150,8 @@ void Ui::async_toggle_rename_dialog() {
   screen_.Post([this]() {
     if (active_pane_ == static_cast<int>(pane::RENAME)) {
       active_pane_ = static_cast<int>(pane::MAIN);
+      input_content_ = "";
+      cursor_positon_ = 0;
       main_layout_->TakeFocus();
     } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
       active_pane_ = static_cast<int>(pane::RENAME);
@@ -158,25 +160,32 @@ void Ui::async_toggle_rename_dialog() {
   });
 }
 
-void Ui::toggle_creation_dialog() {
-  if (active_pane_ == static_cast<int>(pane::CREATION)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-    main_layout_->TakeFocus();
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::CREATION);
-    creation_dialog_->TakeFocus();
-  }
+void Ui::async_toggle_creation_dialog() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::CREATION)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+      input_content_ = "";
+      cursor_positon_ = 0;
+      main_layout_->TakeFocus();
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::CREATION);
+      creation_dialog_->TakeFocus();
+    }
+  });
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void Ui::toggle_notification() {
-  if (active_pane_ == static_cast<int>(pane::NOTIFICATION)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::NOTIFICATION);
-  }
+void Ui::async_toggle_notification() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::NOTIFICATION)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::NOTIFICATION);
+    }
+  });
 }
 
-void Ui::update_rename_input(string input) {
+void Ui::async_update_rename_input(string input) {
   screen_.Post([input = std::move(input), this]() {
     input_content_ = input;
     cursor_positon_ = static_cast<int>(input_content_.size());

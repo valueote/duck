@@ -17,25 +17,6 @@ constexpr size_t dirs_reserve = 256;
 
 FileManager::FileManager(EventBus &event_bus) : event_bus_(event_bus) {}
 
-void FileManager::handle_event(const FmgrEvent &event) {
-  switch (event.type_) {
-  case FmgrEvent::Type::LoadDirectory:
-    async_load_directory(event.path);
-    break;
-  case FmgrEvent::Type::Creation:
-    async_create_entry(event.path, event.is_directory);
-    break;
-  case FmgrEvent::Type::Rename:
-    async_rename_entry(event.path, event.path_to);
-    break;
-  case FmgrEvent::Type::Paste:
-    async_paste_entries(event.path, event.paths, event.is_cutting);
-    break;
-  default:
-    break;
-  }
-}
-
 Directory FileManager::load_directory(const fs::path &path) {
   Directory directory{.path_ = path};
   directory.entries_.reserve(dirs_reserve);
@@ -64,7 +45,7 @@ void FileManager::async_load_directory(const fs::path &path) {
               stdexec::then([this](const Directory &directory) {
                 event_bus_.push_event(DirecotryLoaded{directory});
               });
-  stdexec::start_detached(std::move(task));
+  scope_.spawn(std::move(task));
 }
 
 void FileManager::async_update_preview(const fs::directory_entry &entry,
@@ -134,40 +115,39 @@ void FileManager::async_delete_entries(const std::vector<fs::path> &paths) {
       stdexec::then([this]() {
         event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
       });
-  stdexec::start_detached(std::move(task));
+  scope_.spawn(std::move(task));
 }
 
 void FileManager::async_create_entry(const fs::path &path, bool is_directory) {
-  auto task =
-      stdexec::schedule(Scheduler::io_scheduler()) |
-      stdexec::then([path, is_directory]() {
-        if (is_directory) {
-          fs::create_directories(path);
-        } else {
-          std::ofstream ofs(path);
-          ofs.close();
-        }
-      }) |
-      stdexec::then([this]() {
-        event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
-      });
-  stdexec::start_detached(std::move(task));
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then([path, is_directory]() {
+                if (is_directory) {
+                  fs::create_directories(path);
+                } else {
+                  std::ofstream ofs(path);
+                  ofs.close();
+                }
+              }) |
+              stdexec::then([this, path]() {
+                event_bus_.push_event(FmgrEvent{
+                    .type_ = FmgrEvent::Type::CreationSuccess, .path = path});
+              });
+  scope_.spawn(std::move(task));
 }
 
 void FileManager::async_rename_entry(const fs::path &old_path,
                                      const fs::path &new_path) {
-  auto task =
-      stdexec::schedule(Scheduler::io_scheduler()) |
-      stdexec::then(
-          [old_path, new_path]() { fs::rename(old_path, new_path); }) |
-      stdexec::then([this, old_path, new_path]() {
-        event_bus_.push_event(FmgrEvent{
-            .type_ = FmgrEvent::Type::RenameSuccess,
-            .path = old_path,
-            .path_to = new_path,
-        });
-      });
-  stdexec::start_detached(std::move(task));
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then(
+                  [old_path, new_path]() { fs::rename(old_path, new_path); }) |
+              stdexec::then([this, old_path, new_path]() {
+                event_bus_.push_event(FmgrEvent{
+                    .type_ = FmgrEvent::Type::RenameSuccess,
+                    .path = old_path,
+                    .path_to = new_path,
+                });
+              });
+  scope_.spawn(std::move(task));
 }
 
 void FileManager::async_paste_entries(const fs::path &dest,
@@ -188,7 +168,7 @@ void FileManager::async_paste_entries(const fs::path &dest,
       stdexec::then([this]() {
         event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
       });
-  stdexec::start_detached(std::move(task));
+  scope_.spawn(std::move(task));
 }
 
 } // namespace duck

@@ -65,6 +65,9 @@ void App::handle_directory_loaded(const DirecotryLoaded &event) {
 
 void App::handle_fmgr_event(const FmgrEvent &event) {
   switch (event.type_) {
+  case FmgrEvent::Type::LoadDirectory:
+    file_manager_.async_load_directory(event.path);
+    break;
   case FmgrEvent::Type::UpdateCurrentDirectory: {
     update_current_direcotry(event.path);
     break;
@@ -103,6 +106,12 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     refresh_menu();
     break;
   }
+  case FmgrEvent::Type::CreationSuccess: {
+    state_.create_entry(event.path);
+    refresh_menu();
+    break;
+  }
+
   case FmgrEvent::Type::Paste: {
     std::vector<fs::path> paths;
     paths.reserve(state_.selected_entries_.size());
@@ -120,9 +129,6 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     state_.is_yanking_ = false;
     break;
   }
-  default:
-    file_manager_.handle_event(event);
-    break;
   }
 }
 
@@ -143,23 +149,19 @@ void App::handle_render_event(const RenderEvent &event) {
     leave_directory();
     break;
   case RenderEvent::Type::ToggleDeletionDialog:
-    ui_.async_toggle_deletion_dialog();
-    ui_.async_update_selected(ftxui::vbox(state_.selected_entries_elements()));
+    toggle_deletion_dialog();
     break;
   case RenderEvent::Type::ToggleCreationDialog:
-    ui_.toggle_creation_dialog();
+    toggle_creation_dialog();
     break;
   case RenderEvent::Type::ToggleRenameDialog:
-    ui_.async_toggle_rename_dialog();
-    ui_.update_rename_input(
-        state_.indexed_entry().value().path().filename().string());
+    toggle_rename_dialog();
     break;
   case RenderEvent::Type::ToggleNotification:
-    ui_.toggle_notification();
+    toggle_notification();
     break;
   case RenderEvent::Type::ClearMarks:
-    state_.selected_entries_.clear();
-    refresh_menu();
+    clear_marks();
     break;
   case RenderEvent::Type::RefreshMenu:
     refresh_menu();
@@ -205,10 +207,6 @@ void App::move_index_up() {
 void App::refresh_menu() {
   ui_.async_update_info({state_.current_path_.string(), state_.index_,
                          state_.current_directory_elements()});
-}
-
-void App::reload_menu() {
-  event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
 }
 
 void App::update_preview() {
@@ -259,6 +257,26 @@ void App::leave_directory() {
   }
 }
 
+void App::toggle_deletion_dialog() {
+  ui_.async_toggle_deletion_dialog();
+  ui_.async_update_selected(ftxui::vbox(state_.selected_entries_elements()));
+}
+
+void App::toggle_creation_dialog() { ui_.async_toggle_creation_dialog(); }
+
+void App::toggle_rename_dialog() {
+  ui_.async_toggle_rename_dialog();
+  ui_.async_update_rename_input(
+      state_.indexed_entry().value().path().filename().string());
+}
+
+void App::toggle_notification() { ui_.async_toggle_notification(); }
+
+void App::clear_marks() {
+  state_.selected_entries_.clear();
+  refresh_menu();
+}
+
 // TODO: Set index after deletion
 
 void App::confirm_deletion() {
@@ -272,10 +290,14 @@ void App::confirm_deletion() {
 
 void App::confirm_creation() {
   auto filename = ui_.input_content();
-  event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Creation,
-                                  .path = state_.current_path_ / filename,
-                                  .is_directory = filename.ends_with('/')});
-  ui_.toggle_creation_dialog();
+  if (filename.empty()) {
+    ui_.async_toggle_creation_dialog();
+    return;
+  }
+  auto is_directory = filename.ends_with('/');
+  auto new_path = state_.current_path_ / filename;
+  file_manager_.async_create_entry(new_path, is_directory);
+  ui_.async_toggle_creation_dialog();
 }
 
 void App::confirm_rename() {
@@ -283,7 +305,6 @@ void App::confirm_rename() {
   if (auto entry = state_.indexed_entry(); entry) {
     auto old_path = entry.value().path();
     auto new_path = old_path.parent_path() / new_name;
-
     file_manager_.async_rename_entry(old_path, new_path);
     ui_.async_toggle_rename_dialog();
   }

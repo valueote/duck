@@ -31,9 +31,13 @@ private:
   void move_index_up();
   void update_preview();
   void refresh_menu();
-  void reload_menu();
   void enter_directory();
   void leave_directory();
+  void toggle_deletion_dialog();
+  void toggle_creation_dialog();
+  void toggle_rename_dialog();
+  void toggle_notification();
+  void clear_marks();
   void confirm_deletion();
   void confirm_creation();
   void confirm_rename();

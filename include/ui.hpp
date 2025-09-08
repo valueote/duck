@@ -53,14 +53,14 @@ public:
 
   void async_toggle_deletion_dialog();
   void async_toggle_rename_dialog();
-  void toggle_creation_dialog();
-  void toggle_notification();
+  void async_toggle_creation_dialog();
+  void async_toggle_notification();
 
   void async_update_info(MenuInfo new_info);
   void async_update_index(size_t index);
   void async_update_selected(ftxui::Element selected_entries);
   void async_update_preview(EntryPreview new_preview);
-  void update_rename_input(std::string input);
+  void async_update_rename_input(std::string input);
   void update_notification(std::string input);
 
   std::string &input_content();
