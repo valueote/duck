@@ -111,9 +111,6 @@ void FileManager::async_delete_entries(const std::vector<fs::path> &paths) {
             fs::remove(path);
           }
         }
-      }) |
-      stdexec::then([this]() {
-        event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
       });
   scope_.spawn(std::move(task));
 }
@@ -153,21 +150,21 @@ void FileManager::async_rename_entry(const fs::path &old_path,
 void FileManager::async_paste_entries(const fs::path &dest,
                                       const std::vector<fs::path> &sources,
                                       bool is_cut) {
-  auto task =
-      stdexec::schedule(Scheduler::io_scheduler()) |
-      stdexec::then([dest, sources, is_cut]() {
-        for (const auto &src : sources) {
-          fs::path dest_path = dest / src.filename();
-          if (is_cut) {
-            fs::rename(src, dest_path);
-          } else {
-            fs::copy(src, dest_path, fs::copy_options::recursive);
-          }
-        }
-      }) |
-      stdexec::then([this]() {
-        event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Reload});
-      });
+  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
+              stdexec::then([dest, sources, is_cut]() {
+                for (const auto &src : sources) {
+                  fs::path dest_path = dest / src.filename();
+                  if (is_cut) {
+                    fs::rename(src, dest_path);
+                  } else {
+                    fs::copy(src, dest_path, fs::copy_options::recursive);
+                  }
+                }
+              }) |
+              stdexec::then([this]() {
+                // event_bus_.push_event(FmgrEvent{.type_ =
+                // FmgrEvent::Type::Reload});
+              });
   scope_.spawn(std::move(task));
 }
 

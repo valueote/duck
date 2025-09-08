@@ -111,7 +111,6 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     refresh_menu();
     break;
   }
-
   case FmgrEvent::Type::Paste: {
     std::vector<fs::path> paths;
     paths.reserve(state_.selected_entries_.size());
@@ -166,9 +165,6 @@ void App::handle_render_event(const RenderEvent &event) {
   case RenderEvent::Type::RefreshMenu:
     refresh_menu();
     break;
-  case RenderEvent::Type::ReloadMenu:
-    reload_menu();
-    break;
   case RenderEvent::Type::Quit:
     running_ = false;
     ui_.exit();
@@ -178,8 +174,11 @@ void App::handle_render_event(const RenderEvent &event) {
 
 void App::handle_directory_preview_requested(
     const DirectoryPreviewRequested &event) {
-  if (auto entries = state_.get_entries(event.path_); not entries.empty()) {
+  auto entries = state_.get_entries(event.path_);
+  if (not entries.empty()) {
     ui_.async_update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
+  } else {
+    ui_.async_update_preview(ftxui::vbox(ftxui::text("[Empty folder]")));
   }
 }
 

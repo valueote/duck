@@ -49,7 +49,6 @@ struct RenderEvent {
     ToggleCreationDialog,
     ClearMarks,
     RefreshMenu,
-    ReloadMenu,
     Quit,
   } type_;
 };

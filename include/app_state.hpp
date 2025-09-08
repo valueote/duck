@@ -181,7 +181,8 @@ struct AppState {
   }
 
   void rename_entry(const fs::path &old_name, const fs::path &new_name) {
-    if (auto directory_opt = cache_.get(old_name.parent_path()); directory_opt) {
+    if (auto directory_opt = cache_.get(old_name.parent_path());
+        directory_opt) {
       auto directory = directory_opt.value();
       auto pred = [old_name](const auto &entry) {
         return entry.path() == old_name;
