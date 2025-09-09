@@ -34,6 +34,8 @@ private:
   void refresh_menu();
   void enter_directory();
   void leave_directory();
+  void start_yank();
+  void start_cut();
   void toggle_deletion_dialog();
   void toggle_creation_dialog();
   void toggle_rename_dialog();

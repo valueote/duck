@@ -28,6 +28,8 @@ struct FmgrEvent {
     Paste,
     LoadDirectory,
     Refresh,
+    Yank,
+    Cut,
   } type_;
   fs::path path;
   fs::path path_to;

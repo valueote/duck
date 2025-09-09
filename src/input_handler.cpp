@@ -80,6 +80,16 @@ std::function<bool(ftxui::Event)> InputHandler::operation_handler() {
       return true;
     }
 
+    if (event == ftxui::Event::Character('y')) {
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Yank});
+      return true;
+    }
+
+    if (event == ftxui::Event::Character('x')) {
+      event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Cut});
+      return true;
+    }
+
     if (event == ftxui::Event::Character('p')) {
       event_bus_.push_event(FmgrEvent{.type_ = FmgrEvent::Type::Paste});
       return true;

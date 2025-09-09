@@ -1,5 +1,4 @@
 #pragma once
-#include "app_event.hpp"
 #include "colorscheme.hpp"
 #include "utils.hpp"
 #include <algorithm>

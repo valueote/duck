@@ -150,21 +150,35 @@ void FileManager::async_rename_entry(const fs::path &old_path,
 void FileManager::async_paste_entries(const fs::path &dest,
                                       const std::vector<fs::path> &sources,
                                       bool is_cut) {
-  auto task = stdexec::schedule(Scheduler::io_scheduler()) |
-              stdexec::then([dest, sources, is_cut]() {
-                for (const auto &src : sources) {
-                  fs::path dest_path = dest / src.filename();
-                  if (is_cut) {
-                    fs::rename(src, dest_path);
-                  } else {
-                    fs::copy(src, dest_path, fs::copy_options::recursive);
-                  }
-                }
-              }) |
-              stdexec::then([this]() {
-                // event_bus_.push_event(FmgrEvent{.type_ =
-                // FmgrEvent::Type::Reload});
-              });
+  auto task =
+      stdexec::schedule(Scheduler::io_scheduler()) |
+      stdexec::then([dest, sources, is_cut]() {
+        for (const auto &src : sources) {
+          fs::path dest_path = dest / src.filename();
+          if (fs::exists(dest_path)) {
+            const auto parent_path = dest_path.parent_path();
+            const auto stem = dest_path.stem();
+            const auto extension = dest_path.extension();
+            int i = 1;
+            while (fs::exists(dest_path)) {
+              dest_path =
+                  parent_path / (stem.string() + "_(" + std::to_string(i++) +
+                                 ")" + extension.string());
+            }
+          }
+
+          if (is_cut) {
+            fs::rename(src, dest_path);
+          } else {
+            fs::copy(src, dest_path, fs::copy_options::recursive);
+          }
+        }
+      }) |
+      stdexec::then([this, dest]() {
+        event_bus_.push_event(DirecotryLoaded{load_directory(dest)});
+        event_bus_.push_event(FmgrEvent{
+            .type_ = FmgrEvent::Type::UpdateCurrentDirectory, .path = dest});
+      });
   scope_.spawn(std::move(task));
 }
 

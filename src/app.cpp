@@ -119,21 +119,33 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     refresh_menu();
     break;
   }
+  case FmgrEvent::Type::Yank: {
+    start_yank();
+    break;
+  }
+  case FmgrEvent::Type::Cut: {
+    start_cut();
+    break;
+  }
   case FmgrEvent::Type::Paste: {
+    if (state_.selected_entries_.empty() ||
+        (!state_.is_yanking_ && !state_.is_cutting_)) {
+      break;
+    }
     std::vector<fs::path> paths;
     paths.reserve(state_.selected_entries_.size());
     for (const auto &entry : state_.selected_entries_) {
       paths.push_back(entry.path());
     }
-    event_bus_.push_event(FmgrEvent{
-        .type_ = FmgrEvent::Type::Paste,
-        .path = state_.current_path_,
-        .paths = paths,
-        .is_cutting = state_.is_cutting_,
-    });
+    file_manager_.async_paste_entries(state_.current_path_, paths,
+                                      state_.is_cutting_);
+    if (state_.is_cutting_) {
+      state_.remove_entries(paths);
+    }
     state_.selected_entries_.clear();
     state_.is_cutting_ = false;
     state_.is_yanking_ = false;
+    refresh_menu();
     break;
   }
   }
@@ -262,6 +274,28 @@ void App::leave_directory() {
       file_manager_.async_update_current_directory(parent_path);
     }
   }
+}
+
+void App::start_yank() {
+  if (state_.selected_entries_.empty()) {
+    if (auto entry = state_.indexed_entry()) {
+      state_.selected_entries_.insert(entry.value());
+    }
+  }
+  state_.is_yanking_ = true;
+  state_.is_cutting_ = false;
+  refresh_menu();
+}
+
+void App::start_cut() {
+  if (state_.selected_entries_.empty()) {
+    if (auto entry = state_.indexed_entry()) {
+      state_.selected_entries_.insert(entry.value());
+    }
+  }
+  state_.is_yanking_ = false;
+  state_.is_cutting_ = true;
+  refresh_menu();
 }
 
 void App::toggle_deletion_dialog() {
