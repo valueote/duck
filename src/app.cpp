@@ -14,6 +14,10 @@
 #include <string>
 #include <wait.h>
 
+// TODO: implement yank and cut
+// TODO: implement notification
+// FIX: Error when read binary file
+
 namespace fs = std::filesystem;
 namespace duck {
 App::App(EventBus &event_bus, Ui &ui, FileManager &file_manager)
@@ -49,7 +53,7 @@ void App::process_events() {
                            handle_directory_loaded(event);
                          },
                          [this](const PreviewUpdated &event) {
-                           ui_.async_update_preview(event.preview_);
+                           handle_preview_updated(event);
                          },
                          [this](const DirectoryPreviewRequested &event) {
                            handle_directory_preview_requested(event);
@@ -61,6 +65,10 @@ void App::process_events() {
 
 void App::handle_directory_loaded(const DirecotryLoaded &event) {
   state_.cache_.insert(event.directory_.path_, event.directory_);
+}
+
+void App::handle_preview_updated(const PreviewUpdated &event) {
+  ui_.async_update_preview(event.preview_);
 }
 
 void App::handle_fmgr_event(const FmgrEvent &event) {

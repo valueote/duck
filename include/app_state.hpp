@@ -77,7 +77,19 @@ struct AppState {
 
     auto entries = std::vector<fs::directory_entry>{selected_entries_.begin(),
                                                     selected_entries_.end()};
-    return entries_to_elements(entries);
+    return entries |
+           std::views::transform([this](const fs::directory_entry &entry) {
+             auto filename = ftxui::text(entry.path().string());
+             auto marker = ftxui::text("  ");
+             auto elmt = ftxui::hbox({marker, filename});
+             if (entry.is_directory()) {
+               elmt |= ftxui::color(ColorScheme::dir());
+             } else {
+               elmt |= ftxui::color(ColorScheme::file());
+             }
+             return elmt;
+           }) |
+           std::ranges::to<std::vector>();
   }
 
   size_t get_entries_size(const fs::path &path) {
