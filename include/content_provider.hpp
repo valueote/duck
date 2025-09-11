@@ -14,7 +14,6 @@ namespace fs = std::filesystem;
 
 class ContentProvider {
 private:
-  ftxui::Element deleted_entries(const AppState &state);
   static ftxui::Element
   visible_entries(const std::vector<ftxui::Element> &all_entries,
                   const size_t &index);

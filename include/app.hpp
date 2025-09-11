@@ -24,8 +24,7 @@ private:
   void handle_render_event(const RenderEvent &event);
   void handle_directory_loaded(const DirecotryLoaded &event);
   void handle_preview_updated(const PreviewUpdated &event);
-  void
-  handle_directory_preview_requested(const DirectoryPreviewRequested &event);
+  void handle_directory_preview_requested(const DirectoryPreview &event);
 
   void update_current_direcotry(const fs::path &path);
   void move_index_down();

@@ -108,24 +108,6 @@ ftxui::Component ContentProvider::layout(const MenuInfo &info,
   return render;
 }
 
-ftxui::Element ContentProvider::deleted_entries(const AppState &state) {
-  if (!state.selected_entries_.empty()) {
-    std::vector<ftxui::Element> lines =
-        state.selected_entries_ |
-        std::views::transform([this](const fs::directory_entry &entry) {
-          return ftxui::text(entry_name_with_icon(entry));
-        }) |
-        std::ranges::to<std::vector>();
-    return ftxui::vbox(lines);
-  }
-
-  auto selected_path = state.current_directory_.entries_[state.index_].path();
-
-  return ftxui::vbox({
-      ftxui::text(std::format("{}", selected_path.string())),
-  });
-}
-
 ftxui::Component
 ContentProvider::deletion_dialog(const ftxui::Element &deleted_entries,
                                  std::function<void()> yes,

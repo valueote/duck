@@ -39,7 +39,8 @@ struct AppState {
   entries_to_elements(const std::vector<fs::directory_entry> &entries) const {
     return entries |
            std::views::transform([this](const fs::directory_entry &entry) {
-             auto filename = ftxui::text(entry_name_with_icon(entry));
+             auto filename = ftxui::text(entry_icon(entry) + " " +
+                                         entry.path().filename().string());
              auto marker = ftxui::text("  ");
              if (selected_entries_.contains(entry)) {
                marker = ftxui::text("█ ");
@@ -78,7 +79,8 @@ struct AppState {
                                                     selected_entries_.end()};
     return entries |
            std::views::transform([this](const fs::directory_entry &entry) {
-             auto filename = ftxui::text(entry.path().string());
+             auto filename =
+                 ftxui::text(entry_icon(entry) + " " + entry.path().string());
              auto marker = ftxui::text("  ");
              auto elmt = ftxui::hbox({marker, filename});
              if (entry.is_directory()) {
@@ -118,7 +120,7 @@ struct AppState {
     return entries;
   }
 
-  std::vector<fs::path> get_selected_entries() {
+  std::vector<fs::path> selected_entries_paths() {
     std::vector<fs::path> paths{};
 
     if (selected_entries_.empty()) {

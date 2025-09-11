@@ -26,8 +26,6 @@ struct FmgrEvent {
     RenameSuccess,
     CreationSuccess,
     Paste,
-    LoadDirectory,
-    Refresh,
     Yank,
     Cut,
   } type_;
@@ -50,7 +48,6 @@ struct RenderEvent {
     ToggleRenameDialog,
     ToggleCreationDialog,
     ClearMarks,
-    RefreshMenu,
     Quit,
   } type_;
 };
@@ -63,12 +60,12 @@ struct DirecotryLoaded {
   Directory directory_;
 };
 
-struct DirectoryPreviewRequested {
+struct DirectoryPreview {
   fs::path path_;
 };
 
 using AppEvent = std::variant<FmgrEvent, RenderEvent, DirecotryLoaded,
-                              PreviewUpdated, DirectoryPreviewRequested>;
+                              PreviewUpdated, DirectoryPreview>;
 
 template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;

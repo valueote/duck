@@ -55,7 +55,7 @@ void FileManager::async_update_preview(const fs::directory_entry &entry,
       stdexec::then([this, entry, size]() -> std::optional<EntryPreview> {
         if (entry.is_directory()) {
           event_bus_.push_event(DirecotryLoaded{load_directory(entry)});
-          event_bus_.push_event(DirectoryPreviewRequested{entry});
+          event_bus_.push_event(DirectoryPreview{entry});
           return std::nullopt;
         }
 
@@ -88,7 +88,7 @@ void FileManager::async_update_preview(const fs::directory_entry &entry,
   scope_.spawn(task);
 }
 
-void FileManager::async_update_current_directory(const fs::path &path) {
+void FileManager::async_enter_directory(const fs::path &path) {
   auto task =
       stdexec::schedule(Scheduler::io_scheduler()) |
       stdexec::then([this, path]() {

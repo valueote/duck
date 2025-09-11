@@ -67,7 +67,7 @@ public:
   }
 };
 
-inline std::string entry_name_with_icon(const fs::directory_entry &entry) {
+inline std::string entry_icon(const fs::directory_entry &entry) {
   if (entry.path().empty()) {
     return "[Invalid Entry]";
   }
@@ -82,12 +82,11 @@ inline std::string entry_name_with_icon(const fs::directory_entry &entry) {
   };
 
   if (!fs::exists(entry) || entry.path().empty()) {
-    return "";
+    return {""};
   }
 
-  const auto filename = entry.path().filename().string();
   if (fs::is_directory(entry)) {
-    return std::format("\uf4d3 {}", filename);
+    return {"\uf4d3"};
   }
 
   auto ext = entry.path().extension().string();
@@ -99,7 +98,7 @@ inline std::string entry_name_with_icon(const fs::directory_entry &entry) {
   const std::string &icon =
       icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
 
-  return std::format("{} {}", icon, filename);
+  return icon;
 }
 
 inline bool entries_sorter(const fs::directory_entry &first,

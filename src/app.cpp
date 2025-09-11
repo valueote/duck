@@ -14,7 +14,6 @@
 #include <string>
 #include <wait.h>
 
-// TODO: implement yank and cut
 // TODO: implement notification
 // FIX: Error when read binary file
 
@@ -55,7 +54,7 @@ void App::process_events() {
                          [this](const PreviewUpdated &event) {
                            handle_preview_updated(event);
                          },
-                         [this](const DirectoryPreviewRequested &event) {
+                         [this](const DirectoryPreview &event) {
                            handle_directory_preview_requested(event);
                          }},
                  event);
@@ -73,9 +72,6 @@ void App::handle_preview_updated(const PreviewUpdated &event) {
 
 void App::handle_fmgr_event(const FmgrEvent &event) {
   switch (event.type_) {
-  case FmgrEvent::Type::LoadDirectory:
-    file_manager_.async_load_directory(event.path);
-    break;
   case FmgrEvent::Type::UpdateCurrentDirectory: {
     update_current_direcotry(event.path);
     break;
@@ -182,9 +178,6 @@ void App::handle_render_event(const RenderEvent &event) {
   case RenderEvent::Type::ClearMarks:
     clear_marks();
     break;
-  case RenderEvent::Type::RefreshMenu:
-    refresh_menu();
-    break;
   case RenderEvent::Type::Quit:
     running_ = false;
     ui_.exit();
@@ -192,8 +185,7 @@ void App::handle_render_event(const RenderEvent &event) {
   }
 }
 
-void App::handle_directory_preview_requested(
-    const DirectoryPreviewRequested &event) {
+void App::handle_directory_preview_requested(const DirectoryPreview &event) {
   auto entries = state_.get_entries(event.path_);
   if (not entries.empty()) {
     ui_.async_update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
@@ -258,7 +250,7 @@ void App::enter_directory() {
       if (state_.cache_.get(entry.path())) {
         update_current_direcotry(entry.path());
       } else {
-        file_manager_.async_update_current_directory(entry.path());
+        file_manager_.async_enter_directory(entry.path());
       }
     }
     return entry;
@@ -271,7 +263,7 @@ void App::leave_directory() {
     if (state_.cache_.get(parent_path)) {
       update_current_direcotry(parent_path);
     } else {
-      file_manager_.async_update_current_directory(parent_path);
+      file_manager_.async_enter_directory(parent_path);
     }
   }
 }
@@ -321,9 +313,13 @@ void App::clear_marks() {
 // TODO: Set index after deletion
 
 void App::confirm_deletion() {
-  auto paths = state_.get_selected_entries();
+  auto paths = state_.selected_entries_paths();
+  if (state_.selected_entries_.contains(state_.indexed_entry().value())) {
+    state_.index_ = 0;
+  }
   file_manager_.async_delete_entries(paths);
   state_.remove_entries(paths);
+  state_.selected_entries_.clear();
   ui_.async_toggle_deletion_dialog();
   refresh_menu();
   update_preview();
