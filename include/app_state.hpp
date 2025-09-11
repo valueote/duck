@@ -6,6 +6,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <iterator>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <vector>
@@ -62,12 +63,11 @@ struct AppState {
   }
 
   std::vector<ftxui::Element> current_directory_elements() {
-    auto entries = get_entries(current_path_);
-    if (entries.empty()) {
-      return {ftxui::text("[Empty folder]")};
+    if (auto entries = get_entries(current_path_)) {
+      return entries_to_elements(entries.value());
     }
 
-    return entries_to_elements(entries);
+    return {ftxui::text("[Empty folder]")};
   }
 
   std::vector<ftxui::Element> selected_entries_elements() {
@@ -93,7 +93,7 @@ struct AppState {
            std::ranges::to<std::vector>();
   }
 
-  size_t get_entries_size(const fs::path &path) {
+  size_t entries_size(const fs::path &path) {
     auto directory_opt = cache_.get(path);
     if (!directory_opt) {
       return 0;
@@ -105,10 +105,11 @@ struct AppState {
     return directory.entries_.size();
   }
 
-  std::vector<fs::directory_entry> get_entries(const fs::path &path) {
+  std::optional<std::vector<fs::directory_entry>>
+  get_entries(const fs::path &path) {
     auto directory_opt = cache_.get(path);
     if (!directory_opt) {
-      return {};
+      return std::nullopt;
     }
     auto directory = directory_opt.value();
     auto entries = directory.entries_;
@@ -137,24 +138,25 @@ struct AppState {
   }
 
   std::optional<fs::directory_entry> indexed_entry() {
-    auto entries = get_entries(current_path_);
-    if (index_ < entries.size()) {
-      return entries[index_];
+    if (auto entries = get_entries(current_path_)) {
+      if (index_ < entries.value().size()) {
+        return entries.value()[index_];
+      }
     }
     return std::nullopt;
   }
 
   void move_index_down() {
-    auto entries_size = get_entries_size(current_path_);
-    if (entries_size > 0) {
-      index_ = (index_ + 1) % entries_size;
+    auto size = entries_size(current_path_);
+    if (size > 0) {
+      index_ = (index_ + 1) % size;
     }
   }
 
   void move_index_up() {
-    auto entries_size = get_entries_size(current_path_);
-    if (entries_size > 0) {
-      index_ = (index_ + entries_size - 1) % entries_size;
+    auto size = entries_size(current_path_);
+    if (size > 0) {
+      index_ = (index_ + size - 1) % size;
     }
   }
 
@@ -165,15 +167,16 @@ struct AppState {
 
     if (entry_opt.has_value()) {
       const auto &current_entry = entry_opt.value();
-      auto entries = get_entries(current_path_);
-      auto it = std::ranges::find(
-          entries, current_entry.path(),
-          [](const fs::directory_entry &e) { return e.path(); });
+      if (auto entries = get_entries(current_path_)) {
+        auto it = std::ranges::find(
+            entries.value(), current_entry.path(),
+            [](const fs::directory_entry &e) { return e.path(); });
 
-      if (it != entries.end()) {
-        index_ = std::distance(entries.begin(), it);
-      } else {
-        index_ = 0;
+        if (it != entries.value().end()) {
+          index_ = std::distance(entries.value().begin(), it);
+        } else {
+          index_ = 0;
+        }
       }
     } else {
       index_ = 0;

@@ -33,6 +33,10 @@ private:
   void refresh_menu();
   void enter_directory();
   void leave_directory();
+  void confirm_deletion();
+  void confirm_creation();
+  void confirm_rename();
+  void paste_selected_entries();
   void start_yank();
   void start_cut();
   void toggle_deletion_dialog();
@@ -40,9 +44,6 @@ private:
   void toggle_rename_dialog();
   void toggle_notification();
   void clear_marks();
-  void confirm_deletion();
-  void confirm_creation();
-  void confirm_rename();
   void open_file();
 
 public:

@@ -124,24 +124,7 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     break;
   }
   case FmgrEvent::Type::Paste: {
-    if (state_.selected_entries_.empty() ||
-        (!state_.is_yanking_ && !state_.is_cutting_)) {
-      break;
-    }
-    std::vector<fs::path> paths;
-    paths.reserve(state_.selected_entries_.size());
-    for (const auto &entry : state_.selected_entries_) {
-      paths.push_back(entry.path());
-    }
-    file_manager_.async_paste_entries(state_.current_path_, paths,
-                                      state_.is_cutting_);
-    if (state_.is_cutting_) {
-      state_.remove_entries(paths);
-    }
-    state_.selected_entries_.clear();
-    state_.is_cutting_ = false;
-    state_.is_yanking_ = false;
-    refresh_menu();
+    paste_selected_entries();
     break;
   }
   }
@@ -186,9 +169,9 @@ void App::handle_render_event(const RenderEvent &event) {
 }
 
 void App::handle_directory_preview_requested(const DirectoryPreview &event) {
-  auto entries = state_.get_entries(event.path_);
-  if (not entries.empty()) {
-    ui_.async_update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
+  if (auto entries = state_.get_entries(event.path_)) {
+    ui_.async_update_preview(
+        ftxui::vbox(state_.entries_to_elements(entries.value())));
   } else {
     ui_.async_update_preview(ftxui::vbox(ftxui::text("[Empty folder]")));
   }
@@ -234,8 +217,9 @@ void App::update_preview() {
     return;
   }
 
-  if (auto entries = state_.get_entries(entry.path()); not entries.empty()) {
-    ui_.async_update_preview(ftxui::vbox(state_.entries_to_elements(entries)));
+  if (auto entries = state_.get_entries(entry.path())) {
+    ui_.async_update_preview(
+        ftxui::vbox(state_.entries_to_elements(entries.value())));
     return;
   }
 
@@ -290,28 +274,6 @@ void App::start_cut() {
   refresh_menu();
 }
 
-void App::toggle_deletion_dialog() {
-  ui_.async_toggle_deletion_dialog();
-  ui_.async_update_selected(ftxui::vbox(state_.selected_entries_elements()));
-}
-
-void App::toggle_creation_dialog() { ui_.async_toggle_creation_dialog(); }
-
-void App::toggle_rename_dialog() {
-  ui_.async_toggle_rename_dialog();
-  ui_.async_update_rename_input(
-      state_.indexed_entry().value().path().filename().string());
-}
-
-void App::toggle_notification() { ui_.async_toggle_notification(); }
-
-void App::clear_marks() {
-  state_.selected_entries_.clear();
-  refresh_menu();
-}
-
-// TODO: Set index after deletion
-
 void App::confirm_deletion() {
   auto paths = state_.selected_entries_paths();
   if (state_.selected_entries_.contains(state_.indexed_entry().value())) {
@@ -335,6 +297,43 @@ void App::confirm_creation() {
   auto new_path = state_.current_path_ / filename;
   file_manager_.async_create_entry(new_path, is_directory);
   ui_.async_toggle_creation_dialog();
+}
+
+void App::paste_selected_entries() {
+  if (state_.selected_entries_.empty() ||
+      (!state_.is_yanking_ && !state_.is_cutting_)) {
+    return;
+  }
+  auto paths = state_.selected_entries_paths();
+  file_manager_.async_paste_entries(state_.current_path_, paths,
+                                    state_.is_cutting_);
+  if (state_.is_cutting_) {
+    state_.remove_entries(paths);
+  }
+  state_.selected_entries_.clear();
+  state_.is_cutting_ = false;
+  state_.is_yanking_ = false;
+  refresh_menu();
+}
+
+void App::toggle_deletion_dialog() {
+  ui_.async_toggle_deletion_dialog();
+  ui_.async_update_selected(ftxui::vbox(state_.selected_entries_elements()));
+}
+
+void App::toggle_creation_dialog() { ui_.async_toggle_creation_dialog(); }
+
+void App::toggle_rename_dialog() {
+  ui_.async_toggle_rename_dialog();
+  ui_.async_update_rename_input(
+      state_.indexed_entry().value().path().filename().string());
+}
+
+void App::toggle_notification() { ui_.async_toggle_notification(); }
+
+void App::clear_marks() {
+  state_.selected_entries_.clear();
+  refresh_menu();
 }
 
 void App::confirm_rename() {
