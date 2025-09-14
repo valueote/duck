@@ -30,6 +30,7 @@ add_executable(
   duck
   src/main.cpp
   src/app.cpp
+  src/app_state.cpp
   src/duck.cpp
   src/ui.cpp
   src/file_manager.cpp
