@@ -13,6 +13,7 @@ class FileManager {
 private:
   EventBus &event_bus_;
   exec::async_scope scope_;
+  [[nodiscard]] std::string get_mime(const std::filesystem::path &path);
 
 public:
   static Directory load_directory(const fs::path &path);

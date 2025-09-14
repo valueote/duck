@@ -1,15 +1,17 @@
 #include "file_manager.hpp"
 #include "app_event.hpp"
 #include "scheduler.hpp"
-#include "stdexec/__detail/__execution_fwd.hpp"
 #include "utils.hpp"
-#include <cstdio>
+#include <array>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <ftxui/dom/elements.hpp>
 #include <string>
+#include <vector>
 
 namespace duck {
+using std::string;
 
 namespace fs = std::filesystem;
 
@@ -59,9 +61,15 @@ void FileManager::async_update_preview(const fs::directory_entry &entry,
           return std::nullopt;
         }
 
-        std::ifstream file(entry.path());
+        std::ifstream file(entry.path(), std::ios::binary);
         if (!file.is_open()) {
           return "[Can't open file]";
+        }
+
+        auto mime = get_mime(entry.path());
+        if (!mime.starts_with("text/") &&
+            !mime.starts_with("application/json")) {
+          return "[Binary file]";
         }
 
         auto [width, height] = size;
@@ -180,6 +188,25 @@ void FileManager::async_paste_entries(const fs::path &dest,
             .type_ = FmgrEvent::Type::UpdateCurrentDirectory, .path = dest});
       });
   scope_.spawn(std::move(task));
+}
+
+std::string FileManager::get_mime(const std::filesystem::path &path) {
+  constexpr int buffer_size = 256;
+  std::array<char, buffer_size> buffer{};
+  std::string cmd = "file -b --mime-type " + path.string();
+
+  using file_closer_t = int (*)(FILE *);
+  std::unique_ptr<FILE, file_closer_t> pipe(popen(cmd.c_str(), "r"), pclose);
+
+  if (!pipe) {
+    return {"Unknow"};
+  }
+
+  if (fgets(buffer.data(), buffer.size(), pipe.get()) == nullptr) {
+    throw std::runtime_error("fgets() failed");
+  }
+
+  return {buffer.data()};
 }
 
 } // namespace duck
