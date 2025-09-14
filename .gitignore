@@ -16,3 +16,7 @@ speed
 line.sh
 old_build
 playground
+ref/
+'
+design.org
+stdexec/

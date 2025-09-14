@@ -4,6 +4,8 @@ int main() {
   duck::Duck d;
   d.run();
 }
+
+// TODO: Keep selecting current selected file when toggle hidden entries
 // TODO: Improve add_new_entry
 // TODO: Show a notification when try to mark entries in current dir
 // TODO: implement task cancelation

@@ -1,51 +1,75 @@
 #include "ui.hpp"
+#include "app_event.hpp"
+#include "app_state.hpp"
 #include "ftxui/dom/elements.hpp"
+#include "input_handler.hpp"
+#include <cstddef>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <string>
 #include <unistd.h>
 #include <utility>
-#include <vector>
+
 namespace duck {
+using std::string;
 
-Ui::Ui()
-    : global_selected_{0}, view_selected_{0}, rename_cursor_positon_{0},
-      active_pane_{0}, curdir_entries_{ftxui::emptyElement()},
-      entries_preview_{ftxui::emptyElement()}, text_preview_{"Loading..."},
-      screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {}
+Ui::Ui(InputHandler &input_handler)
+    : input_handler_{input_handler}, cursor_positon_{0}, active_pane_{0},
+      selected_entries_{ftxui::text("")},
+      screen_{ftxui::ScreenInteractive::FullscreenAlternateScreen()} {
 
-void Ui::set_main_layout(
-    ftxui::Component layout,
-    std::function<bool(const ftxui::Event &)> navigation_handler,
-    std::function<bool(const ftxui::Event &)> operation_handler) {
-  main_layout_ = std::move(layout) | ftxui::CatchEvent(navigation_handler) |
-                 ftxui::CatchEvent(operation_handler);
-}
+  rename_dialog_ =
+      content_provider_.rename_dialog(cursor_positon_, input_content_) |
+      ftxui::CatchEvent(input_handler_.rename_dialog_handler());
 
-void Ui::set_deletion_dialog(
-    ftxui::Component deletion_dialog,
-    std::function<bool(const ftxui::Event &)> handler) {
+  creation_dialog_ =
+      content_provider_.creation_dialog(cursor_positon_, input_content_) |
+      ftxui::CatchEvent(input_handler_.creation_dialog_handler());
+
   deletion_dialog_ =
-      std::move(deletion_dialog) | ftxui::CatchEvent(handler) | ftxui::center;
+      content_provider_.deletion_dialog(
+          selected_entries_,
+          [this]() { screen_.PostEvent(ftxui::Event::Character('y')); },
+          [this]() { screen_.PostEvent(ftxui::Event::Character('n')); }) |
+      ftxui::CatchEvent(input_handler_.deletion_dialog_handler());
+
+  notification_ = content_provider_.notification(notification_content_);
+
+  main_layout_ = content_provider_.layout(info_, preview_) |
+                 ftxui::CatchEvent(input_handler_.navigation_handler()) |
+                 ftxui::CatchEvent(input_handler_.operation_handler());
+
+  finalize_tui();
 }
 
-void Ui::set_rename_dialog(ftxui::Component rename_dialog,
-                           std::function<bool(const ftxui::Event &)> handler) {
-  rename_dialog_ = std::move(rename_dialog) | ftxui::CatchEvent(handler);
+void Ui::async_update_info(MenuInfo new_info) {
+  screen_.Post([this, info = std::move(new_info)]() { info_ = info; });
+  screen_.PostEvent(ftxui::Event::Custom);
+};
+
+void Ui::update_whole_state(const AppState &state) {}
+
+void Ui::async_update_index(size_t index) {
+  screen_.Post([this, index]() { std::get<1>(info_) = index; });
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void Ui::set_creation_dialog(
-    ftxui::Component new_entry_dialog,
-    std::function<bool(const ftxui::Event &)> handler) {
-  creation_dialog_ = std::move(new_entry_dialog) | ftxui::CatchEvent(handler);
+void Ui::async_update_selected(ftxui::Element selected_entries) {
+  screen_.Post([this, entries = std::move(selected_entries)]() {
+    selected_entries_ = entries;
+  });
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void Ui::set_notification(ftxui::Component notification) {
-  notification_ = std::move(notification);
+void Ui::async_update_preview(EntryPreview new_preview) {
+  screen_.Post(
+      [this, preview = std::move(new_preview)]() { preview_ = preview; });
+  screen_.PostEvent(ftxui::Event::Custom);
 }
 
 void Ui::finalize_tui() {
@@ -60,15 +84,13 @@ void Ui::finalize_tui() {
       &active_pane_);
   main_layout_->TakeFocus();
 
-  tui_ = ftxui::Renderer(components_tab, [&] {
+  tui_ = ftxui::Renderer(components_tab, [this] {
     auto main_ui_layer = main_layout_->Render();
     switch (active_pane_) {
     case static_cast<int>(pane::RENAME): {
       auto top_layer = ftxui::vbox({
           ftxui::vbox({}) |
-              ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                          (global_selected_ > 2 ? global_selected_ - 2
-                                                : global_selected_ + 2)),
+              ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, (0 > 2 ? 0 - 2 : 0 + 2)),
           ftxui::hbox({rename_dialog_->Render()}),
       });
       return ftxui::dbox({
@@ -112,127 +134,85 @@ void Ui::finalize_tui() {
   });
 }
 
-void Ui::move_selected_up(const int max) {
-  if (max == 0) {
-    return;
-  }
-  global_selected_ = (global_selected_ + max - 1) % max;
+void Ui::async_toggle_deletion_dialog() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::DELETION)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+      main_layout_->TakeFocus();
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::DELETION);
+      deletion_dialog_->TakeFocus();
+    }
+  });
 }
 
-void Ui::move_selected_down(const int max) {
-  if (max == 0) {
-    return;
-  }
-  global_selected_ = (global_selected_ + 1) % max;
+void Ui::async_toggle_rename_dialog() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::RENAME)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+      input_content_ = "";
+      cursor_positon_ = 0;
+      main_layout_->TakeFocus();
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::RENAME);
+      rename_dialog_->TakeFocus();
+    }
+  });
 }
 
-void Ui::toggle_deletion_dialog() {
-  if (active_pane_ == static_cast<int>(pane::DELETION)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-    main_layout_->TakeFocus();
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::DELETION);
-    deletion_dialog_->TakeFocus();
-  }
-}
-
-void Ui::toggle_rename_dialog() {
-  if (active_pane_ == static_cast<int>(pane::RENAME)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-    main_layout_->TakeFocus();
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::RENAME);
-    rename_dialog_->TakeFocus();
-  }
-}
-
-void Ui::toggle_creation_dialog() {
-  if (active_pane_ == static_cast<int>(pane::CREATION)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-    main_layout_->TakeFocus();
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::CREATION);
-    creation_dialog_->TakeFocus();
-  }
-}
-
-void Ui::toggle_notification() {
-  if (active_pane_ == static_cast<int>(pane::NOTIFICATION)) {
-    active_pane_ = static_cast<int>(pane::MAIN);
-  } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
-    active_pane_ = static_cast<int>(pane::NOTIFICATION);
-  }
-}
-
-// FIX:: the previous_selected_ logic is uncorrect
-void Ui::enter_direcotry(std::vector<ftxui::Element> curdir_entries) {
-  if (previous_selected_.empty()) {
-    global_selected_ = 0;
-  } else {
-    global_selected_ = previous_selected_.top();
-    previous_selected_.pop();
-  }
-  update_curdir_entries(std::move(curdir_entries));
-}
-
-void Ui::leave_direcotry(std::vector<ftxui::Element> curdir_entries,
-                         int previous_path_index) {
-  previous_selected_.push(global_selected_);
-  global_selected_ = previous_path_index;
-  update_curdir_entries(std::move(curdir_entries));
-}
-
-void Ui::update_curdir_entries(std::vector<ftxui::Element> new_entries) {
-  curdir_entries_ = std::move(new_entries);
-  if (global_selected_ >= curdir_entries_.size()) {
-    global_selected_ = 0;
-  }
+void Ui::async_toggle_creation_dialog() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::CREATION)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+      input_content_ = "";
+      cursor_positon_ = 0;
+      main_layout_->TakeFocus();
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::CREATION);
+      creation_dialog_->TakeFocus();
+    }
+  });
   screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void Ui::update_text_preview(std::string new_text_preview) {
-  text_preview_ = std::move(new_text_preview);
+void Ui::async_toggle_notification() {
+  screen_.Post([this]() {
+    if (active_pane_ == static_cast<int>(pane::NOTIFICATION)) {
+      active_pane_ = static_cast<int>(pane::MAIN);
+    } else if (active_pane_ == static_cast<int>(pane::MAIN)) {
+      active_pane_ = static_cast<int>(pane::NOTIFICATION);
+    }
+  });
+}
+
+void Ui::async_update_rename_input(string input) {
+  screen_.Post([input = std::move(input), this]() {
+    input_content_ = input;
+    cursor_positon_ = static_cast<int>(input_content_.size());
+  });
   screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void Ui::update_entries_preview(ftxui::Element new_entries) {
-  entries_preview_ = std::move(new_entries);
-  screen_.PostEvent(ftxui::Event::Custom);
+void Ui::update_notification(std::string input) {
+  screen_.Post(
+      [this, input = std::move(input)]() { notification_content_ = input; });
 }
 
-void Ui::update_rename_input(std::string str) {
-  rename_input_ = std::move(str);
-  rename_cursor_positon_ = static_cast<int>(rename_input_.size());
+std::string &Ui::input_content() { return input_content_; }
+
+int &Ui ::cursor_positon() { return cursor_positon_; }
+
+void Ui::render(AppState &state) {
+  info_ = {state.current_directory_.path_.string(), state.index_,
+           state.current_directory_elements()};
+  preview_ = ftxui::text("Loading");
+  selected_entries_ = ftxui::text("Nothing");
+  screen_.Loop(tui_);
 }
-
-void Ui::update_notification(std::string str) {
-  notification_content_ = std::move(str);
-}
-
-std::vector<ftxui::Element> Ui::curdir_entries() { return curdir_entries_; }
-
-ftxui::Element Ui::entries_preview() { return entries_preview_; }
-std::string Ui::text_preview() { return text_preview_; }
-
-std::string &Ui::rename_input() { return rename_input_; }
-
-std::string &Ui::new_entry_input() { return new_entry_input_; }
-
-std::string Ui::notification_content() { return notification_content_; }
-
-int &Ui ::rename_cursor_positon() { return rename_cursor_positon_; }
-
-void Ui::render() { screen_.Loop(tui_); }
 
 void Ui::exit() { screen_.Exit(); }
 
-int Ui::global_selected() const { return global_selected_; }
-
-// Screen has a internal task queue which is protected by a mutex, so this
-// opration is safe without lock;
 void Ui::post_task(std::function<void()> task) { screen_.Post(task); }
-
-void Ui::post_event(ftxui::Event event) { screen_.PostEvent(std::move(event)); }
 
 void Ui::restored_io(std::function<void()> closure) {
   screen_.WithRestoredIO(std::move(closure));

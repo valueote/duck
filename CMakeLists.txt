@@ -29,13 +29,17 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(
   duck
   src/main.cpp
+  src/app.cpp
+  src/app_state.cpp
+  src/duck.cpp
   src/ui.cpp
   src/file_manager.cpp
   src/input_handler.cpp
   src/content_provider.cpp
-  src/duck.cpp
   src/colorscheme.cpp
-  src/scheduler.cpp)
+  src/scheduler.cpp
+  src/event_bus.cpp
+  src/utils.cpp)
 
 target_include_directories(duck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(duck PRIVATE ftxui::screen ftxui::dom ftxui::component)
@@ -43,13 +47,16 @@ target_link_libraries(duck PRIVATE STDEXEC::stdexec TBB::tbb)
 
 add_executable(
   duck_tests EXCLUDE_FROM_ALL
+  src/app.cpp
+  src/duck.cpp
   src/ui.cpp
   src/file_manager.cpp
   src/input_handler.cpp
   src/content_provider.cpp
-  src/duck.cpp
   src/colorscheme.cpp
   src/scheduler.cpp
+  src/event_bus.cpp
+  src/utils.cpp
   tests/test_main.cpp
   tests/file_manager_test.cpp)
 target_include_directories(

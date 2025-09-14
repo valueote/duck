@@ -1,4 +1,8 @@
 #pragma once
+#include "app_event.hpp"
+#include "app_state.hpp"
+#include "content_provider.hpp"
+#include "input_handler.hpp"
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/event.hpp>
@@ -6,20 +10,18 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <functional>
-#include <shared_mutex>
 #include <stack>
 #include <string>
-#include <vector>
 
 namespace duck {
 
 class Ui {
 private:
-  std::shared_mutex ui_lock_;
-  std::string text_preview_;
-
-  std::vector<ftxui::Element> curdir_entries_;
-  ftxui::Element entries_preview_;
+  MenuInfo info_;
+  EntryPreview preview_;
+  ContentProvider content_provider_;
+  ftxui::Element selected_entries_;
+  InputHandler &input_handler_;
 
   ftxui::ScreenInteractive screen_;
   ftxui::Component tui_;
@@ -28,17 +30,13 @@ private:
   ftxui::Component creation_dialog_;
   ftxui::Component notification_;
   std::string notification_content_;
-  std::string new_entry_input_;
-
   ftxui::Component rename_dialog_;
-  std::string rename_input_;
-  int rename_cursor_positon_;
+  std::string input_content_;
+  int cursor_positon_;
 
-  std::stack<int> previous_selected_;
-  int global_selected_;
-  int view_selected_;
+  std::stack<int> index_selected_;
 
-  enum class pane : int8_t {
+  enum class pane : uint8_t {
     MAIN = 0,
     DELETION,
     RENAME,
@@ -47,53 +45,29 @@ private:
   };
   int active_pane_;
 
-public:
-  Ui();
-  void
-  set_main_layout(ftxui::Component layout,
-                  std::function<bool(const ftxui::Event &)> navigation_handler,
-                  std::function<bool(const ftxui::Event &)> operation_handler);
-  void set_deletion_dialog(ftxui::Component deletion_dialog,
-                           std::function<bool(const ftxui::Event &)> handler);
-
-  void set_rename_dialog(ftxui::Component rename_dialog,
-                         std::function<bool(const ftxui::Event &)> handler);
-
-  void set_creation_dialog(ftxui::Component new_entry_dialog,
-                           std::function<bool(const ftxui::Event &)> handler);
-  void set_notification(ftxui::Component notification);
-
   void finalize_tui();
 
-  void move_selected_up(int max);
-  void move_selected_down(int max);
-  void toggle_deletion_dialog();
-  void toggle_rename_dialog();
-  void toggle_creation_dialog();
-  void toggle_notification();
+public:
+  Ui(InputHandler &input_handler);
+  void update_whole_state(const AppState &state);
 
-  void enter_direcotry(std::vector<ftxui::Element> curdir_entries);
-  void leave_direcotry(std::vector<ftxui::Element> curdir_entries,
-                       int previous_path_index);
-  void update_entries_preview(ftxui::Element new_entries);
-  void update_curdir_entries(std::vector<ftxui::Element> new_entries);
-  void update_rename_input(std::string str);
-  void update_notification(std::string str);
+  void async_toggle_deletion_dialog();
+  void async_toggle_rename_dialog();
+  void async_toggle_creation_dialog();
+  void async_toggle_notification();
 
-  std::vector<ftxui::Element> curdir_entries();
-  ftxui::Element entries_preview();
-  void update_text_preview(std::string new_text_preview);
-  std::string text_preview();
-  std::string &rename_input();
-  std::string &new_entry_input();
-  std::string notification_content();
-  int &rename_cursor_positon();
+  void async_update_info(MenuInfo new_info);
+  void async_update_index(size_t index);
+  void async_update_selected(ftxui::Element selected_entries);
+  void async_update_preview(EntryPreview new_preview);
+  void async_update_rename_input(std::string input);
+  void update_notification(std::string input);
 
-  void render();
+  std::string &input_content();
+  int &cursor_positon();
+
+  void render(AppState &state);
   void exit();
-  [[nodiscard]] int global_selected() const;
-  bool show_hidden();
-  void post_event(ftxui::Event event);
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);
 };

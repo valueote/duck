@@ -1,13 +1,8 @@
 #pragma once
+#include "event_bus.hpp"
+#include "exec/async_scope.hpp"
 #include "utils.hpp"
-#include <exec/task.hpp>
-#include <expected>
 #include <filesystem>
-#include <ftxui/component/component.hpp>
-#include <ftxui/dom/node.hpp>
-#include <set>
-#include <shared_mutex>
-#include <stdexec/execution.hpp>
 #include <vector>
 
 namespace duck {
@@ -15,75 +10,23 @@ namespace duck {
 namespace fs = std::filesystem;
 
 class FileManager {
-
 private:
-  Lru<fs::path, Direcotry> cache_;
-  fs::path current_path_;
-  fs::path previous_path_;
-  fs::path parent_path_;
-
-  std::vector<fs::directory_entry> preview_entries_;
-  std::set<fs::directory_entry> marked_entries_;
-  std::vector<fs::directory_entry> clipboard_entries_;
-  bool is_yanking_;
-  bool is_cutting_;
-  bool show_hidden_;
-  std::shared_mutex file_manager_mutex_;
-
-  FileManager();
-
-  static FileManager &instance();
-
-  void load_directory_entries(const fs::path &path, bool use_cache);
-
-  static bool delete_entry_without_lock(const fs::directory_entry &entry);
-
-  static fs::path get_dest_path(const fs::directory_entry &entry,
-                                const fs::path &current_path);
-
-  static void yank_entries(const std::vector<fs::directory_entry> &entries,
-                           const fs::path &current_path);
-  static void rename_entries(const std::vector<fs::directory_entry> &entries,
-                             const fs::path &current_path);
-
-  static bool entries_sorter(const fs::directory_entry &first,
-                             const fs::directory_entry &second);
-
-  void remove_entry_from_cache();
-  void add_entry_to_the_cache();
-  void rename_entry_in_the_cache();
+  EventBus &event_bus_;
+  exec::async_scope scope_;
+  [[nodiscard]] std::string get_mime(const std::filesystem::path &path);
 
 public:
-  static const fs::path &current_path();
-  static const fs::path &cur_parent_path();
-  static const fs::path &previous_path();
-  static std::vector<fs::directory_entry> curdir_entries();
-  static std::vector<fs::directory_entry>
-  get_entries(const fs::path &target_path, bool show_hidden);
-  static std::vector<fs::directory_entry> preview_entries();
-  static std::set<fs::directory_entry> marked_entries();
-  static int previous_path_index();
-  static bool yanking();
-  static bool cutting();
-  static std::optional<fs::directory_entry> selected_entry(const int &selected);
-  static void start_yanking(int selected);
-  static void start_cutting(int selected);
-  static void yank_or_cut(int selected);
-  static bool is_marked(const fs::directory_entry &entry);
-  static void toggle_mark_on_selected(int selected);
-  static void clear_marked_entries();
-  static void toggle_hidden_entries();
-  static bool delete_selected_entry(int selected);
-  static void rename_selected_entry(int selected, const std::string &new_name);
-  static bool delete_marked_entries();
-  static void create_new_entry(const std::string &name);
-  static std::vector<fs::directory_entry> update_curdir_entries(bool use_cache);
-  static void update_current_path(const fs::path &new_path);
-
-  static std::string entry_name_with_icon(const fs::directory_entry &entry);
-  static std::vector<fs::directory_entry>
-  directory_preview(const std::pair<int, int> &selected_and_size);
-  static std::string text_preview(int selected, std::pair<int, int> size);
+  static Directory load_directory(const fs::path &path);
+  void async_load_directory(const fs::path &path);
+  void async_enter_directory(const fs::path &path);
+  void async_update_preview(const fs::directory_entry &entry,
+                            const std::pair<int, int> &size);
+  void async_delete_entries(const std::vector<fs::path> &paths);
+  void async_create_entry(const fs::path &path, bool is_directory);
+  void async_rename_entry(const fs::path &old_path, const fs::path &new_path);
+  void async_paste_entries(const fs::path &dest,
+                           const std::vector<fs::path> &sources, bool is_cut);
+  FileManager(EventBus &event_bus);
 };
 
 } // namespace duck

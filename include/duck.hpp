@@ -1,16 +1,19 @@
 #pragma once
-#include "content_provider.hpp"
+#include "app.hpp"
+#include "event_bus.hpp"
+#include "file_manager.hpp"
 #include "input_handler.hpp"
 #include "ui.hpp"
 
 namespace duck {
 class Duck {
 private:
-  Ui ui_;
+  EventBus event_bus_;
   InputHandler input_handler_;
-  ContentProvider content_provider_;
-
-  void setup_ui();
+  Ui ui_;
+  AppState state_;
+  FileManager file_manager_;
+  App app_;
 
 public:
   Duck();

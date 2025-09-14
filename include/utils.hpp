@@ -1,3 +1,5 @@
+#pragma once
+#include <algorithm>
 #include <filesystem>
 #include <list>
 #include <mutex>
@@ -9,6 +11,12 @@
 namespace duck {
 
 namespace fs = std::filesystem;
+
+struct Directory {
+  fs::path path_;
+  std::vector<fs::directory_entry> entries_;
+  std::vector<fs::directory_entry> hidden_entries_;
+};
 
 template <typename Key, typename Value> class Lru {
 private:
@@ -36,11 +44,11 @@ public:
     return cache_[path];
   }
 
-  void insert(const Key &path, const Value &data) {
+  void insert(Key path, Value data) {
     auto iter = map_.find(path);
     std::unique_lock lock{lru_mutex_};
     if (iter != map_.end()) {
-      cache_[path] = data;
+      cache_[path] = std::move(data);
       touch_without_lock(path);
     } else {
       if (lru_list_.size() == capacity_) {
@@ -54,15 +62,53 @@ public:
 
       lru_list_.push_front(path);
       map_[path] = lru_list_.begin();
-      cache_[path] = data;
+      cache_[path] = std::move(data);
     }
   }
 };
 
-struct Direcotry {
-  fs::path path_;
-  std::vector<fs::directory_entry> entries_;
-  std::vector<fs::directory_entry> hidden_entries_;
-};
+inline std::string entry_icon(const fs::directory_entry &entry) {
+  if (entry.path().empty()) {
+    return "[Invalid Entry]";
+  }
+
+  static const std::unordered_map<std::string, std::string> extension_icons{
+      {".txt", "\uf15c"}, {".md", "\ueeab"},   {".cpp", "\ue61d"},
+      {".hpp", "\uf0fd"}, {".h", "\uf0fd"},    {".c", "\ue61e"},
+      {".jpg", "\uf4e5"}, {".jpeg", "\uf4e5"}, {".png", "\uf4e5"},
+      {".gif", "\ue60d"}, {".pdf", "\ue67d"},  {".zip", "\ue6aa"},
+      {".mp3", "\uf001"}, {".mp4", "\uf03d"},  {".json", "\ue60b"},
+      {".log", "\uf4ed"}, {".csv", "\ueefc"},
+  };
+
+  if (!fs::exists(entry) || entry.path().empty()) {
+    return {""};
+  }
+
+  if (fs::is_directory(entry)) {
+    return {"\uf4d3"};
+  }
+
+  auto ext = entry.path().extension().string();
+  std::ranges::transform(ext, ext.begin(), [](char character) {
+    return static_cast<char>(std::tolower(character));
+  });
+
+  auto icon_it = extension_icons.find(ext);
+  const std::string &icon =
+      icon_it != extension_icons.end() ? icon_it->second : "\uf15c";
+
+  return icon;
+}
+
+inline bool entries_sorter(const fs::directory_entry &first,
+                           const fs::directory_entry &second) {
+  if (first.is_directory() != second.is_directory()) {
+    return static_cast<int>(first.is_directory()) >
+           static_cast<int>(second.is_directory());
+  }
+
+  return first.path().filename() < second.path().filename();
+}
 
 } // namespace duck

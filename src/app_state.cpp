@@ -1,0 +1,206 @@
+#include "app_state.hpp"
+#include "algorithm"
+#include "colorscheme.hpp"
+#include "ranges"
+
+namespace duck {
+namespace fs = std::filesystem;
+
+AppState::AppState() : cache_(lru_cache_size) {}
+
+std::vector<ftxui::Element> AppState::entries_to_elements(
+    const std::vector<fs::directory_entry> &entries) const {
+  return entries |
+         std::views::transform([this](const fs::directory_entry &entry) {
+           auto filename = ftxui::text(entry_icon(entry) + " " +
+                                       entry.path().filename().string());
+           auto marker = ftxui::text("  ");
+           if (selected_entries_.contains(entry)) {
+             marker = ftxui::text("█ ");
+             if (is_yanking_) {
+               marker = marker | ftxui::color(ftxui::Color::Blue);
+             } else if (is_cutting_) {
+               marker = marker | ftxui::color(ftxui::Color::Red);
+             }
+           }
+           auto elmt = ftxui::hbox({marker, filename});
+           if (entry.is_directory()) {
+             elmt |= ftxui::color(ColorScheme::dir());
+           } else {
+             elmt |= ftxui::color(ColorScheme::file());
+           }
+           return elmt;
+         }) |
+         std::ranges::to<std::vector>();
+}
+
+std::vector<ftxui::Element> AppState::current_directory_elements() {
+  if (auto entries = get_entries(current_path_)) {
+    return entries_to_elements(entries.value());
+  }
+
+  return {ftxui::text("[Empty folder]")};
+}
+
+std::vector<ftxui::Element> AppState::selected_entries_elements() {
+  if (selected_entries_.empty()) {
+    return entries_to_elements({indexed_entry().value()});
+  }
+
+  auto entries = std::vector<fs::directory_entry>{selected_entries_.begin(),
+                                                  selected_entries_.end()};
+  return entries |
+         std::views::transform([this](const fs::directory_entry &entry) {
+           auto filename =
+               ftxui::text(entry_icon(entry) + " " + entry.path().string());
+           auto marker = ftxui::text("  ");
+           auto elmt = ftxui::hbox({marker, filename});
+           if (entry.is_directory()) {
+             elmt |= ftxui::color(ColorScheme::dir());
+           } else {
+             elmt |= ftxui::color(ColorScheme::file());
+           }
+           return elmt;
+         }) |
+         std::ranges::to<std::vector>();
+}
+
+size_t AppState::entries_size(const fs::path &path) {
+  auto directory_opt = cache_.get(path);
+  if (!directory_opt) {
+    return 0;
+  }
+  const auto &directory = directory_opt.value();
+  if (show_hidden_) {
+    return directory.entries_.size() + directory.hidden_entries_.size();
+  }
+  return directory.entries_.size();
+}
+
+std::optional<std::vector<fs::directory_entry>>
+AppState::get_entries(const fs::path &path) {
+  auto directory_opt = cache_.get(path);
+  if (!directory_opt) {
+    return std::nullopt;
+  }
+  auto directory = directory_opt.value();
+  auto entries = directory.entries_;
+  if (show_hidden_) {
+    entries.reserve(entries.size() + directory.hidden_entries_.size());
+    std::ranges::copy(directory.hidden_entries_, std::back_inserter(entries));
+    std::ranges::sort(entries, entries_sorter);
+  }
+  return entries;
+}
+
+std::vector<fs::path> AppState::selected_entries_paths() {
+  std::vector<fs::path> paths{};
+
+  if (selected_entries_.empty()) {
+    if (auto entry = indexed_entry(); entry.has_value()) {
+      paths.push_back(entry.value().path());
+    }
+  } else {
+    for (const auto &entry : selected_entries_) {
+      paths.push_back(entry.path());
+    }
+  }
+
+  return paths;
+}
+
+std::optional<fs::directory_entry> AppState::indexed_entry() {
+  if (auto entries = get_entries(current_path_)) {
+    if (index_ < entries.value().size()) {
+      return entries.value()[index_];
+    }
+  }
+  return std::nullopt;
+}
+
+void AppState::move_index_down() {
+  auto size = entries_size(current_path_);
+  if (size > 0) {
+    index_ = (index_ + 1) % size;
+  }
+}
+
+void AppState::move_index_up() {
+  auto size = entries_size(current_path_);
+  if (size > 0) {
+    index_ = (index_ + size - 1) % size;
+  }
+}
+
+void AppState::toggle_hidden() {
+  auto entry_opt = indexed_entry();
+
+  show_hidden_ = !show_hidden_;
+
+  if (entry_opt.has_value()) {
+    const auto &current_entry = entry_opt.value();
+    if (auto entries = get_entries(current_path_)) {
+      auto it = std::ranges::find(
+          entries.value(), current_entry.path(),
+          [](const fs::directory_entry &e) { return e.path(); });
+
+      if (it != entries.value().end()) {
+        index_ = std::distance(entries.value().begin(), it);
+      } else {
+        index_ = 0;
+      }
+    }
+  } else {
+    index_ = 0;
+  }
+}
+
+void AppState::remove_entries(const std::vector<fs::path> &paths) {
+  for (const auto &path : paths) {
+    if (auto directory = cache_.get(path.parent_path());
+        directory.has_value()) {
+      auto pred = [path](const auto &entry) { return entry.path() == path; };
+      std::erase_if(directory.value().entries_, pred);
+      std::erase_if(directory.value().hidden_entries_, pred);
+      cache_.insert(std::move(path.parent_path()),
+                    std::move(directory.value()));
+    }
+  }
+}
+
+void AppState::rename_entry(const fs::path &old_name,
+                            const fs::path &new_name) {
+  if (auto directory_opt = cache_.get(old_name.parent_path()); directory_opt) {
+    auto directory = directory_opt.value();
+    auto pred = [old_name](const auto &entry) {
+      return entry.path() == old_name;
+    };
+
+    std::erase_if(directory.entries_, pred);
+    std::erase_if(directory.hidden_entries_, pred);
+    if (new_name.filename().string().starts_with('.')) {
+      directory.hidden_entries_.emplace_back(new_name);
+      std::ranges::sort(directory.hidden_entries_, entries_sorter);
+    } else {
+      directory.entries_.emplace_back(new_name);
+      std::ranges::sort(directory.entries_, entries_sorter);
+    }
+    cache_.insert(old_name.parent_path(), directory);
+  }
+}
+
+void AppState::create_entry(const fs::path &new_entry) {
+  auto parent_path = new_entry.parent_path();
+  if (auto directory_opt = cache_.get(parent_path); directory_opt.has_value()) {
+    auto directory = directory_opt.value();
+    if (new_entry.filename().string().starts_with('.')) {
+      directory.hidden_entries_.emplace_back(new_entry);
+      std::ranges::sort(directory.hidden_entries_, entries_sorter);
+    } else {
+      directory.entries_.emplace_back(new_entry);
+      std::ranges::sort(directory.entries_, entries_sorter);
+    }
+    cache_.insert(parent_path, directory);
+  }
+}
+} // namespace duck
