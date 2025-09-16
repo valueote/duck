@@ -1,7 +1,9 @@
 #include "app_state.hpp"
-#include "algorithm"
 #include "colorscheme.hpp"
 #include "ranges"
+#include "utils.hpp"
+#include <algorithm>
+#include <iterator>
 
 namespace duck {
 namespace fs = std::filesystem;
