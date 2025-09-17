@@ -69,14 +69,6 @@ std::vector<ftxui::Element> AppState::selected_entries_elements() {
          std::ranges::to<std::vector>();
 }
 
-std::vector<ftxui::Element> AppState::indexed_entry_elements() {
-  auto path = indexed_entry().value().path();
-  if (auto entries = get_entries(path)) {
-    return entries_to_elements(entries.value());
-  }
-  return {ftxui::text("[Empty folder]")};
-}
-
 size_t AppState::entries_size(const fs::path &path) {
   auto directory_opt = cache_.get(path);
   if (!directory_opt) {

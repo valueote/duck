@@ -48,7 +48,7 @@ void App::process_events() {
               [this](const DirecotryLoaded &event) {
                 handle_directory_loaded(event);
               },
-              [this](const PreviewUpdated &event) {
+              [this](const TextPreview &event) {
                 handle_preview_updated(event);
               },
           },
@@ -64,7 +64,7 @@ void App::handle_directory_loaded(const DirecotryLoaded &event) {
   }
 }
 
-void App::handle_preview_updated(const PreviewUpdated &event) {
+void App::handle_preview_updated(const TextPreview &event) {
   ui_.async_update_preview(event.preview_);
 }
 

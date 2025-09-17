@@ -36,7 +36,6 @@ struct AppState {
   entries_to_elements(const std::vector<fs::directory_entry> &entries) const;
   std::vector<ftxui::Element> current_directory_elements();
   std::vector<ftxui::Element> selected_entries_elements();
-  std::vector<ftxui::Element> indexed_entry_elements();
   size_t entries_size(const fs::path &path);
   std::optional<std::vector<fs::directory_entry>>
   get_entries(const fs::path &path);

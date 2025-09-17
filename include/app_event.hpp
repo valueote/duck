@@ -52,17 +52,17 @@ struct RenderEvent {
   } type_;
 };
 
-struct PreviewUpdated {
-  EntryPreview preview_;
+struct TextPreview {
+  std::string preview_;
 };
 
 struct DirecotryLoaded {
-  bool update_preview_;
+  bool update_preview_ = false;
   Directory directory_;
 };
 
 using AppEvent =
-    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, PreviewUpdated>;
+    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, TextPreview>;
 
 template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;
