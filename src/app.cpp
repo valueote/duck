@@ -14,9 +14,6 @@
 #include <string>
 #include <wait.h>
 
-// TODO: implement notification
-// FIX: Error when read binary file
-
 namespace fs = std::filesystem;
 namespace duck {
 App::App(EventBus &event_bus, Ui &ui, FileManager &file_manager)
@@ -29,7 +26,7 @@ void App::run() {
   state_.current_directory_ = FileManager::load_directory(state_.current_path_);
   state_.cache_.insert(state_.current_path_, state_.current_directory_);
   update_preview();
-  ui_.render(state_);
+  ui_.run(state_);
 }
 
 void App::stop() {
@@ -44,26 +41,27 @@ void App::process_events() {
     auto event_opt = event_bus_.pop_event();
     if (event_opt) {
       auto event = event_opt.value();
-      std::visit(Visitor{[this](FmgrEvent &event) { handle_fmgr_event(event); },
-                         [this](const RenderEvent &event) {
-                           handle_render_event(event);
-                         },
-                         [this](const DirecotryLoaded &event) {
-                           handle_directory_loaded(event);
-                         },
-                         [this](const PreviewUpdated &event) {
-                           handle_preview_updated(event);
-                         },
-                         [this](const DirectoryPreview &event) {
-                           handle_directory_preview_requested(event);
-                         }},
-                 event);
+      std::visit(
+          Visitor{
+              [this](FmgrEvent &event) { handle_fmgr_event(event); },
+              [this](const RenderEvent &event) { handle_render_event(event); },
+              [this](const DirecotryLoaded &event) {
+                handle_directory_loaded(event);
+              },
+              [this](const PreviewUpdated &event) {
+                handle_preview_updated(event);
+              },
+          },
+          event);
     }
   }
 }
 
 void App::handle_directory_loaded(const DirecotryLoaded &event) {
   state_.cache_.insert(event.directory_.path_, event.directory_);
+  if (event.update_preview_) {
+    update_preview();
+  }
 }
 
 void App::handle_preview_updated(const PreviewUpdated &event) {
@@ -165,15 +163,6 @@ void App::handle_render_event(const RenderEvent &event) {
     running_ = false;
     ui_.exit();
     break;
-  }
-}
-
-void App::handle_directory_preview_requested(const DirectoryPreview &event) {
-  if (auto entries = state_.get_entries(event.path_)) {
-    ui_.async_update_preview(
-        ftxui::vbox(state_.entries_to_elements(entries.value())));
-  } else {
-    ui_.async_update_preview(ftxui::vbox(ftxui::text("[Empty folder]")));
   }
 }
 

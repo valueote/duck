@@ -66,7 +66,7 @@ public:
   std::string &input_content();
   int &cursor_positon();
 
-  void render(AppState &state);
+  void run(AppState &state);
   void exit();
   void post_task(std::function<void()> task);
   void restored_io(std::function<void()> closure);

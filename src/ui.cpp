@@ -202,11 +202,11 @@ std::string &Ui::input_content() { return input_content_; }
 
 int &Ui ::cursor_positon() { return cursor_positon_; }
 
-void Ui::render(AppState &state) {
+void Ui::run(AppState &state) {
   info_ = {state.current_directory_.path_.string(), state.index_,
            state.current_directory_elements()};
-  preview_ = ftxui::text("Loading");
-  selected_entries_ = ftxui::text("Nothing");
+  preview_ = ftxui::text("");
+  selected_entries_ = ftxui::text("");
   screen_.Loop(tui_);
 }
 

@@ -45,7 +45,8 @@ void FileManager::async_load_directory(const fs::path &path) {
   auto task = stdexec::schedule(Scheduler::io_scheduler()) |
               stdexec::then([path]() { return load_directory(path); }) |
               stdexec::then([this](const Directory &directory) {
-                event_bus_.push_event(DirecotryLoaded{directory});
+                event_bus_.push_event(DirecotryLoaded{.update_preview_ = false,
+                                                      .directory_ = directory});
               });
   scope_.spawn(std::move(task));
 }
@@ -56,8 +57,8 @@ void FileManager::async_update_preview(const fs::directory_entry &entry,
       stdexec::schedule(Scheduler::io_scheduler()) |
       stdexec::then([this, entry, size]() -> std::optional<EntryPreview> {
         if (entry.is_directory()) {
-          event_bus_.push_event(DirecotryLoaded{load_directory(entry)});
-          event_bus_.push_event(DirectoryPreview{entry});
+          event_bus_.push_event(DirecotryLoaded{
+              .update_preview_ = true, .directory_ = load_directory(entry)});
           return std::nullopt;
         }
 
@@ -100,7 +101,8 @@ void FileManager::async_enter_directory(const fs::path &path) {
   auto task =
       stdexec::schedule(Scheduler::io_scheduler()) |
       stdexec::then([this, path]() {
-        event_bus_.push_event(DirecotryLoaded{load_directory(path)});
+        event_bus_.push_event(DirecotryLoaded{
+            .update_preview_ = false, .directory_ = load_directory(path)});
       }) |
       stdexec::then([this, path]() {
         event_bus_.push_event(FmgrEvent{
@@ -183,7 +185,8 @@ void FileManager::async_paste_entries(const fs::path &dest,
         }
       }) |
       stdexec::then([this, dest]() {
-        event_bus_.push_event(DirecotryLoaded{load_directory(dest)});
+        event_bus_.push_event(DirecotryLoaded{
+            .update_preview_ = false, .directory_ = load_directory(dest)});
         event_bus_.push_event(FmgrEvent{
             .type_ = FmgrEvent::Type::UpdateCurrentDirectory, .path = dest});
       });

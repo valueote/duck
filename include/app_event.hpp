@@ -57,15 +57,12 @@ struct PreviewUpdated {
 };
 
 struct DirecotryLoaded {
+  bool update_preview_;
   Directory directory_;
 };
 
-struct DirectoryPreview {
-  fs::path path_;
-};
-
-using AppEvent = std::variant<FmgrEvent, RenderEvent, DirecotryLoaded,
-                              PreviewUpdated, DirectoryPreview>;
+using AppEvent =
+    std::variant<FmgrEvent, RenderEvent, DirecotryLoaded, PreviewUpdated>;
 
 template <typename... Ts> struct Visitor : Ts... {
   using Ts::operator()...;

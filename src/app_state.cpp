@@ -1,9 +1,11 @@
 #include "app_state.hpp"
 #include "colorscheme.hpp"
-#include "ranges"
 #include "utils.hpp"
 #include <algorithm>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/dom/node.hpp>
 #include <iterator>
+#include <ranges>
 
 namespace duck {
 namespace fs = std::filesystem;
@@ -65,6 +67,14 @@ std::vector<ftxui::Element> AppState::selected_entries_elements() {
            return elmt;
          }) |
          std::ranges::to<std::vector>();
+}
+
+std::vector<ftxui::Element> AppState::indexed_entry_elements() {
+  auto path = indexed_entry().value().path();
+  if (auto entries = get_entries(path)) {
+    return entries_to_elements(entries.value());
+  }
+  return {ftxui::text("[Empty folder]")};
 }
 
 size_t AppState::entries_size(const fs::path &path) {
