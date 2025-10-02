@@ -48,6 +48,7 @@ target_link_libraries(duck PRIVATE STDEXEC::stdexec TBB::tbb)
 add_executable(
   duck_tests EXCLUDE_FROM_ALL
   src/app.cpp
+  src/app_state.cpp
   src/duck.cpp
   src/ui.cpp
   src/file_manager.cpp
@@ -58,7 +59,8 @@ add_executable(
   src/event_bus.cpp
   src/utils.cpp
   tests/test_main.cpp
-  tests/file_manager_test.cpp)
+  tests/file_manager_test.cpp
+  tests/utils_test.cpp)
 target_include_directories(
   duck_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
                      ${CMAKE_CURRENT_SOURCE_DIR}/tests)

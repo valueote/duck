@@ -52,10 +52,10 @@ public:
       touch_without_lock(path);
     } else {
       if (lru_list_.size() == capacity_) {
-        const fs::path &lru_path = lru_list_.back();
+        const auto &lru_key = lru_list_.back();
 
-        map_.erase(lru_path);
-        cache_.erase(lru_path);
+        map_.erase(lru_key);
+        cache_.erase(lru_key);
 
         lru_list_.pop_back();
       }
