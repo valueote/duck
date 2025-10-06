@@ -75,21 +75,11 @@ void App::handle_fmgr_event(const FmgrEvent &event) {
     break;
   }
   case FmgrEvent::Type::ToggleSelection: {
-    auto entry = state_.indexed_entry();
-    if (entry) {
-      if (state_.selected_entries_.contains(entry.value())) {
-        state_.selected_entries_.erase(entry.value());
-      } else {
-        state_.selected_entries_.insert(entry.value());
-      }
-      move_index_down();
-    }
-    refresh_menu();
+    toggle_selection();
     break;
   }
   case FmgrEvent::Type::ToggleHidden:
-    state_.toggle_hidden();
-    refresh_menu();
+    toggle_hidden();
     break;
   case FmgrEvent::Type::OpenFile:
     open_file();
@@ -190,6 +180,24 @@ void App::move_index_up() {
 void App::refresh_menu() {
   ui_.async_update_info({state_.current_path_.string(), state_.index_,
                          state_.current_directory_elements()});
+}
+
+void App::toggle_selection() {
+  auto entry = state_.indexed_entry();
+  if (entry) {
+    if (state_.selected_entries_.contains(entry.value())) {
+      state_.selected_entries_.erase(entry.value());
+    } else {
+      state_.selected_entries_.insert(entry.value());
+    }
+    move_index_down();
+  }
+  refresh_menu();
+}
+
+void App::toggle_hidden() {
+  state_.toggle_hidden();
+  refresh_menu();
 }
 
 void App::update_preview() {

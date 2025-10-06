@@ -28,8 +28,10 @@ private:
   void update_current_direcotry(const fs::path &path);
   void move_index_down();
   void move_index_up();
+  void toggle_selection();
   void update_preview();
   void refresh_menu();
+  void toggle_hidden();
   void enter_directory();
   void leave_directory();
   void confirm_deletion();
